@@ -54,12 +54,12 @@ describe("addIssueCommentTool", () => {
 
   it("calls backlog.postIssueComments with correct params when using issue ID and notifications", async () => {
     await tool.handler({
-      issueIdOrKey: 1,
+      issueIdOrKey: "1",
       content: "This is a new comment with notifications",
       notifiedUserId: [2, 3]
     });
     
-    expect(mockBacklog.postIssueComments).toHaveBeenCalledWith(1, {
+    expect(mockBacklog.postIssueComments).toHaveBeenCalledWith("1", {
       content: "This is a new comment with notifications",
       notifiedUserId: [2, 3],
       attachmentId: undefined
