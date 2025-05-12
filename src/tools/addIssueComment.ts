@@ -5,7 +5,7 @@ import { TranslationHelper } from "../createTranslationHelper.js";
 import { IssueCommentSchema } from "../types/zod/backlogOutputDefinition.js";
 
 const addIssueCommentSchema = buildToolSchema(t => ({
-  issueIdOrKey: z.union([z.string(), z.number()]).describe(t("TOOL_ADD_ISSUE_COMMENT_ISSUE_ID_OR_KEY", "Issue ID or issue key")),
+  issueIdOrKey: z.string().describe(t("TOOL_ADD_ISSUE_COMMENT_ISSUE_ID_OR_KEY", "The issue key (e.g., 'HOME-999') or issue ID (e.g., '1234') as a string")),
   content: z.string().describe(t("TOOL_ADD_ISSUE_COMMENT_CONTENT", "Comment content")),
   notifiedUserId: z.array(z.number()).optional().describe(t("TOOL_ADD_ISSUE_COMMENT_NOTIFIED_USER_ID", "User IDs to notify")),
   attachmentId: z.array(z.number()).optional().describe(t("TOOL_ADD_ISSUE_COMMENT_ATTACHMENT_ID", "Attachment IDs")),
