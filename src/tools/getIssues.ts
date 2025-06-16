@@ -3,6 +3,7 @@ import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from "../createTranslationHelper.js";
 import { IssueSchema } from "../types/zod/backlogOutputDefinition.js";
+import { customFieldsToPayload } from "../backlog/customFields.js";
 
 const getIssuesSchema = buildToolSchema(t => ({
   projectId: z.array(z.number()).optional().describe(t("TOOL_GET_ISSUES_PROJECT_ID", "Project IDs")),
@@ -29,6 +30,14 @@ const getIssuesSchema = buildToolSchema(t => ({
   order: z.enum(["asc", "desc"]).optional().describe(t("TOOL_GET_ISSUES_ORDER", "Sort order")),
   offset: z.number().optional().describe(t("TOOL_GET_ISSUES_OFFSET", "Offset for pagination")),
   count: z.number().optional().describe(t("TOOL_GET_ISSUES_COUNT", "Number of issues to retrieve")),
+  customFields: z.array(z.object({
+    id: z.number().describe(t("TOOL_GET_ISSUES_CUSTOM_FIELD_ID", "Custom field ID")),
+    value: z.union([
+      z.string(),
+      z.number(),
+      z.array(z.string())
+    ]).describe(t("TOOL_GET_ISSUES_CUSTOM_FIELD_VALUE", "Custom field value"))
+  })).optional().describe(t("TOOL_GET_ISSUES_CUSTOM_FIELDS", "Custom field filters")),
 }));
 
 export const getIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolDefinition<ReturnType<typeof getIssuesSchema>, typeof IssueSchema["shape"]> => {
@@ -38,6 +47,12 @@ export const getIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolD
     schema: z.object(getIssuesSchema(t)),
     importantFields: ["projectId", "issueKey", "keyId", "summary", "description", "issueType"],
     outputSchema: IssueSchema,
-    handler: async (params) => backlog.getIssues(params),
+    handler: async (params) => {
+      const { customFields, ...rest } = params;
+      return backlog.getIssues({
+        ...rest,
+        ...customFieldsToPayload(customFields)
+      });
+    },
   };
 };
