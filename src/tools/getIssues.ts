@@ -37,7 +37,7 @@ const getIssuesSchema = buildToolSchema(t => ({
       z.number(),
       z.array(z.string())
     ]).describe(t("TOOL_GET_ISSUES_CUSTOM_FIELD_VALUE", "Custom field value"))
-  })).optional().describe(t("TOOL_GET_ISSUES_CUSTOM_FIELDS", "Custom field filters")),
+  })).optional().describe(t("TOOL_GET_ISSUES_CUSTOM_FIELDS", "Custom fields")),
 }));
 
 export const getIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolDefinition<ReturnType<typeof getIssuesSchema>, typeof IssueSchema["shape"]> => {
@@ -47,8 +47,7 @@ export const getIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolD
     schema: z.object(getIssuesSchema(t)),
     importantFields: ["projectId", "issueKey", "keyId", "summary", "description", "issueType"],
     outputSchema: IssueSchema,
-    handler: async (params) => {
-      const { customFields, ...rest } = params;
+    handler: async ({ customFields, ...rest }) => {
       return backlog.getIssues({
         ...rest,
         ...customFieldsToPayload(customFields)

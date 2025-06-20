@@ -33,7 +33,7 @@ const countIssuesSchema = buildToolSchema(t => ({
       z.number(),
       z.array(z.string())
     ]).describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELD_VALUE", "Custom field value"))
-  })).optional().describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELDS", "Custom field filters")),
+  })).optional().describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELDS", "Custom fields")),
 }));
 
 export const countIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolDefinition<ReturnType<typeof countIssuesSchema>, typeof IssueCountSchema["shape"]> => {
@@ -42,8 +42,7 @@ export const countIssuesTool = (backlog: Backlog, { t }: TranslationHelper): Too
     description: t("TOOL_COUNT_ISSUES_DESCRIPTION", "Returns count of issues"),
     schema: z.object(countIssuesSchema(t)),
     outputSchema: IssueCountSchema,
-    handler: async (params) => {
-      const { customFields, ...rest } = params;
+    handler: async ({ customFields, ...rest }) => {
       return backlog.getIssuesCount({
         ...rest,
         ...customFieldsToPayload(customFields)
