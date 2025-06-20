@@ -1,5 +1,5 @@
-import { cosmiconfigSync } from "cosmiconfig";
-import os from "os";
+import { cosmiconfigSync } from 'cosmiconfig';
+import os from 'os';
 
 export interface TranslationHelper {
   t: (key: string, fallback: string) => string;
@@ -8,7 +8,7 @@ export interface TranslationHelper {
 
 export function createTranslationHelper(options?: {
   configName?: string;
-  searchDir?: string; 
+  searchDir?: string;
 }): TranslationHelper {
   const usedKeys: Record<string, string> = {};
 
@@ -34,9 +34,7 @@ export function createTranslationHelper(options?: {
 
     // Priority：ENV → config → fallback
     const value =
-      process.env[toEnvKey(upperKey)] ||
-      config[upperKey] ||
-      fallback;
+      process.env[toEnvKey(upperKey)] || config[upperKey] || fallback;
 
     usedKeys[upperKey] = value;
     return value;
@@ -46,5 +44,5 @@ export function createTranslationHelper(options?: {
     return { ...usedKeys };
   }
 
-  return { t, dump};
+  return { t, dump };
 }

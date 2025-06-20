@@ -1,9 +1,12 @@
 import { createTranslationHelper } from './createTranslationHelper';
 import { writeFileSync, unlinkSync } from 'fs';
-import { describe, it, expect, beforeEach } from '@jest/globals'; 
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import path from 'path';
 
-const TEMP_CONFIG_PATH = path.resolve(process.cwd(), '.backlog-mcp-serverrc.json');
+const TEMP_CONFIG_PATH = path.resolve(
+  process.cwd(),
+  '.backlog-mcp-serverrc.json'
+);
 
 describe('createTranslationHelper', () => {
   beforeEach(() => {
@@ -11,7 +14,7 @@ describe('createTranslationHelper', () => {
     try {
       unlinkSync(TEMP_CONFIG_PATH);
     } catch {
-    // noop: cannot do anything
+      // noop: cannot do anything
     }
   });
 

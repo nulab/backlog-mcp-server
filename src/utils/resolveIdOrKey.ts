@@ -1,11 +1,10 @@
-import { TranslationHelper } from "../createTranslationHelper.js";
+import { TranslationHelper } from '../createTranslationHelper.js';
 
-export type EntityName = 
-  | "issue" 
-  | "project" 
-  | "repository";
+export type EntityName = 'issue' | 'project' | 'repository';
 
-type ResolveResult = { ok: true; value: string | number } | { ok: false; error: Error };
+type ResolveResult =
+  | { ok: true; value: string | number }
+  | { ok: false; error: Error };
 
 type ResolveIdOrFieldInput<F extends string> = {
   id?: number;
@@ -20,14 +19,11 @@ type ResolveIdOrFieldInput<F extends string> = {
  * @param values - An object with `id?: number` and `[fieldName]?: string`
  * @param t - Translator
  */
-function resolveIdOrField<
-  E extends EntityName,
-  F extends string
->(
+function resolveIdOrField<E extends EntityName, F extends string>(
   entity: E,
   fieldName: F,
   values: ResolveIdOrFieldInput<F>,
-  t: TranslationHelper["t"]
+  t: TranslationHelper['t']
 ): ResolveResult {
   const value = tryResolveIdOrField(fieldName, values);
   if (value === undefined) {
@@ -55,15 +51,15 @@ function tryResolveIdOrField<F extends string>(
 export const resolveIdOrKey = <E extends EntityName>(
   entity: E,
   values: { id?: number; key?: string },
-  t: TranslationHelper["t"]
-): ResolveResult => resolveIdOrField(entity, "key", values, t);
+  t: TranslationHelper['t']
+): ResolveResult => resolveIdOrField(entity, 'key', values, t);
 
 export const resolveIdOrName = <E extends EntityName>(
   entity: E,
   values: { id?: number; name?: string },
-  t: TranslationHelper["t"]
-): ResolveResult => resolveIdOrField(entity, "name", values, t);
+  t: TranslationHelper['t']
+): ResolveResult => resolveIdOrField(entity, 'name', values, t);
 
 function capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }

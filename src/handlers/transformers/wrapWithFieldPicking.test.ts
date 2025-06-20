@@ -1,65 +1,65 @@
-import { wrapWithFieldPicking } from "./wrapWithFieldPicking";
-import type { SafeResult } from "../../types/result";
-import { jest, describe, it, expect } from '@jest/globals'; 
+import { wrapWithFieldPicking } from './wrapWithFieldPicking';
+import type { SafeResult } from '../../types/result';
+import { jest, describe, it, expect } from '@jest/globals';
 
-describe("wrapWithFieldPicking", () => {
+describe('wrapWithFieldPicking', () => {
   const fullData = {
     id: 1,
-    name: "Project A",
+    name: 'Project A',
     config: {
-      mode: "advanced",
-      enabled: true
+      mode: 'advanced',
+      enabled: true,
     },
-    extra: "should be ignored"
+    extra: 'should be ignored',
   };
 
   const successResult: SafeResult<typeof fullData> = {
-    kind: "ok",
+    kind: 'ok',
     data: fullData,
   };
 
   const mockFn = jest.fn(async () => successResult);
 
-  it("returns full data when fields is not specified", async () => {
+  it('returns full data when fields is not specified', async () => {
     const wrapped = wrapWithFieldPicking(mockFn);
     const result = await wrapped({});
 
     expect(result).toEqual(successResult);
   });
 
-  it("filters top-level fields", async () => {
+  it('filters top-level fields', async () => {
     const wrapped = wrapWithFieldPicking(mockFn);
     const result = await wrapped({
-      fields: `{ id name }`
+      fields: `{ id name }`,
     });
 
     expect(result).toEqual({
-      kind: "ok",
+      kind: 'ok',
       data: {
         id: 1,
-        name: "Project A"
-      }
+        name: 'Project A',
+      },
     });
   });
 
-  it("filters nested fields", async () => {
+  it('filters nested fields', async () => {
     const wrapped = wrapWithFieldPicking(mockFn);
     const result = await wrapped({
-      fields: `{ config { mode } }`
+      fields: `{ config { mode } }`,
     });
 
     expect(result).toEqual({
-      kind: "ok",
+      kind: 'ok',
       data: {
         config: {
-          mode: "advanced"
-        }
-      }
+          mode: 'advanced',
+        },
+      },
     });
   });
 
-  it("returns original error if result is an error", async () => {
-    const errorResult = { kind: "error", message: "boom" } as const;
+  it('returns original error if result is an error', async () => {
+    const errorResult = { kind: 'error', message: 'boom' } as const;
     const errorFn = jest.fn(async () => errorResult);
 
     const wrapped = wrapWithFieldPicking(errorFn);
@@ -68,36 +68,36 @@ describe("wrapWithFieldPicking", () => {
     expect(result).toBe(errorResult);
   });
 
-  it("ignores fields not in data", async () => {
+  it('ignores fields not in data', async () => {
     const wrapped = wrapWithFieldPicking(mockFn);
     const result = await wrapped({ fields: `{ id unknown }` });
 
     expect(result).toEqual({
-      kind: "ok",
+      kind: 'ok',
       data: {
-        id: 1
-      }
+        id: 1,
+      },
     });
   });
 
-  it("filters arrays of objects", async () => {
-    const arrFn = jest.fn(async (_) => ({
-      kind: "ok",
-      data: [
-        { id: 1, name: "A", unused: true },
-        { id: 2, name: "B", unused: false }
-      ]
-    }) as const);
+  it('filters arrays of objects', async () => {
+    const arrFn = jest.fn(
+      async (_) =>
+        ({
+          kind: 'ok',
+          data: [
+            { id: 1, name: 'A', unused: true },
+            { id: 2, name: 'B', unused: false },
+          ],
+        }) as const
+    );
 
     const wrapped = wrapWithFieldPicking(arrFn);
     const result = await wrapped({ fields: `{ name }` });
 
     expect(result).toEqual({
-      kind: "ok",
-      data: [
-        { name: "A" },
-        { name: "B" }
-      ]
+      kind: 'ok',
+      data: [{ name: 'A' }, { name: 'B' }],
     });
   });
 });

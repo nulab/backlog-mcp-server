@@ -1,45 +1,45 @@
-import { getPrioritiesTool } from "./getPriorities.js";
-import { jest, describe, it, expect } from '@jest/globals'; 
-import type { Backlog } from "backlog-js";
-import { createTranslationHelper } from "../createTranslationHelper.js";
+import { getPrioritiesTool } from './getPriorities.js';
+import { jest, describe, it, expect } from '@jest/globals';
+import type { Backlog } from 'backlog-js';
+import { createTranslationHelper } from '../createTranslationHelper.js';
 
-describe("getPrioritiesTool", () => {
+describe('getPrioritiesTool', () => {
   const mockBacklog: Partial<Backlog> = {
     getPriorities: jest.fn<() => Promise<any>>().mockResolvedValue([
       {
         id: 2,
-        name: "High"
+        name: 'High',
       },
       {
         id: 3,
-        name: "Normal"
+        name: 'Normal',
       },
       {
         id: 4,
-        name: "Low"
-      }
-    ])
+        name: 'Low',
+      },
+    ]),
   };
 
   const mockTranslationHelper = createTranslationHelper();
   const tool = getPrioritiesTool(mockBacklog as Backlog, mockTranslationHelper);
 
-  it("returns priorities list as formatted JSON text", async () => {
+  it('returns priorities list as formatted JSON text', async () => {
     const result = await tool.handler({});
 
     if (!Array.isArray(result)) {
-      throw new Error("Unexpected non array result");
+      throw new Error('Unexpected non array result');
     }
 
     expect(result).toHaveLength(3);
-    expect(result[0].name).toContain("High");
-    expect(result[1].name).toContain("Normal");
-    expect(result[2].name).toContain("Low");
+    expect(result[0].name).toContain('High');
+    expect(result[1].name).toContain('Normal');
+    expect(result[2].name).toContain('Low');
   });
 
-  it("calls backlog.getPriorities", async () => {
+  it('calls backlog.getPriorities', async () => {
     await tool.handler({});
-    
+
     expect(mockBacklog.getPriorities).toHaveBeenCalled();
   });
 });

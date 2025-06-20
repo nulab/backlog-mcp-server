@@ -1,10 +1,10 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { MCPOptions } from "../types/mcp";
-import { ToolsetGroup } from "../types/toolsets";
-import { createToolRegistrar } from "../utils/toolRegistrar";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { MCPOptions } from '../types/mcp';
+import { ToolsetGroup } from '../types/toolsets';
+import { createToolRegistrar } from '../utils/toolRegistrar';
 
-jest.mock("../registerTools", () => ({
+jest.mock('../registerTools', () => ({
   registerTools: jest.fn(),
 }));
 
@@ -20,16 +20,16 @@ const serverMock = {
 const options: MCPOptions = {
   useFields: true,
   maxTokens: 5000,
-  prefix: "",
+  prefix: '',
 };
 
-describe("createToolRegistrar", () => {
-  it("enables a toolset and refreshes tool list", async () => {
+describe('createToolRegistrar', () => {
+  it('enables a toolset and refreshes tool list', async () => {
     const toolsetGroup: ToolsetGroup = {
       toolsets: [
         {
-          name: "issue",
-          description: "Issue toolset",
+          name: 'issue',
+          description: 'Issue toolset',
           enabled: false,
           tools: [],
         },
@@ -37,20 +37,20 @@ describe("createToolRegistrar", () => {
     };
 
     const registrar = createToolRegistrar(serverMock, toolsetGroup, options);
-    const msg = await registrar.enableToolsetAndRefresh("issue");
+    const msg = await registrar.enableToolsetAndRefresh('issue');
 
-    expect(msg).toBe("Toolset issue enabled");
+    expect(msg).toBe('Toolset issue enabled');
     expect(toolsetGroup.toolsets[0].enabled).toBe(true);
 
     expect(mockSendToolListChanged).toHaveBeenCalled();
   });
 
-  it("returns already enabled message if toolset is already enabled", async () => {
+  it('returns already enabled message if toolset is already enabled', async () => {
     const toolsetGroup: ToolsetGroup = {
       toolsets: [
         {
-          name: "project",
-          description: "Project toolset",
+          name: 'project',
+          description: 'Project toolset',
           enabled: true,
           tools: [],
         },
@@ -58,19 +58,19 @@ describe("createToolRegistrar", () => {
     };
 
     const registrar = createToolRegistrar(serverMock, toolsetGroup, options);
-    const msg = await registrar.enableToolsetAndRefresh("project");
+    const msg = await registrar.enableToolsetAndRefresh('project');
 
-    expect(msg).toBe("Toolset project is already enabled");
+    expect(msg).toBe('Toolset project is already enabled');
   });
 
-  it("returns not found message if toolset does not exist", async () => {
+  it('returns not found message if toolset does not exist', async () => {
     const toolsetGroup: ToolsetGroup = {
       toolsets: [],
     };
 
     const registrar = createToolRegistrar(serverMock, toolsetGroup, options);
-    const msg = await registrar.enableToolsetAndRefresh("unknown");
+    const msg = await registrar.enableToolsetAndRefresh('unknown');
 
-    expect(msg).toBe("Toolset unknown not found");
+    expect(msg).toBe('Toolset unknown not found');
   });
 });

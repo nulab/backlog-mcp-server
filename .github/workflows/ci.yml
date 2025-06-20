@@ -28,7 +28,9 @@ jobs:
 
       - name: 🔍 Lint (if exists)
         run: npm run lint
-        continue-on-error: true  # 任意
+
+      - name: 🎨 Format check (Prettier)
+        run: npm run format
 
       - name: 🧪 Run tests
         run: npm test
