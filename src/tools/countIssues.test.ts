@@ -44,4 +44,55 @@ describe("countIssuesTool", () => {
       createdUntil: "2023-01-31"
     });
   });
+
+  it("calls backlog.getIssuesCount with custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      customFields: [
+        { id: 12345, value: "test-value" },
+        { id: 67890, value: 123 }
+      ]
+    });
+    
+    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+      projectId: [100],
+      customField_12345: "test-value",
+      customField_67890: 123
+    });
+  });
+
+  it("calls backlog.getIssuesCount with custom fields array values", async () => {
+    await tool.handler({
+      customFields: [
+        { id: 11111, value: ["option1", "option2"] }
+      ]
+    });
+    
+    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+      customField_11111: ["option1", "option2"]
+    });
+  });
+
+  it("calls backlog.getIssuesCount with empty custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      customFields: []
+    });
+    
+    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+      projectId: [100]
+    });
+  });
+
+  it("calls backlog.getIssuesCount without custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      statusId: [1]
+    });
+    
+    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+      projectId: [100],
+      statusId: [1]
+    });
+  });
 });

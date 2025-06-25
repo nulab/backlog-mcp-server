@@ -105,4 +105,55 @@ describe("getIssuesTool", () => {
       keyword: "bug"
     });
   });
+
+  it("calls backlog.getIssues with custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      customFields: [
+        { id: 12345, value: "test-value" },
+        { id: 67890, value: 123 }
+      ]
+    });
+    
+    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+      projectId: [100],
+      customField_12345: "test-value",
+      customField_67890: 123
+    });
+  });
+
+  it("calls backlog.getIssues with custom fields array values", async () => {
+    await tool.handler({
+      customFields: [
+        { id: 11111, value: ["option1", "option2"] }
+      ]
+    });
+    
+    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+      customField_11111: ["option1", "option2"]
+    });
+  });
+
+  it("calls backlog.getIssues with empty custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      customFields: []
+    });
+    
+    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+      projectId: [100]
+    });
+  });
+
+  it("calls backlog.getIssues without custom fields", async () => {
+    await tool.handler({
+      projectId: [100],
+      statusId: [1]
+    });
+    
+    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+      projectId: [100],
+      statusId: [1]
+    });
+  });
 });

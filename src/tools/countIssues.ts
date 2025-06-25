@@ -3,6 +3,7 @@ import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from "../createTranslationHelper.js";
 import { IssueCountSchema } from "../types/zod/backlogOutputDefinition.js";
+import { customFieldsToPayload } from "../backlog/customFields.js";
 
 const countIssuesSchema = buildToolSchema(t => ({
   projectId: z.array(z.number()).optional().describe(t("TOOL_COUNT_ISSUES_PROJECT_ID", "Project IDs")),
@@ -25,6 +26,14 @@ const countIssuesSchema = buildToolSchema(t => ({
   createdUntil: z.string().optional().describe(t("TOOL_COUNT_ISSUES_CREATED_UNTIL", "Created until (yyyy-MM-dd)")),
   updatedSince: z.string().optional().describe(t("TOOL_COUNT_ISSUES_UPDATED_SINCE", "Updated since (yyyy-MM-dd)")),
   updatedUntil: z.string().optional().describe(t("TOOL_COUNT_ISSUES_UPDATED_UNTIL", "Updated until (yyyy-MM-dd)")),
+  customFields: z.array(z.object({
+    id: z.number().describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELD_ID", "Custom field ID")),
+    value: z.union([
+      z.string(),
+      z.number(),
+      z.array(z.string())
+    ]).describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELD_VALUE", "Custom field value"))
+  })).optional().describe(t("TOOL_COUNT_ISSUES_CUSTOM_FIELDS", "Custom fields")),
 }));
 
 export const countIssuesTool = (backlog: Backlog, { t }: TranslationHelper): ToolDefinition<ReturnType<typeof countIssuesSchema>, typeof IssueCountSchema["shape"]> => {
@@ -33,7 +42,11 @@ export const countIssuesTool = (backlog: Backlog, { t }: TranslationHelper): Too
     description: t("TOOL_COUNT_ISSUES_DESCRIPTION", "Returns count of issues"),
     schema: z.object(countIssuesSchema(t)),
     outputSchema: IssueCountSchema,
-    handler: async (params) =>
-      backlog.getIssuesCount(params)
+    handler: async ({ customFields, ...rest }) => {
+      return backlog.getIssuesCount({
+        ...rest,
+        ...customFieldsToPayload(customFields)
+      });
+    }
   };
 };
