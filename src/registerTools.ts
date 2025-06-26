@@ -12,10 +12,9 @@ type RegisterOptions = {
   toolsetGroup: ToolsetSource;
   prefix: string;
   onlyEnabled?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handlerStrategy: (
-    tool: ToolDefinition<any, any> | DynamicToolDefinition<any>
-  ) => (...args: any[]) => any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tool: ToolDefinition<any, any> | DynamicToolDefinition<any>) => (...args: any[]) => any;
 };
 
 export function registerTools(
