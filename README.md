@@ -93,6 +93,28 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
   }
   ```
 
+### Option 3: Desktop Extension (DXT)
+
+For Claude Desktop users, you can create a Desktop Extension for one-click installation:
+
+1. Install the DXT CLI tool:
+   ```bash
+   npm install -g @anthropic-ai/dxt
+   ```
+
+2. Create a Desktop Extension package:
+   ```bash
+   # Initialize manifest (if not already present)
+   dxt init
+   
+   # Package the extension
+   dxt pack
+   ```
+
+3. Install the generated `.dxt` file in Claude Desktop by double-clicking it or using the Extensions menu.
+
+The Desktop Extension includes a `manifest.json` file that defines the server configuration and available tools, making installation seamless for end users.
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.
@@ -479,6 +501,23 @@ The server supports several command line options:
 - `--enable-toolsets <toolsets...>`: Specify which toolsets to enable (comma-separated or multiple arguments). Defaults to "all".
   Example: `--enable-toolsets space,project` or `--enable-toolsets issue --enable-toolsets git`
   Available toolsets: `space`, `project`, `issue`, `wiki`, `git`, `notifications`.
+
+### Desktop Extension Development
+
+For developing Desktop Extensions, you can use the DXT CLI tools:
+
+```bash
+# Initialize a new manifest.json (interactive)
+npx dxt init
+
+# Validate the current manifest.json
+npx dxt validate
+
+# Package the extension into a .dxt file
+npx dxt pack
+```
+
+The `manifest.json` file defines the extension metadata, server configuration, and available tools for Desktop Extension installation.
 
 Example:
 ```bash
