@@ -97,21 +97,16 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
 
 Claude Desktopユーザー向けに、ワンクリックインストール用のDesktop Extensionを作成できます：
 
-1. DXT CLIツールをインストール：
-   ```bash
-   npm install -g @anthropic-ai/dxt
-   ```
-
-2. Desktop Extensionパッケージを作成：
+1. Desktop Extensionパッケージを作成：
    ```bash
    # manifest.jsonを初期化（まだ存在しない場合）
    dxt init
-   
+
    # 拡張機能をパッケージ化
    dxt pack
    ```
 
-3. 生成された `.dxt` ファイルをダブルクリックするか、拡張機能メニューを使用してClaude Desktopにインストールします。
+2. 生成された `.dxt` ファイルをダブルクリックするか、拡張機能メニューを使用してClaude Desktopにインストールします。
 
 Desktop Extensionには、サーバー設定と利用可能なツールを定義する `manifest.json` ファイルが含まれており、エンドユーザーにとってシームレスなインストールを実現します。
 
