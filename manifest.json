@@ -1,0 +1,74 @@
+{
+  "dxt_version": "0.1",
+  "name": "backlog-mcp-server",
+  "version": "0.1.1",
+  "description": "A Model Context Protocol (MCP) server for interacting with the Backlog API. This server provides tools for managing projects, issues, wiki pages, and more in Backlog through AI agents.",
+  "display_name": "Backlog MCP Server",
+  "author": {
+    "name": "nulab",
+    "url": "https://github.com/nulab"
+  },
+  "homepage": "https://github.com/nulab/backlog-mcp-server",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nulab/backlog-mcp-server.git"
+  },
+  "keywords": ["mcp", "backlog", "api", "project-management", "issue-tracking"],
+  "server": {
+    "type": "node",
+    "entry_point": "build/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/build/index.js",
+        "--stdio"
+      ],
+      "env": {
+        "BACKLOG_DOMAIN": "${user_config.BACKLOG_DOMAIN}",
+        "BACKLOG_API_KEY": "${user_config.BACKLOG_API_KEY}"
+      }
+    }
+  },
+  "user_config": {
+    "BACKLOG_DOMAIN": {
+      "title": "Backlog Domain",
+      "description": "Your Backlog domain (e.g., your-domain.backlog.com)",
+      "type": "string",
+      "required": true,
+      "secret": false
+    },
+    "BACKLOG_API_KEY": {
+      "title": "Backlog API Key",
+      "description": "Your Backlog API key. Generate one from https://your-domain.backlog.com/EditApiSettings.action",
+      "type": "string",
+      "required": true,
+      "secret": true
+    }
+  },
+  "tools": [
+    {
+      "name": "project_management",
+      "description": "Create, read, update, and delete Backlog projects"
+    },
+    {
+      "name": "issue_tracking",
+      "description": "Manage issues and comments in Backlog"
+    },
+    {
+      "name": "wiki_pages",
+      "description": "Create and manage wiki pages"
+    },
+    {
+      "name": "git_repositories",
+      "description": "Access git repositories and pull requests"
+    },
+    {
+      "name": "notifications",
+      "description": "Manage Backlog notifications"
+    }
+  ],
+  "compatibility": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

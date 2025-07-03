@@ -22,13 +22,34 @@ A Model Context Protocol (MCP) server for interacting with the Backlog API. This
 
 ### Requirements
 
-- Docker
+- Docker or Node.js 18+
 - A Backlog account with API access
 - API key from your Backlog account
 
-### Option 1: Install via Docker
+### Option 1: One-Click Install with DXT File (Recommended)
 
-The easiest way to use this MCP server is through MCP configurations:
+For Claude Desktop users, the easiest way to install is using a DXT file:
+
+1. **Download the DXT file**
+   - Download the latest `backlog-mcp-server.dxt` from the [Releases](https://github.com/nulab/backlog-mcp-server/releases) page
+
+2. **Install in Claude Desktop**
+   - Double-click the downloaded `.dxt` file or drag and drop it into Claude Desktop
+   - An installation confirmation dialog will appear - review and click "Install"
+
+3. **Configure settings**
+   - During installation, you'll be prompted to enter:
+     - **Backlog Domain**: Your Backlog domain (e.g., `your-domain.backlog.com`)
+     - **Backlog API Key**: Your Backlog API key (get it from [API Settings](https://your-domain.backlog.com/EditApiSettings.action))
+   - Enter the required information and click "Save"
+
+4. **Done!**
+   - Claude Desktop will restart and the Backlog MCP Server will be available
+   - You can now ask Claude to "Search for issues in Backlog" and more
+
+### Option 2: Install via Docker
+
+If you prefer not to use DXT files, you can manually configure via Docker:
 
 1. Open MCP settings
 2. Navigate to the MCP configuration section
@@ -65,7 +86,7 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
 docker pull ghcr.io/nulab/backlog-mcp-server:latest
 ```
 
-### Option 2: Manual Setup (Node.js)
+### Option 3: Manual Setup (Node.js)
 
 1. Clone and install:
    ```bash
