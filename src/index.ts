@@ -4,9 +4,11 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import * as backlogjs from 'backlog-js';
 import dotenv from 'dotenv';
 import { default as env } from 'env-var';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createTranslationHelper } from './createTranslationHelper.js';
@@ -65,6 +67,22 @@ Available toolsets:
       'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
     default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
   })
+  .option('transport', {
+    type: 'string',
+    choices: ['stdio', 'sse'] as const,
+    describe: 'Transport protocol to use',
+    default: env.get('TRANSPORT').default('stdio').asString(),
+  })
+  .option('port', {
+    type: 'number',
+    describe: 'Port for SSE server (when transport=sse)',
+    default: env.get('PORT').default('3000').asIntPositive(),
+  })
+  .option('endpoint', {
+    type: 'string',
+    describe: 'Endpoint for SSE messages (when transport=sse)',
+    default: env.get('ENDPOINT').default('/message').asString(),
+  })
   .parseSync();
 
 const useFields = argv.optimizeResponse;
@@ -116,10 +134,105 @@ if (argv.exportTranslations) {
   process.exit(0);
 }
 
+function setCORSHeaders(res: ServerResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function parseJsonBody(req: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const parsed = body ? JSON.parse(body) : undefined;
+        resolve(parsed);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('Backlog MCP Server running on stdio');
+  if (argv.transport === 'sse') {
+    const port = argv.port;
+    const endpoint = argv.endpoint;
+    
+    // Store active SSE transports by session ID
+    const activeTransports = new Map<string, SSEServerTransport>();
+    
+    const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+      setCORSHeaders(res);
+      
+      if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+      
+      const url = new URL(req.url || '/', `http://localhost:${port}`);
+      
+      if (url.pathname === '/' && req.method === 'GET') {
+        try {
+          const transport = new SSEServerTransport(endpoint, res);
+          await server.connect(transport);
+          
+          // Store the transport for handling POST requests
+          activeTransports.set(transport.sessionId, transport);
+          
+          // Clean up when connection closes
+          transport.onclose = () => {
+            activeTransports.delete(transport.sessionId);
+          };
+        } catch (error) {
+          console.error('Error establishing SSE connection:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to establish SSE connection' }));
+        }
+      } else if (url.pathname === endpoint && req.method === 'POST') {
+        try {
+          const sessionId = url.searchParams.get('sessionId');
+          if (!sessionId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing sessionId parameter' }));
+            return;
+          }
+          
+          const transport = activeTransports.get(sessionId);
+          if (!transport) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Session not found' }));
+            return;
+          }
+          
+          const body = await parseJsonBody(req);
+          await transport.handlePostMessage(req, res, body);
+        } catch (error) {
+          console.error('Error handling POST request:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Internal server error' }));
+        }
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not found' }));
+      }
+    });
+    
+    httpServer.listen(port, () => {
+      console.error(`Backlog MCP Server running on SSE at http://localhost:${port}`);
+      console.error(`Connect to: http://localhost:${port}/`);
+      console.error(`Send messages to: http://localhost:${port}${endpoint}?sessionId=<SESSION_ID>`);
+    });
+  } else {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error('Backlog MCP Server running on stdio');
+  }
 }
 
 main().catch((error) => {
