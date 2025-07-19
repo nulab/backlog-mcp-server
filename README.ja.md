@@ -17,6 +17,7 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
 - 通知ツール
 - 最適化されたレスポンスのためのGraphQLスタイルのフィールド選択
 - 大規模なレスポンスに対するトークン制限
+- 複数のトランスポートオプション（stdioとSSE）
 
 ## 利用開始
 
@@ -397,6 +398,47 @@ MAX_TOKENS=10000
 }
 ```
 
+## トランスポートオプション
+
+MCPサーバーは2つのトランスポートプロトコルをサポートしています：
+
+### stdio トランスポート（デフォルト）
+
+デフォルトのstdioトランスポートは、標準入出力ストリームを通じた通信を可能にし、Claude Desktopなどの一般的なMCPクライアントで使用されます。
+
+```bash
+node build/index.js
+# またはDockerで
+docker run -i --rm -e BACKLOG_DOMAIN -e BACKLOG_API_KEY ghcr.io/nulab/backlog-mcp-server
+```
+
+### SSE（Server-Sent Events）トランスポート
+
+SSEトランスポートはサーバーをHTTPサーバーとして実行し、HTTP/SSEを介した通信を可能にします。これはWebアプリケーションや他のHTTPクライアントに便利です。
+
+```bash
+node build/index.js --transport sse --port 3001
+# またはDockerで
+docker run -p 3001:3001 -e BACKLOG_DOMAIN -e BACKLOG_API_KEY ghcr.io/nulab/backlog-mcp-server --transport sse --port 3001
+```
+
+SSEトランスポート使用時：
+- **SSEストリームへの接続**: `GET http://localhost:3001/`
+- **メッセージの送信**: `POST http://localhost:3001/message?sessionId=<SESSION_ID>`
+- **CORS対応**: クロスオリジンリクエストがサポートされています
+
+#### SSE設定オプション
+
+- `--port`: サーバーポート（デフォルト：3000）
+- `--endpoint`: メッセージエンドポイントパス（デフォルト：「/message」）
+
+カスタム設定の例：
+```bash
+node build/index.js --transport sse --port 8080 --endpoint /api/mcp
+```
+
+これにより、ポート8080でサーバーが開始され、メッセージは `/api/mcp?sessionId=<SESSION_ID>` に送信されます。
+
 ## 開発
 
 ### テストの実行
@@ -423,6 +465,9 @@ npm test
 - `--enable-toolsets <toolsets...>`: 有効にするツールセットを指定します（カンマ区切りまたは複数の引数）。デフォルトは "all" です。
   例：`--enable-toolsets space,project` または `--enable-toolsets issue --enable-toolsets git`
   利用可能なツールセット：`space`、`project`、`issue`、`wiki`、`git`、`notifications`。
+- `--transport=<stdio|sse>`: 使用するトランスポートプロトコル（デフォルト：「stdio」）
+- `--port=NUMBER`: SSEトランスポート使用時のサーバーポート（デフォルト：3000）
+- `--endpoint=STRING`: SSEトランスポート使用時のメッセージエンドポイント（デフォルト：「/message」）
 
 例：
 ```bash

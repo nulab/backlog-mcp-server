@@ -17,6 +17,7 @@ A Model Context Protocol (MCP) server for interacting with the Backlog API. This
 - Notification tools
 - GraphQL-style field selection for optimized responses
 - Token limiting for large responses
+- Multiple transport options (stdio and SSE)
 
 ## Getting Started
 
@@ -453,6 +454,47 @@ This section demonstrates advanced configuration using multiple environment vari
 }
 ```
 
+## Transport Options
+
+The MCP server supports two transport protocols:
+
+### stdio Transport (Default)
+
+The default stdio transport allows communication through standard input/output streams, which is commonly used with MCP clients like Claude Desktop.
+
+```bash
+node build/index.js
+# or with Docker
+docker run -i --rm -e BACKLOG_DOMAIN -e BACKLOG_API_KEY ghcr.io/nulab/backlog-mcp-server
+```
+
+### SSE (Server-Sent Events) Transport
+
+SSE transport allows the server to run as an HTTP server, enabling communication via HTTP/SSE. This is useful for web applications or other HTTP clients.
+
+```bash
+node build/index.js --transport sse --port 3001
+# or with Docker
+docker run -p 3001:3001 -e BACKLOG_DOMAIN -e BACKLOG_API_KEY ghcr.io/nulab/backlog-mcp-server --transport sse --port 3001
+```
+
+When using SSE transport:
+- **Connect to SSE stream**: `GET http://localhost:3001/`
+- **Send messages**: `POST http://localhost:3001/message?sessionId=<SESSION_ID>`
+- **CORS enabled**: Cross-origin requests are supported
+
+#### SSE Configuration Options
+
+- `--port`: Server port (default: 3000)
+- `--endpoint`: Message endpoint path (default: "/message")
+
+Example with custom configuration:
+```bash
+node build/index.js --transport sse --port 8080 --endpoint /api/mcp
+```
+
+This will start the server on port 8080 with messages sent to `/api/mcp?sessionId=<SESSION_ID>`.
+
 ## Development
 
 ### Running Tests
@@ -479,6 +521,9 @@ The server supports several command line options:
 - `--enable-toolsets <toolsets...>`: Specify which toolsets to enable (comma-separated or multiple arguments). Defaults to "all".
   Example: `--enable-toolsets space,project` or `--enable-toolsets issue --enable-toolsets git`
   Available toolsets: `space`, `project`, `issue`, `wiki`, `git`, `notifications`.
+- `--transport=<stdio|sse>`: Transport protocol to use (default: "stdio")
+- `--port=NUMBER`: Port for SSE server when using SSE transport (default: 3000)
+- `--endpoint=STRING`: Endpoint for SSE messages when using SSE transport (default: "/message")
 
 Example:
 ```bash
