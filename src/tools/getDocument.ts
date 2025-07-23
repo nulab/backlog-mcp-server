@@ -1,10 +1,7 @@
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { TranslationHelper } from '../createTranslationHelper.js';
-import {
-  DocumentItemSchema,
-  DocumentSchema,
-} from '../types/zod/backlogOutputDefinition.js';
+import { DocumentItemSchema } from '../types/zod/backlogOutputDefinition.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 
 const getDocumentSchema = buildToolSchema((t) => ({

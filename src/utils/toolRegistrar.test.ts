@@ -1,5 +1,4 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { MCPOptions } from '../types/mcp';
 import { ToolsetGroup } from '../types/toolsets';
 import { createToolRegistrar } from '../utils/toolRegistrar';
