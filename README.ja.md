@@ -109,6 +109,7 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
 | `wiki`          | Wikiページを管理するためのツール                                                     |
 | `git`           | Gitリポジトリとプルリクエストを管理するためのツール                                    |
 | `notifications` | ユーザー通知を管理するためのツール                                                   |
+| `document`      | ドキュメントおよびドキュメントツリーを参照するためのツール      |
 
 ### ツールセットの指定
 
@@ -154,7 +155,6 @@ CLI経由での有効化：
 
 以下のような Backlog 機能に対応するツールを提供しています：
 
-[利用可能なツール]()
 [Available Tools セクションへ](https://github.com/nulab/backlog-mcp-server?tab=readme-ov-file#available-tools)
 
 ## 使用例

@@ -109,6 +109,7 @@ The following toolsets are available (enabled by default when `"all"` is used):
 | `wiki`          | Tools for managing wiki pages                                                        |
 | `git`           | Tools for managing Git repositories and pull requests                                |
 | `notifications` | Tools for managing user notifications                                                |
+| `document`      | Tools for viewing documents and document trees                   |
 
 ### Specifying Toolsets
 
@@ -210,6 +211,12 @@ Tools for managing user notifications.
 - `get_notifications_count`: Returns count of notifications.
 - `reset_unread_notification_count`: Resets unread notification count.
 - `mark_notification_as_read`: Marks a notification as read.
+
+### Toolset: `document`
+Tools for managing documents and document trees in Backlog projects.
+- `get_document_tree`: Returns the hierarchical tree of documents for a project, including folders and ne
+- `get_documents`: Returns a flat list of documents in a project or folder.
+- `get_document`: Returns detailed information about a specific document, including metadata, content, an
 
 ## Usage Examples
 
