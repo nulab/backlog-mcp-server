@@ -2,7 +2,6 @@
   "git": {
     "tagName": "v${version}",
     "commitMessage": "chore(bump): v${version}",
-    "tagMatch": "*",
     "requireCleanWorkingDir": true
   },
   "plugins": {
