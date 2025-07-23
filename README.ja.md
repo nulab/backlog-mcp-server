@@ -153,6 +153,8 @@ CLI経由での有効化：
 ## 利用可能なツール
 
 以下のような Backlog 機能に対応するツールを提供しています：
+
+[利用可能なツール]()
 [Available Tools セクションへ](https://github.com/nulab/backlog-mcp-server?tab=readme-ov-file#available-tools)
 
 ## 使用例

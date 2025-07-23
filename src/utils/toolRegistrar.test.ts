@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { MCPOptions } from '../types/mcp';
 import { ToolsetGroup } from '../types/toolsets';
 import { createToolRegistrar } from '../utils/toolRegistrar';
+import { BacklogMCPServer } from './wrapServerWithToolRegistry';
 
 jest.mock('../registerTools', () => ({
   registerTools: jest.fn(),
@@ -15,7 +16,9 @@ const serverMock = {
     sendToolListChanged: mockSendToolListChanged,
   },
   tool: jest.fn(),
-} as unknown as McpServer;
+  __registeredToolNames: new Set<string>(),
+  registerOnce: () => {},
+} as unknown as BacklogMCPServer;
 
 const options: MCPOptions = {
   useFields: true,

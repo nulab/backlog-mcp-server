@@ -450,3 +450,84 @@ export const WikiListItemSchema = z.object({
 export const WikiCountSchema = z.object({
   count: z.number(),
 });
+
+export const DocumentSchema = z.object({
+  id: z.number(),
+  projectId: z.number(),
+  name: z.string(),
+  content: z.string(),
+  createdUser: UserSchema,
+  created: z.string(),
+  updatedUser: UserSchema,
+  updated: z.string(),
+});
+
+export const DocumentAttachmentSchema = z.object({
+  filename: z.string(),
+  body: z.any(),
+  url: z.string(),
+});
+
+export const DocumentTagSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+export const DocumentFileInfoSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  size: z.number(),
+  createdUser: UserSchema,
+  created: z.string(),
+});
+
+export const DocumentItemSchema = z.object({
+  id: z.string(),
+  projectId: z.number(),
+  title: z.string(),
+  plain: z.string(),
+  json: z.string(),
+  statusId: z.number(),
+  emoji: z.string().nullable(),
+  attachments: z.array(DocumentFileInfoSchema),
+  tags: z.array(DocumentTagSchema),
+  createdUser: UserSchema,
+  created: z.string(),
+  updatedUser: UserSchema,
+  updated: z.string(),
+});
+
+export type DocumentTreeNode = {
+  id: string;
+  name?: string;
+  children: DocumentTreeNode[];
+  statusId?: number;
+  emoji?: string;
+  emojiType?: string;
+  updated?: string;
+};
+
+export const DocumentTreeNodeSchema: z.ZodType<DocumentTreeNode> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    children: z.array(DocumentTreeNodeSchema),
+    statusId: z.number().optional(),
+    emoji: z.string().optional(),
+    emojiType: z.string().optional(),
+    updated: z.string().optional(),
+  })
+);
+
+export const ActiveTrashTreeSchema = z.object({
+  id: z.string(),
+  children: z.array(DocumentTreeNodeSchema),
+});
+
+export const DocumentTreeFullSchema: z.ZodRawShape = {
+  projectId: z.number(),
+  activeTree: ActiveTrashTreeSchema.optional(),
+  trashTree: ActiveTrashTreeSchema.optional(),
+};
+
+export const DocumentTreeFullSchemaZ = z.object(DocumentTreeFullSchema);

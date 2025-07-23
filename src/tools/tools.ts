@@ -42,6 +42,9 @@ import { updateIssueTool } from './updateIssue.js';
 import { updateProjectTool } from './updateProject.js';
 import { updatePullRequestTool } from './updatePullRequest.js';
 import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
+import { getDocumentTool } from './getDocument.js';
+import { getDocumentsTool } from './getDocuments.js';
+import { getDocumentTreeTool } from './getDocumentTree.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -121,6 +124,16 @@ export const allTools = (
           getPullRequestCommentsTool(backlog, helper),
           addPullRequestCommentTool(backlog, helper),
           updatePullRequestCommentTool(backlog, helper),
+        ],
+      },
+      {
+        name: 'document',
+        description: 'Tools for managing documents.',
+        enabled: false,
+        tools: [
+          getDocumentsTool(backlog, helper),
+          getDocumentTreeTool(backlog, helper),
+          getDocumentTool(backlog, helper),
         ],
       },
       {
