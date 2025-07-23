@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.4.0 (2025-07-23)
+
 ## [0.3.1](https://github.com/trknhr/backlog-mcp-server/compare/v0.3.0...v0.3.1)
 
 ### Features
