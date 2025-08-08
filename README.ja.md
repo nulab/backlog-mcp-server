@@ -65,7 +65,34 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
 docker pull ghcr.io/nulab/backlog-mcp-server:latest
 ```
 
-### オプション2: 手動セットアップ (Node.js)
+### オプション2: npx経由でのインストール
+
+リポジトリをクローンせずに `npx` を使用してサーバーを直接実行することもできます。これは、完全なインストールなしでサーバーを実行する便利な方法です。
+
+1. MCP設定を開きます
+2. MCP設定セクションに移動します
+3. 次の設定を追加します：
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": [
+        "backlog-mcp-server"
+      ],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+`your-domain.backlog.com` を実際のBacklogドメインに、`your-api-key` を実際のBacklog APIキーに置き換えてください。
+
+### オプション3: 手動セットアップ (Node.js)
 
 1. クローンしてインストール：
    ```bash

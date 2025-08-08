@@ -65,7 +65,34 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
 docker pull ghcr.io/nulab/backlog-mcp-server:latest
 ```
 
-### Option 2: Manual Setup (Node.js)
+### Option 2: Install via npx
+
+You can also run the server directly using `npx` without cloning the repository. This is a convenient way to run the server without a full installation.
+
+1. Open MCP settings
+2. Navigate to the MCP configuration section
+3. Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": [
+        "backlog-mcp-server"
+      ],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` with your Backlog API key.
+
+### Option 3: Manual Setup (Node.js)
 
 1. Clone and install:
    ```bash
