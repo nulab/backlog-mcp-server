@@ -45,6 +45,10 @@ import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
 import { getDocumentTool } from './getDocument.js';
 import { getDocumentsTool } from './getDocuments.js';
 import { getDocumentTreeTool } from './getDocumentTree.js';
+import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
+import { addVersionMilestoneTool } from './addVersionMilestone.js';
+import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
+import { deleteVersionTool } from './deleteVersion.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -145,6 +149,17 @@ export const allTools = (
           getNotificationsCountTool(backlog, helper),
           resetUnreadNotificationCountTool(backlog, helper),
           markNotificationAsReadTool(backlog, helper),
+        ],
+      },
+      {
+        name: 'version_milestone',
+        description: 'Tools for managing version milestones in projects.',
+        enabled: false,
+        tools: [
+          getVersionMilestoneListTool(backlog, helper),
+          addVersionMilestoneTool(backlog, helper),
+          updateVersionMilestoneTool(backlog, helper),
+          deleteVersionTool(backlog, helper),
         ],
       },
     ],
