@@ -57,6 +57,12 @@
 - ✅ Adding pull request comments (`add_pull_request_comment`)
 - ✅ Updating pull request comments (`update_pull_request_comment`)
 
+### Version/Milestone-related
+- ✅ Retrieving version/milestone lists (`get_version_milestone_list`)
+- ✅ Adding versions/milestones (`add_version_milestone`)
+- ✅ Updating versions/milestones (`update_version_milestone`)
+- ✅ Deleting versions (`delete_version`)
+
 ### Watch-related
 - ✅ Retrieving watched item lists (`get_watching_list_items`)
 - ✅ Retrieving watch counts (`get_watching_list_count`)
@@ -131,10 +137,6 @@
 - ❌ Adding categories (`add_category`)
 - ❌ Updating categories (`update_category`)
 - ❌ Deleting categories (`delete_category`)
-- ❌ Retrieving version/milestone lists (`get_version_milestone_list`)
-- ❌ Adding versions/milestones (`add_version_milestone`)
-- ❌ Updating versions/milestones (`update_version_milestone`)
-- ❌ Deleting versions (`delete_version`)
 - ❌ Retrieving custom field lists (`get_custom_field_list`)
 - ❌ Adding custom fields (`add_custom_field`)
 - ❌ Updating custom fields (`update_custom_field`)
@@ -218,7 +220,6 @@ This allows access to Backlog's main features from Claude, with optimizations fo
 
 2. **Medium-term Goals**
    - Custom field-related features
-   - Version/milestone-related features
    - Webhook-related features
    - Further performance optimizations
 
