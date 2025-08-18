@@ -7,6 +7,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "dev": "NODE_ENV=development node --loader ts-node/esm src/index.ts",
     "prebuild": "node scripts/replace-version.js",
     "build": "tsc && chmod 755 build/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -27,6 +28,8 @@
     "env-var": "^7.5.0",
     "graphql": "^16.11.0",
     "node-fetch": "^3.3.2",
+    "pino": "^9.9.0",
+    "pino-pretty": "^13.1.1",
     "yargs": "^18.0.0",
     "zod": "^3.24.3"
   },

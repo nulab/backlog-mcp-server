@@ -12,6 +12,7 @@ import { hideBin } from 'yargs/helpers';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { registerDyamicTools, registerTools } from './registerTools.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
+import { logger } from './utils/logger.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
@@ -119,10 +120,10 @@ if (argv.exportTranslations) {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Backlog MCP Server running on stdio');
+  logger.info('Backlog MCP Server running on stdio');
 }
 
 main().catch((error) => {
-  console.error('Fatal error in main():', error);
+  logger.error({ err: error }, 'Fatal error in main()');
   process.exit(1);
 });
