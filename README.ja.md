@@ -120,6 +120,23 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
   }
   ```
 
+### オプション3: Desktop Extension (DXT)
+
+Claude Desktopユーザー向けに、ワンクリックインストール用のDesktop Extensionを作成できます：
+
+1. Desktop Extensionパッケージを作成：
+   ```bash
+   # manifest.jsonを初期化（まだ存在しない場合）
+   dxt init
+
+   # 拡張機能をパッケージ化
+   dxt pack
+   ```
+
+2. 生成された `.dxt` ファイルをダブルクリックするか、拡張機能メニューを使用してClaude Desktopにインストールします。
+
+Desktop Extensionには、サーバー設定と利用可能なツールを定義する `manifest.json` ファイルが含まれており、エンドユーザーにとってシームレスなインストールを実現します。
+
 ## ツール設定
 
 `--enable-toolsets` コマンドラインフラグまたは `ENABLE_TOOLSETS` 環境変数を使用して、特定の **ツールセット** を選択的に有効または無効にすることができます。これにより、AIエージェントが利用できるツールをより細かく制御し、コンテキストサイズを削減するのに役立ちます。
@@ -452,6 +469,23 @@ npm test
 - `--enable-toolsets <toolsets...>`: 有効にするツールセットを指定します（カンマ区切りまたは複数の引数）。デフォルトは "all" です。
   例：`--enable-toolsets space,project` または `--enable-toolsets issue --enable-toolsets git`
   利用可能なツールセット：`space`、`project`、`issue`、`wiki`、`git`、`notifications`。
+
+### Desktop Extension開発
+
+Desktop Extensionの開発には、DXT CLIツールを使用できます：
+
+```bash
+# 新しいmanifest.jsonを初期化（対話式）
+npx dxt init
+
+# 現在のmanifest.jsonを検証
+npx dxt validate
+
+# 拡張機能を.dxtファイルにパッケージ化
+npx dxt pack
+```
+
+`manifest.json` ファイルは、Desktop Extensionインストール用の拡張機能メタデータ、サーバー設定、利用可能なツールを定義します。
 
 例：
 ```bash

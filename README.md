@@ -4,7 +4,7 @@
 ![Build](https://github.com/nulab/backlog-mcp-server/actions/workflows/ci.yml/badge.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/nulab/backlog-mcp-server.svg)
 
-[📘 日本語でのご利用ガイド](./README.ja.md) 
+[📘 日本語でのご利用ガイド](./README.ja.md)
 
 A Model Context Protocol (MCP) server for interacting with the Backlog API. This server provides tools for managing projects, issues, wiki pages, and more in Backlog through AI agents like Claude Desktop / Cline / Cursor etc.
 
@@ -119,6 +119,23 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
     }
   }
   ```
+
+### Option 3: Desktop Extension (DXT)
+
+For Claude Desktop users, you can create a Desktop Extension for one-click installation:
+
+1. Create a Desktop Extension package:
+   ```bash
+   # Initialize manifest (if not already present)
+   dxt init
+
+   # Package the extension
+   dxt pack
+   ```
+
+2. Install the generated `.dxt` file in Claude Desktop by double-clicking it or using the Extensions menu.
+
+The Desktop Extension includes a `manifest.json` file that defines the server configuration and available tools, making installation seamless for end users.
 
 ## Tool Configuration
 
@@ -274,14 +291,14 @@ Create a new pull request from branch "feature/new-feature" to "main" in the rep
 ```
 - Watching Items
 ```
-Show me all items I'm watching 
+Show me all items I'm watching
 ```
 
 ### i18n / Overriding Descriptions
 
 You can override the descriptions of tools by creating a `.backlog-mcp-serverrc.json` file in your **home directory**.
 
-The file should contain a JSON object with the tool names as keys and the new descriptions as values.  
+The file should contain a JSON object with the tool names as keys and the new descriptions as values.
 For example:
 
 ```json
@@ -297,7 +314,7 @@ When the server starts, it determines the final description for each tool based 
 2. Entries in `.backlog-mcp-serverrc.json` - Supported configuration file formats: .json, .yaml, .yml
 3. Built-in fallback values (English)
 
-Sample config: 
+Sample config:
 
 ```json
 {
@@ -334,7 +351,7 @@ Example:
 docker run -i --rm ghcr.io/nulab/backlog-mcp-server node build/index.js --export-translations
 ```
 
-or 
+or
 
 ```bash
 npx github:nulab/backlog-mcp-server --export-translations
@@ -514,6 +531,23 @@ The server supports several command line options:
   Example: `--enable-toolsets space,project` or `--enable-toolsets issue --enable-toolsets git`
   Available toolsets: `space`, `project`, `issue`, `wiki`, `git`, `notifications`.
 
+### Desktop Extension Development
+
+For developing Desktop Extensions, you can use the DXT CLI tools:
+
+```bash
+# Initialize a new manifest.json (interactive)
+npx dxt init
+
+# Validate the current manifest.json
+npx dxt validate
+
+# Package the extension into a .dxt file
+npx dxt pack
+```
+
+The `manifest.json` file defines the extension metadata, server configuration, and available tools for Desktop Extension installation.
+
 Example:
 ```bash
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
@@ -523,6 +557,6 @@ node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" 
 
 This project is licensed under the [MIT License](./LICENSE).
 
-Please note: This tool is provided under the MIT License **without any warranty or official support**.  
-Use it at your own risk after reviewing the contents and determining its suitability for your needs.  
+Please note: This tool is provided under the MIT License **without any warranty or official support**.
+Use it at your own risk after reviewing the contents and determining its suitability for your needs.
 If you encounter any issues, please report them via [GitHub Issues](../../issues).

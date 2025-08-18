@@ -31,6 +31,7 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@anthropic-ai/dxt": "^0.2.0",
     "@eslint/js": "^9.24.0",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
