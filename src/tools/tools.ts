@@ -100,6 +100,10 @@ export const allTools = (
           getResolutionsTool(backlog, helper),
           getWatchingListItemsTool(backlog, helper),
           getWatchingListCountTool(backlog, helper),
+          getVersionMilestoneListTool(backlog, helper),
+          addVersionMilestoneTool(backlog, helper),
+          updateVersionMilestoneTool(backlog, helper),
+          deleteVersionTool(backlog, helper),
         ],
       },
       {
@@ -149,17 +153,6 @@ export const allTools = (
           getNotificationsCountTool(backlog, helper),
           resetUnreadNotificationCountTool(backlog, helper),
           markNotificationAsReadTool(backlog, helper),
-        ],
-      },
-      {
-        name: 'version_milestone',
-        description: 'Tools for managing version milestones in projects.',
-        enabled: false,
-        tools: [
-          getVersionMilestoneListTool(backlog, helper),
-          addVersionMilestoneTool(backlog, helper),
-          updateVersionMilestoneTool(backlog, helper),
-          deleteVersionTool(backlog, helper),
         ],
       },
     ],
