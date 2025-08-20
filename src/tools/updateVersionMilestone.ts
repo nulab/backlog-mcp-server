@@ -87,14 +87,6 @@ export const updateVersionMilestoneTool = (
       if (!result.ok) {
         throw result.error;
       }
-      if (!id) {
-        throw new Error(
-          t(
-            'TOOL_UPDATE_VERSION_MILESTONE_ID_REQUIRED',
-            'Version ID is required'
-          )
-        );
-      }
       return backlog.patchVersions(result.value, id, params);
     },
   };

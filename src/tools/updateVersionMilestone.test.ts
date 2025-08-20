@@ -99,17 +99,4 @@ describe('updateVersionMilestoneTool', () => {
 
     await expect(tool.handler(params as any)).rejects.toThrow(Error);
   });
-
-  it('throws an error if id is not provided', async () => {
-    const params = {
-      projectKey: 'TEST',
-      // id is missing
-      name: 'Version without ID',
-      description: 'This should fail',
-    };
-
-    await expect(tool.handler(params as any)).rejects.toThrow(
-      'Version ID is required'
-    );
-  });
 });
