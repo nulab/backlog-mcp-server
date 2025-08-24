@@ -12,6 +12,7 @@ A Model Context Protocol (MCP) server for interacting with the Backlog API. This
 
 - Project tools (create, read, update, delete)
 - Issue tracking and comments (create, update, delete, list)
+- Version/Milestone management (create, read, update, delete)
 - Wiki page support
 - Git repository and pull request tools
 - Notification tools
@@ -105,7 +106,7 @@ The following toolsets are available (enabled by default when `"all"` is used):
 |-----------------|--------------------------------------------------------------------------------------|
 | `space`         | Tools for managing Backlog space settings and general information                   |
 | `project`       | Tools for managing projects, categories, custom fields, and issue types              |
-| `issue`         | Tools for managing issues and their comments                                         |
+| `issue`         | Tools for managing issues and their comments, version milestones                    |
 | `wiki`          | Tools for managing wiki pages                                                        |
 | `git`           | Tools for managing Git repositories and pull requests                                |
 | `notifications` | Tools for managing user notifications                                                |
@@ -184,6 +185,10 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `get_resolutions`: Returns list of issue resolutions.
 - `get_watching_list_items`: Returns list of watching items for a user.
 - `get_watching_list_count`: Returns count of watching items for a user.
+- `get_version_milestone_list`: Returns list of version milestones for a project.
+- `add_version_milestone`: Creates a new version milestone for a project.
+- `update_version_milestone`: Updates an existing version milestone.
+- `delete_version_milestone`: Deletes a version milestone.
 
 ### Toolset: `wiki`
 Tools for managing wiki pages.
