@@ -45,6 +45,10 @@ import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
 import { getDocumentTool } from './getDocument.js';
 import { getDocumentsTool } from './getDocuments.js';
 import { getDocumentTreeTool } from './getDocumentTree.js';
+import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
+import { addVersionMilestoneTool } from './addVersionMilestone.js';
+import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
+import { deleteVersionTool } from './deleteVersion.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -96,6 +100,10 @@ export const allTools = (
           getResolutionsTool(backlog, helper),
           getWatchingListItemsTool(backlog, helper),
           getWatchingListCountTool(backlog, helper),
+          getVersionMilestoneListTool(backlog, helper),
+          addVersionMilestoneTool(backlog, helper),
+          updateVersionMilestoneTool(backlog, helper),
+          deleteVersionTool(backlog, helper),
         ],
       },
       {
