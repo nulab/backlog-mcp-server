@@ -1,5 +1,8 @@
+import { Backlog } from 'backlog-js';
 import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
+import { wrapWithProjectGuard } from './handlers/transformers/wrapWithProjectGuard.js';
+import { ProjectGuardService } from './guards/ProjectGuardService.js';
 import { MCPOptions } from './types/mcp.js';
 import { DynamicToolDefinition, ToolDefinition } from './types/tool.js';
 import { DynamicToolsetGroup, ToolsetGroup } from './types/toolsets.js';
@@ -22,7 +25,9 @@ type RegisterOptions = {
 export function registerTools(
   server: BacklogMCPServer,
   toolsetGroup: ToolsetGroup,
-  options: MCPOptions
+  options: MCPOptions,
+  guardService: ProjectGuardService,
+  backlog: Backlog
 ) {
   const { useFields, maxTokens, prefix } = options;
 
@@ -30,13 +35,26 @@ export function registerTools(
     server,
     toolsetGroup,
     prefix,
-    handlerStrategy: (tool) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      composeToolHandler(tool as ToolDefinition<any, any>, {
-        useFields,
-        errorHandler: backlogErrorHandler,
-        maxTokens,
-      }),
+    handlerStrategy: (tool) => {
+      const composedHandler = composeToolHandler(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tool as ToolDefinition<any, any>,
+        {
+          useFields,
+          errorHandler: backlogErrorHandler,
+          maxTokens,
+        }
+      );
+      // Wrap composedHandler to accept a single argument as expected by wrapWithProjectGuard
+      const handlerWithSingleArg = (input: any) =>
+        composedHandler(input, { signal: new AbortController().signal });
+      return wrapWithProjectGuard(
+        handlerWithSingleArg,
+        tool.name,
+        guardService,
+        backlog
+      );
+    },
   });
 }
 

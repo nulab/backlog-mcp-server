@@ -1,6 +1,8 @@
 export type ErrorLike = {
   kind: 'error';
   message: string;
+  code?: number;
+  data?: unknown;
 };
 
 export type Success<T> = {
