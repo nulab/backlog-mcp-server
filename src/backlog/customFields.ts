@@ -33,17 +33,20 @@ export type CustomFieldFilterInput =
  */
 export function customFieldsToPayload(
   customFields: CustomFieldInput[] | undefined
-): Record<string, string | number | string[] | number[]| undefined> {
+): Record<string, string | number | string[] | number[] | undefined> {
   if (customFields == null) {
     return {};
   }
-  const result: Record<string, string | number | string[] | number[] | undefined> = {};
+  const result: Record<
+    string,
+    string | number | string[] | number[] | undefined
+  > = {};
 
   for (const field of customFields) {
-    if(field.value !== undefined){
+    if (field.value !== undefined) {
       result[`customField_${field.id}`] = field.value;
-    } 
-    if(field.otherValue !== undefined) {
+    }
+    if (field.otherValue !== undefined) {
       result[`customField_${field.id}_otherValue`] = field.otherValue;
     }
   }
@@ -101,11 +104,12 @@ export function customFieldFiltersToPayload(
       }
       default: {
         const exhaustiveCheck: never = field;
-        throw new Error(`Unsupported custom field filter type: ${exhaustiveCheck}`);
+        throw new Error(
+          `Unsupported custom field filter type: ${exhaustiveCheck}`
+        );
       }
     }
   }
 
   return result;
 }
-

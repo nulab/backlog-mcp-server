@@ -1,9 +1,7 @@
 import { z, ZodIssueCode } from 'zod';
 import { TranslationHelper } from '../../createTranslationHelper.js';
 
-export const buildCustomFieldFilterSchema = (
-  t: TranslationHelper['t']
-) => {
+export const buildCustomFieldFilterSchema = (t: TranslationHelper['t']) => {
   const schema = z.discriminatedUnion('type', [
     z
       .object({
@@ -66,19 +64,13 @@ export const buildCustomFieldFilterSchema = (
           .string()
           .optional()
           .describe(
-            t(
-              'TOOL_CUSTOM_FIELD_FILTER_DATE_MIN',
-              'Start date (yyyy-MM-dd)'
-            )
+            t('TOOL_CUSTOM_FIELD_FILTER_DATE_MIN', 'Start date (yyyy-MM-dd)')
           ),
         max: z
           .string()
           .optional()
           .describe(
-            t(
-              'TOOL_CUSTOM_FIELD_FILTER_DATE_MAX',
-              'End date (yyyy-MM-dd)'
-            )
+            t('TOOL_CUSTOM_FIELD_FILTER_DATE_MAX', 'End date (yyyy-MM-dd)')
           ),
       })
       .describe(t('TOOL_CUSTOM_FIELD_FILTER_DATE', 'Date custom field filter')),
@@ -103,7 +95,11 @@ export const buildCustomFieldFilterSchema = (
   ]);
 
   return schema.superRefine((data, ctx) => {
-    if (data.type === 'numeric' && data.min === undefined && data.max === undefined) {
+    if (
+      data.type === 'numeric' &&
+      data.min === undefined &&
+      data.max === undefined
+    ) {
       ctx.addIssue({
         code: ZodIssueCode.custom,
         message: t(
@@ -127,4 +123,6 @@ export const buildCustomFieldFilterSchema = (
   });
 };
 
-export type CustomFieldFilterSchema = ReturnType<typeof buildCustomFieldFilterSchema>;
+export type CustomFieldFilterSchema = ReturnType<
+  typeof buildCustomFieldFilterSchema
+>;
