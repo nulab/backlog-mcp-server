@@ -122,9 +122,9 @@ describe('addIssueTool', () => {
       issueTypeId: 2,
       priorityId: 3,
       customFields: [
-        { id: 123, value: 'テキスト' },
+        { id: 123, value: 987 },
         { id: 456, value: 42 },
-        { id: 789, value: ['OptionA', 'OptionB'], otherValue: '詳細説明' },
+        { id: 789, value: [11, 22], otherValue: '詳細説明' },
       ],
     });
 
@@ -134,10 +134,44 @@ describe('addIssueTool', () => {
         summary: 'Custom Field Test',
         issueTypeId: 2,
         priorityId: 3,
-        customField_123: 'テキスト',
+        customField_123: 987,
         customField_456: 42,
-        customField_789: ['OptionA', 'OptionB'],
+        customField_789: [11, 22],
         customField_789_otherValue: '詳細説明',
+      })
+    );
+  });
+
+  it('transforms multi-select customFields with numeric IDs', async () => {
+    await tool.handler({
+      projectId: 100,
+      summary: 'Multi-select Test',
+      issueTypeId: 2,
+      priorityId: 3,
+      customFields: [{ id: 555, value: [10, 20, 30] }],
+    });
+
+    expect(mockBacklog.postIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 100,
+        customField_555: [10, 20, 30],
+      })
+    );
+  });
+
+  it('transforms customFields that provide only otherValue', async () => {
+    await tool.handler({
+      projectId: 100,
+      summary: 'Other value only',
+      issueTypeId: 2,
+      priorityId: 3,
+      customFields: [{ id: 777, otherValue: '自由入力' }],
+    });
+
+    expect(mockBacklog.postIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 100,
+        customField_777_otherValue: '自由入力',
       })
     );
   });

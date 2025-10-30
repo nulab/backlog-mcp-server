@@ -79,8 +79,9 @@ const addIssueSchema = buildToolSchema((t) => ({
               'The ID of the custom field (e.g., 12345)'
             )
           ),
-        value: z.union([z.string().max(255), z.number(), z.array(z.string())]),
-        otherValue: z
+        value: z.union([z.number(), z.array(z.number())]).optional()
+        .describe("The ID(s) of the custom field item. For single-select fields, provide a number. For multi-select fields, provide an array of numbers representing the selected item IDs."),
+         otherValue: z
           .string()
           .optional()
           .describe(

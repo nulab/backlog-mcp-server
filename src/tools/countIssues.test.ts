@@ -49,25 +49,26 @@ describe('countIssuesTool', () => {
     await tool.handler({
       projectId: [100],
       customFields: [
-        { id: 12345, value: 'test-value' },
-        { id: 67890, value: 123 },
+        { id: 12345, type: 'text', value: 'test-value' },
+        { id: 67890, type: 'numeric', min: 1, max: 5 },
       ],
     });
 
     expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
       projectId: [100],
       customField_12345: 'test-value',
-      customField_67890: 123,
+      customField_67890_min: 1,
+      customField_67890_max: 5,
     });
   });
 
   it('calls backlog.getIssuesCount with custom fields array values', async () => {
     await tool.handler({
-      customFields: [{ id: 11111, value: ['option1', 'option2'] }],
+      customFields: [{ id: 11111, type: 'list', value: [7, 8] }],
     });
 
     expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
-      customField_11111: ['option1', 'option2'],
+      'customField_11111[]': [7, 8],
     });
   });
 

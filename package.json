@@ -7,7 +7,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development node --loader ts-node/esm src/index.ts",
+    "dev": "tsx src/index.ts",
     "prebuild": "node scripts/replace-version.js",
     "build": "tsc && chmod 755 build/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -22,7 +22,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
-    "backlog-js": "^0.13.6",
+    "backlog-js": "^0.15.0",
     "cosmiconfig": "^9.0.0",
     "dotenv": "^16.5.0",
     "env-var": "^7.5.0",
@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "tsx": "^4.20.6",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",

@@ -3,7 +3,8 @@ import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from '../createTranslationHelper.js';
 import { IssueCountSchema } from '../types/zod/backlogOutputDefinition.js';
-import { customFieldsToPayload } from '../backlog/customFields.js';
+import { customFieldFiltersToPayload } from '../backlog/customFields.js';
+import { buildCustomFieldFilterSchema } from './shared/customFieldFiltersSchema.js';
 
 const countIssuesSchema = buildToolSchema((t) => ({
   projectId: z
@@ -105,20 +106,14 @@ const countIssuesSchema = buildToolSchema((t) => ({
       t('TOOL_COUNT_ISSUES_UPDATED_UNTIL', 'Updated until (yyyy-MM-dd)')
     ),
   customFields: z
-    .array(
-      z.object({
-        id: z
-          .number()
-          .describe(t('TOOL_COUNT_ISSUES_CUSTOM_FIELD_ID', 'Custom field ID')),
-        value: z
-          .union([z.string(), z.number(), z.array(z.string())])
-          .describe(
-            t('TOOL_COUNT_ISSUES_CUSTOM_FIELD_VALUE', 'Custom field value')
-          ),
-      })
-    )
+    .array(buildCustomFieldFilterSchema(t))
     .optional()
-    .describe(t('TOOL_COUNT_ISSUES_CUSTOM_FIELDS', 'Custom fields')),
+    .describe(
+      t(
+        'TOOL_COUNT_ISSUES_CUSTOM_FIELDS',
+        'Custom field filters (text, numeric, date, or list)'
+      )
+    ),
 }));
 
 export const countIssuesTool = (
@@ -136,7 +131,7 @@ export const countIssuesTool = (
     handler: async ({ customFields, ...rest }) => {
       return backlog.getIssuesCount({
         ...rest,
-        ...customFieldsToPayload(customFields),
+        ...customFieldFiltersToPayload(customFields),
       });
     },
   };
