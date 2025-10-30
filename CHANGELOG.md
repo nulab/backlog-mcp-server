@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/nulab/backlog-mcp-server/compare/v0.4.0...v0.5.0) (2025-10-30)
+
+### Features
+
+* **logger:** add pino logger for improved logging and error handling ([dc7c0f8](https://github.com/nulab/backlog-mcp-server/commit/dc7c0f876f1670bea2bd04b4a0cf6d5a3b5d2665))
+* update custom fields handling to support numeric arrays and filters ([26c4a50](https://github.com/nulab/backlog-mcp-server/commit/26c4a5089eb55ae21fcc8d33b1bcd3d1031142ba))
+
 ## 0.4.0 (2025-07-23)
 
 ## [0.3.1](https://github.com/trknhr/backlog-mcp-server/compare/v0.3.0...v0.3.1)
