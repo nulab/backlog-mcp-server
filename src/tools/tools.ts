@@ -33,6 +33,10 @@ import { getSpaceTool } from './getSpace.js';
 import { getUsersTool } from './getUsers.js';
 import { getWatchingListCountTool } from './getWatchingListCount.js';
 import { getWatchingListItemsTool } from './getWatchingListItems.js';
+import { addWatchingTool } from './addWatching.js';
+import { updateWatchingTool } from './updateWatching.js';
+import { deleteWatchingTool } from './deleteWatching.js';
+import { markWatchingAsReadTool } from './markWatchingAsRead.js';
 import { getWikiTool } from './getWiki.js';
 import { getWikiPagesTool } from './getWikiPages.js';
 import { getWikisCountTool } from './getWikisCount.js';
@@ -100,6 +104,10 @@ export const allTools = (
           getResolutionsTool(backlog, helper),
           getWatchingListItemsTool(backlog, helper),
           getWatchingListCountTool(backlog, helper),
+          addWatchingTool(backlog, helper),
+          updateWatchingTool(backlog, helper),
+          deleteWatchingTool(backlog, helper),
+          markWatchingAsReadTool(backlog, helper),
           getVersionMilestoneListTool(backlog, helper),
           addVersionMilestoneTool(backlog, helper),
           updateVersionMilestoneTool(backlog, helper),
