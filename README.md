@@ -212,6 +212,10 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `get_resolutions`: Returns list of issue resolutions.
 - `get_watching_list_items`: Returns list of watching items for a user.
 - `get_watching_list_count`: Returns count of watching items for a user.
+- `add_watching`: Adds a new watch to an issue.
+- `update_watching`: Updates an existing watch note.
+- `delete_watching`: Deletes a watch from an issue.
+- `mark_watching_as_read`: Marks a watch as read.
 - `get_version_milestone_list`: Returns list of version milestones for a project.
 - `add_version_milestone`: Creates a new version milestone for a project.
 - `update_version_milestone`: Updates an existing version milestone.

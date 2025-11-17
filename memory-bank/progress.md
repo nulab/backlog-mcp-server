@@ -66,6 +66,10 @@
 ### Watch-related
 - ✅ Retrieving watched item lists (`get_watching_list_items`)
 - ✅ Retrieving watch counts (`get_watching_list_count`)
+- ✅ Adding watches (`add_watching`)
+- ✅ Updating watches (`update_watching`)
+- ✅ Deleting watches (`delete_watching`)
+- ✅ Marking watches as read (`mark_watching_as_read`)
 
 ### Infrastructure
 - ✅ MCP server implementation
@@ -78,10 +82,6 @@
 
 ### Watch-related
 - ❌ Retrieving watches (`get_watching`)
-- ❌ Adding watches (`add_watching`)
-- ❌ Updating watches (`update_watching`)
-- ❌ Deleting watches (`delete_watching`)
-- ❌ Marking watches as read (`mark_watching_as_read`)
 
 ### Attachment-related
 - ❌ Uploading attachments (`post_attachment_file`)
