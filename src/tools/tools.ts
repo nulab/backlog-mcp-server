@@ -7,6 +7,7 @@ import { addProjectTool } from './addProject.js';
 import { addPullRequestTool } from './addPullRequest.js';
 import { addPullRequestCommentTool } from './addPullRequestComment.js';
 import { addWikiTool } from './addWiki.js';
+import { updateWikiTool } from './updateWiki.js';
 import { countIssuesTool } from './countIssues.js';
 import { deleteIssueTool } from './deleteIssue.js';
 import { deleteProjectTool } from './deleteProject.js';
@@ -123,6 +124,7 @@ export const allTools = (
           getWikisCountTool(backlog, helper),
           getWikiTool(backlog, helper),
           addWikiTool(backlog, helper),
+          updateWikiTool(backlog, helper),
         ],
       },
       {
