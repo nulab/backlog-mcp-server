@@ -73,10 +73,7 @@ const useFields = argv.optimizeResponse;
 const server = wrapServerWithToolRegistry(
   new McpServer({
     name: 'backlog',
-    description: useFields
-      ? `You can include only the fields you need using GraphQL-style syntax.
-Start with the example above and customize freely.`
-      : undefined,
+    title: useFields ? 'backlog (field selection enabled)' : 'backlog',
     version: VERSION,
   })
 );
