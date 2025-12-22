@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/nulab/backlog-mcp-server/compare/v0.5.0...v0.6.0) (2025-12-22)
+
+### Features
+
+* Add watch management tools (#25) ([f94291c](https://github.com/nulab/backlog-mcp-server/commit/f94291c46c3f430abde5ac8d2eb4581b36e24d91))
+* add update_wiki tool for wiki page updates (#28) ([c34d9fc](https://github.com/nulab/backlog-mcp-server/commit/c34d9fc01e4998318d660c4535a5887a30edcbfc))
+
+### Chores
+
+* upgrade actions/checkout to v5 in CI and release workflows (#27) ([cf020a8](https://github.com/nulab/backlog-mcp-server/commit/cf020a8b118d4c8311d7787976a90c4cf548fd42))
+* **deps:** remove node-fetch (#26) ([82c54cc](https://github.com/nulab/backlog-mcp-server/commit/82c54cc8112837a7278fd8e0002d65eb75ad9a68))
+* **deps:** bump @conventional-changelog/git-client and @release-it/conventional-changelog ([c51fdbb](https://github.com/nulab/backlog-mcp-server/commit/c51fdbb171ad48fa99e86100ac6e1d4b59eb0aae))
+* **deps:** bump js-yaml (#30) ([f312181](https://github.com/nulab/backlog-mcp-server/commit/f312181e1a1850c563d3e5062296c1991f0fc254))
+* **deps:** bump body-parser from 2.2.0 to 2.2.1 (#31) ([1684d94](https://github.com/nulab/backlog-mcp-server/commit/1684d94bd8a861506b94ee57db0f2ba802de7cb4))
+* **deps:** bump @modelcontextprotocol/sdk from 1.9.0 to 1.24.0 (#33) ([0fa4c51](https://github.com/nulab/backlog-mcp-server/commit/0fa4c5173cad135bf63b18f73c9884bdb3ffc168))
+
 ## [0.5.0](https://github.com/nulab/backlog-mcp-server/compare/v0.4.0...v0.5.0) (2025-10-30)
 
 ### Features
