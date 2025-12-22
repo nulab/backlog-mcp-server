@@ -1,5 +1,9 @@
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolResult,
+  ServerNotification,
+  ServerRequest,
+} from '@modelcontextprotocol/sdk/types.js';
 import { isErrorLike, SafeResult } from '../../types/result.js';
 
 /**
@@ -7,7 +11,10 @@ import { isErrorLike, SafeResult } from '../../types/result.js';
  */
 export function wrapWithToolResult<I, T>(
   fn: (input: I) => Promise<SafeResult<string | T>>
-): (input: I, extra: RequestHandlerExtra) => Promise<CallToolResult> {
+): (
+  input: I,
+  extra: RequestHandlerExtra<ServerRequest, ServerNotification>
+) => Promise<CallToolResult> {
   return async (input: I, _extra) => {
     const result = await fn(input);
 
