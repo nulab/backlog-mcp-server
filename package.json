@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
-    "tsx": "^4.20.6",
+    "@jest/globals": "^29.7.0",
     "@release-it/conventional-changelog": "^10.0.2",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",
@@ -50,6 +50,7 @@
     "release-it": "^19.0.0",
     "ts-jest": "^29.3.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.3"
   }
 }
