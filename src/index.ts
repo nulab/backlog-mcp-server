@@ -14,7 +14,10 @@ import { registerDyamicTools, registerTools } from './registerTools.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import { logger } from './utils/logger.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
-import { buildToolsetGroup } from './utils/toolsetUtils.js';
+import {
+  buildToolsetGroup,
+  validateToolNames,
+} from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import { VERSION } from './version.js';
 
@@ -60,6 +63,12 @@ Available toolsets:
   - notifications: Tools for managing user notifications`,
     default: env.get('ENABLE_TOOLSETS').default('all').asArray(','),
   })
+  .option('enable-tools', {
+    type: 'array',
+    describe:
+      'Specify which individual tools to enable. Can be used with --enable-toolsets. When specified, only tools matching either the toolset or individual tool names will be enabled.',
+    default: env.get('ENABLE_TOOLS').default('').asArray(','),
+  })
   .option('dynamic-toolsets', {
     type: 'boolean',
     describe:
@@ -83,14 +92,25 @@ const transHelper = createTranslationHelper();
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
 let enabledToolsets = argv.enableToolsets as string[];
+let enabledTools = (argv.enableTools as string[]).filter((t) => t !== '');
 
 // If dynamic toolsets are enabled, remove "all" to allow for selective enabling via commands
 if (argv.dynamicToolsets) {
   enabledToolsets = enabledToolsets.filter((a) => a != 'all');
 }
 
-const mcpOption = { useFields: useFields, maxTokens, prefix };
+const mcpOption = {
+  useFields: useFields,
+  maxTokens,
+  prefix,
+  enabledTools: enabledTools.length > 0 ? enabledTools : undefined,
+};
 const toolsetGroup = buildToolsetGroup(backlog, transHelper, enabledToolsets);
+
+// Validate tool names if specified
+if (enabledTools.length > 0) {
+  validateToolNames(toolsetGroup, enabledTools);
+}
 
 // Register all tools
 registerTools(server, toolsetGroup, mcpOption);

@@ -43,6 +43,20 @@ export function listToolsetTools(group: ToolsetGroup, name: string) {
   );
 }
 
+export function validateToolNames(
+  group: ToolsetGroup,
+  toolNames: string[]
+): void {
+  const allToolNames = group.toolsets.flatMap((ts) =>
+    ts.tools.map((tool) => tool.name)
+  );
+  const unknown = toolNames.filter((name) => !allToolNames.includes(name));
+
+  if (unknown.length > 0) {
+    console.warn(`⚠️ Unknown tools: ${unknown.join(', ')}`);
+  }
+}
+
 export const buildToolsetGroup = (
   backlog: Backlog,
   helper: TranslationHelper,

@@ -24,12 +24,13 @@ export function registerTools(
   toolsetGroup: ToolsetGroup,
   options: MCPOptions
 ) {
-  const { useFields, maxTokens, prefix } = options;
+  const { useFields, maxTokens, prefix, enabledTools } = options;
 
   registerToolsets({
     server,
     toolsetGroup,
     prefix,
+    enabledTools,
     handlerStrategy: (tool) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       composeToolHandler(tool as ToolDefinition<any, any>, {
@@ -58,13 +59,21 @@ function registerToolsets({
   toolsetGroup,
   prefix,
   handlerStrategy,
-}: RegisterOptions) {
+  enabledTools,
+}: RegisterOptions & { enabledTools?: string[] }) {
   for (const toolset of toolsetGroup.toolsets) {
-    if (!toolset.enabled) {
-      continue;
-    }
-
     for (const tool of toolset.tools) {
+      // Enable tool if:
+      // 1. Its toolset is enabled, OR
+      // 2. The tool is explicitly listed in enabledTools
+      const shouldEnableTool =
+        toolset.enabled ||
+        (enabledTools && enabledTools.includes(tool.name));
+
+      if (!shouldEnableTool) {
+        continue;
+      }
+
       const toolNameWithPrefix = `${prefix}${tool.name}`;
       const handler = handlerStrategy(tool);
 

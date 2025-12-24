@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import { ToolsetGroup } from '../types/toolsets.js';
 import {
@@ -7,6 +7,7 @@ import {
   getToolset,
   listAvailableToolsets,
   listToolsetTools,
+  validateToolNames,
 } from '../utils/toolsetUtils.js';
 
 const mockTool = {
@@ -68,5 +69,28 @@ describe('Toolset Utils', () => {
   it('listToolsetTools returns empty for unknown toolset', () => {
     const tools = listToolsetTools(toolsetGroup, 'unknown');
     expect(tools.length).toBe(0);
+  });
+
+  it('validateToolNames does not warn for valid tool names', () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    validateToolNames(toolsetGroup, ['mock_tool']);
+    expect(consoleSpy).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('validateToolNames warns for unknown tool names', () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    validateToolNames(toolsetGroup, ['unknown_tool', 'another_unknown']);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '⚠️ Unknown tools: unknown_tool, another_unknown'
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('validateToolNames handles mixed valid and invalid tool names', () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    validateToolNames(toolsetGroup, ['mock_tool', 'unknown_tool']);
+    expect(consoleSpy).toHaveBeenCalledWith('⚠️ Unknown tools: unknown_tool');
+    consoleSpy.mockRestore();
   });
 });

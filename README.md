@@ -123,7 +123,7 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
 
 ## Tool Configuration
 
-You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.
+You can selectively enable or disable specific **toolsets** or **individual tools** using command-line flags or environment variables. This allows better control over which tools are available to the AI agent and helps reduce context size.
 
 ### Available Toolsets
 
@@ -160,6 +160,35 @@ If all is specified, all available toolsets will be enabled. This is also the de
 Using selective toolsets can be helpful if the toolset list is too large for your AI agent or if certain tools are causing performance issues. In such cases, disabling unused toolsets may improve stability.
 
 > 🧩 Tip: `project` toolset is highly recommended, as many other tools rely on project data as an entry point.
+
+### Specifying Individual Tools
+
+In addition to toolsets, you can also enable specific **individual tools** using the `--enable-tools` command-line flag or the `ENABLE_TOOLS` environment variable. This provides fine-grained control over which tools are available.
+
+Using via CLI:
+
+```bash
+--enable-tools get_issue,update_issue,list_issues
+```
+
+Or via environment variable:
+
+```
+ENABLE_TOOLS="get_issue,update_issue,list_issues"
+```
+
+When both `--enable-toolsets` and `--enable-tools` are specified, a tool will be enabled if it matches **either** condition:
+- The tool belongs to an enabled toolset, OR
+- The tool is explicitly listed in `--enable-tools`
+
+For example:
+```bash
+--enable-toolsets project --enable-tools get_issue,update_issue
+```
+
+This will enable:
+- All tools in the `project` toolset
+- The `get_issue` and `update_issue` tools (even though they belong to the `issue` toolset)
 
 ### Dynamic Toolset Discovery (Experimental)
 
@@ -480,6 +509,7 @@ This section demonstrates advanced configuration using multiple environment vari
         "-e", "OPTIMIZE_RESPONSE",
         "-e", "PREFIX",
         "-e", "ENABLE_TOOLSETS",
+        "-e", "ENABLE_TOOLS",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -489,6 +519,7 @@ This section demonstrates advanced configuration using multiple environment vari
         "OPTIMIZE_RESPONSE": "1",
         "PREFIX": "backlog_",
         "ENABLE_TOOLSETS": "space,project,issue",
+        "ENABLE_TOOLS": "",
         "ENABLE_DYNAMIC_TOOLSETS": "1"
       }
     }
