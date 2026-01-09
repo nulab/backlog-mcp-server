@@ -9,7 +9,6 @@
       "esModuleInterop": true,
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
-      "types": ["@jest/globals"],
       "isolatedModules": true
     },
     "include": ["src/**/*"],
