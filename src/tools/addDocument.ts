@@ -5,12 +5,29 @@ import { DocumentItemSchema } from '../types/zod/backlogOutputDefinition.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 
 const addDocumentSchema = buildToolSchema((t) => ({
-  projectId: z.number().describe(t('TOOL_ADD_DOCUMENT_PROJECT_ID', 'Project ID')),
-  title: z.string().optional().describe(t('TOOL_ADD_DOCUMENT_TITLE', 'Title of the document')),
-  content: z.string().optional().describe(t('TOOL_ADD_DOCUMENT_CONTENT', 'Content of the document')),
-  emoji: z.string().optional().describe(t('TOOL_ADD_DOCUMENT_EMOJI', 'Emoji for the document')),
-  parentId: z.string().optional().describe(t('TOOL_ADD_DOCUMENT_PARENT_ID', 'Parent document ID')),
-  addLast: z.boolean().optional().describe(t('TOOL_ADD_DOCUMENT_ADD_LAST', 'Add to the end of the list')),
+  projectId: z
+    .number()
+    .describe(t('TOOL_ADD_DOCUMENT_PROJECT_ID', 'Project ID')),
+  title: z
+    .string()
+    .optional()
+    .describe(t('TOOL_ADD_DOCUMENT_TITLE', 'Title of the document')),
+  content: z
+    .string()
+    .optional()
+    .describe(t('TOOL_ADD_DOCUMENT_CONTENT', 'Content of the document')),
+  emoji: z
+    .string()
+    .optional()
+    .describe(t('TOOL_ADD_DOCUMENT_EMOJI', 'Emoji for the document')),
+  parentId: z
+    .string()
+    .optional()
+    .describe(t('TOOL_ADD_DOCUMENT_PARENT_ID', 'Parent document ID')),
+  addLast: z
+    .boolean()
+    .optional()
+    .describe(t('TOOL_ADD_DOCUMENT_ADD_LAST', 'Add to the end of the list')),
 }));
 
 export const addDocumentTool = (
