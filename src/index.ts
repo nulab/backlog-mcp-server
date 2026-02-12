@@ -16,7 +16,8 @@ import { logger } from './utils/logger.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
-import { VERSION } from './version.js';
+import packageJson from '../package.json' with { type: 'json' };
+const { version } = packageJson;
 
 dotenv.config();
 
@@ -74,7 +75,7 @@ const server = wrapServerWithToolRegistry(
   new McpServer({
     name: 'backlog',
     title: useFields ? 'backlog (field selection enabled)' : 'backlog',
-    version: VERSION,
+    version,
   })
 );
 

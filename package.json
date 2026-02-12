@@ -8,7 +8,6 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx src/index.ts",
-    "prebuild": "node scripts/replace-version.js",
     "build": "tsc && chmod 755 build/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
