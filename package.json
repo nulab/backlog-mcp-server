@@ -14,7 +14,9 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --check \"**/*.{ts,tsx}\"",
-    "format:fix": "prettier --write \"**/*.{ts,tsx}\""
+    "format:fix": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "typecheck:all": "tsc --noEmit --project tsconfig.test.json"
   },
   "files": [
     "build"

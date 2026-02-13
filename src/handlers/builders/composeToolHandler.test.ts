@@ -1,6 +1,10 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolResult,
+  ServerNotification,
+  ServerRequest,
+} from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { ErrorLike } from '../../types/result.js';
 import { ToolDefinition } from '../../types/tool.js';
@@ -11,9 +15,7 @@ const dummyErrorHandler = (err: unknown): ErrorLike => ({
   message: 'Handled: ' + (err as Error).message,
 });
 
-const dummyExtra: RequestHandlerExtra = {
-  signal: {} as unknown as any,
-};
+const dummyExtra = {} as RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 describe('composeToolHandler', () => {
   const baseSchema = z.object({
@@ -43,9 +45,12 @@ describe('composeToolHandler', () => {
     expect(tool.schema.shape).toHaveProperty('fields');
 
     const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
-    expect((result as CallToolResult).content[0].type).toBe('text');
-    expect((result as CallToolResult).content[0].text).toContain('id');
-    expect((result as CallToolResult).content[0].text).not.toContain('name');
+    const content = (result as CallToolResult).content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain('id');
+      expect(content.text).not.toContain('name');
+    }
   });
 
   it("does not add 'fields' when useFields is false", async () => {
@@ -66,9 +71,12 @@ describe('composeToolHandler', () => {
     expect(toolWithoutFields.schema.shape).not.toHaveProperty('fields');
 
     const result = await composed({ id: 456 }, dummyExtra);
-    expect((result as CallToolResult).content[0].type).toBe('text');
-    expect((result as CallToolResult).content[0].text).toContain('id');
-    expect((result as CallToolResult).content[0].text).toContain('name');
+    const content = (result as CallToolResult).content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain('id');
+      expect(content.text).toContain('name');
+    }
   });
 
   it('extends schema and composes handler with field picking and token limit', async () => {
@@ -81,9 +89,12 @@ describe('composeToolHandler', () => {
     const input = { name: 'test', fields: '{ id name }' };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('content');
-    expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('"id": 1');
-    expect(result.content[0].text).toContain('"name": "Sample"');
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain('"id": 1');
+      expect(content.text).toContain('"name": "Sample"');
+    }
   });
 
   it('handles error with provided errorHandler', async () => {
@@ -103,6 +114,9 @@ describe('composeToolHandler', () => {
     const input = { name: 'test', fields: '{ id name }' };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('isError', true);
-    expect(result.content[0].text).toMatch(/Handled: fail test/);
+    const content = result.content[0];
+    if (content.type === 'text') {
+      expect(content.text).toMatch(/Handled: fail test/);
+    }
   });
 });
