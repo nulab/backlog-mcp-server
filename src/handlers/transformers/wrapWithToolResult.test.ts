@@ -7,7 +7,10 @@ import {
 import { describe, it, expect } from 'vitest';
 
 describe('wrapWithToolResult', () => {
-  const dummyExtra = {} as RequestHandlerExtra<ServerRequest, ServerNotification>;
+  const dummyExtra = {} as RequestHandlerExtra<
+    ServerRequest,
+    ServerNotification
+  >;
 
   it('returns error result when SafeResult is error', async () => {
     const fn = async () =>

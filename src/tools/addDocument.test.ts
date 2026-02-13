@@ -1,5 +1,12 @@
 import { addDocumentTool } from './addDocument.js';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import {
+  vi,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  type MockedFunction,
+} from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
