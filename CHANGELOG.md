@@ -2,6 +2,11 @@
 
 ## [0.7.0](https://github.com/nulab/backlog-mcp-server/compare/v0.6.0...v0.7.0) (2026-02-13)
 
+## Features
+
+### Document Management (#42)
+* **Implement addDocument tool**: Added a new tool to facilitate document creation with full integration and comprehensive test coverage.
+
 ## [0.6.0](https://github.com/nulab/backlog-mcp-server/compare/v0.5.0...v0.6.0) (2025-12-22)
 
 ### Features
