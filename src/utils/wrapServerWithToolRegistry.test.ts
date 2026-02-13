@@ -1,4 +1,4 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { wrapServerWithToolRegistry } from './wrapServerWithToolRegistry';
 
@@ -10,7 +10,7 @@ describe('wrapServerWithToolRegistry', () => {
     toolCalls = [];
 
     mockServer = {
-      tool: jest.fn((name: string, description: string) => {
+      tool: vi.fn((name: string, description: string) => {
         toolCalls.push({ name, description });
       }),
     };

@@ -1,11 +1,11 @@
 import { addWatchingTool } from './addWatching.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('addWatchingTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    postWatchingListItem: jest.fn<() => Promise<any>>().mockResolvedValue({
+    postWatchingListItem: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       resourceAlreadyRead: false,
       note: 'Watching this issue',

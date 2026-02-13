@@ -1,6 +1,6 @@
 import { createTranslationHelper } from './createTranslationHelper';
 import { writeFileSync, unlinkSync } from 'fs';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import path from 'path';
 
 const TEMP_CONFIG_PATH = path.resolve(

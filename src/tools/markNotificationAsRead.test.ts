@@ -1,11 +1,11 @@
 import { markNotificationAsReadTool } from './markNotificationAsRead.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('markNotificationAsReadTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    markAsReadNotification: jest
+    markAsReadNotification: vi
       .fn<() => Promise<void>>()
       .mockResolvedValue(undefined),
   };

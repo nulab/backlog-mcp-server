@@ -1,11 +1,11 @@
 import { markWatchingAsReadTool } from './markWatchingAsRead.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('markWatchingAsReadTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    resetWatchingListItemAsRead: jest
+    resetWatchingListItemAsRead: vi
       .fn<() => Promise<void>>()
       .mockResolvedValue(undefined),
   };

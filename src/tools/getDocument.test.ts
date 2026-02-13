@@ -1,11 +1,11 @@
 import { getDocumentTool } from './getDocument.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getDocumentTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getDocument: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getDocument: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: '019347fc760c7b0abff04b44628c94d7',
       projectId: 1,
       title: 'Test Document',

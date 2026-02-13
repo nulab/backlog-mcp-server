@@ -1,20 +1,20 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 import { MCPOptions } from '../types/mcp';
 import { ToolsetGroup } from '../types/toolsets';
 import { createToolRegistrar } from '../utils/toolRegistrar';
 import { BacklogMCPServer } from './wrapServerWithToolRegistry';
 
-jest.mock('../registerTools', () => ({
-  registerTools: jest.fn(),
+vi.mock('../registerTools', () => ({
+  registerTools: vi.fn(),
 }));
 
-const mockSendToolListChanged = jest.fn();
+const mockSendToolListChanged = vi.fn();
 
 const serverMock = {
   server: {
     sendToolListChanged: mockSendToolListChanged,
   },
-  tool: jest.fn(),
+  tool: vi.fn(),
   __registeredToolNames: new Set<string>(),
   registerOnce: () => {},
 } as unknown as BacklogMCPServer;

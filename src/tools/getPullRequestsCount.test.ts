@@ -1,11 +1,11 @@
 import { getPullRequestsCountTool } from './getPullRequestsCount.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getPullRequestsCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getPullRequestsCount: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getPullRequestsCount: vi.fn<() => Promise<any>>().mockResolvedValue({
       count: 42,
     }),
   };

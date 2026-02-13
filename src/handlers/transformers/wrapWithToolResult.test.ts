@@ -1,9 +1,13 @@
 import { wrapWithToolResult } from './wrapWithToolResult.js';
 import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { describe, it, expect } from '@jest/globals';
+import {
+  ServerNotification,
+  ServerRequest,
+} from '@modelcontextprotocol/sdk/types.js';
+import { describe, it, expect } from 'vitest';
 
 describe('wrapWithToolResult', () => {
-  const dummyExtra = {} as RequestHandlerExtra;
+  const dummyExtra = {} as RequestHandlerExtra<ServerRequest, ServerNotification>;
 
   it('returns error result when SafeResult is error', async () => {
     const fn = async () =>

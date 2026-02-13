@@ -1,6 +1,6 @@
 import { wrapWithFieldPicking } from './wrapWithFieldPicking';
 import type { SafeResult } from '../../types/result';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 
 describe('wrapWithFieldPicking', () => {
   const fullData = {
@@ -18,7 +18,7 @@ describe('wrapWithFieldPicking', () => {
     data: fullData,
   };
 
-  const mockFn = jest.fn(async () => successResult);
+  const mockFn = vi.fn(async () => successResult);
 
   it('returns full data when fields is not specified', async () => {
     const wrapped = wrapWithFieldPicking(mockFn);
@@ -60,7 +60,7 @@ describe('wrapWithFieldPicking', () => {
 
   it('returns original error if result is an error', async () => {
     const errorResult = { kind: 'error', message: 'boom' } as const;
-    const errorFn = jest.fn(async () => errorResult);
+    const errorFn = vi.fn(async () => errorResult);
 
     const wrapped = wrapWithFieldPicking(errorFn);
     const result = await wrapped({ fields: `{ id }` });
@@ -81,7 +81,7 @@ describe('wrapWithFieldPicking', () => {
   });
 
   it('filters arrays of objects', async () => {
-    const arrFn = jest.fn(
+    const arrFn = vi.fn(
       async (_) =>
         ({
           kind: 'ok',

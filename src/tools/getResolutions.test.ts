@@ -1,11 +1,11 @@
 import { getResolutionsTool } from './getResolutions.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getResolutionsTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getResolutions: jest.fn<() => Promise<any>>().mockResolvedValue([
+    getResolutions: vi.fn<() => Promise<any>>().mockResolvedValue([
       {
         id: 0,
         name: 'Fixed',

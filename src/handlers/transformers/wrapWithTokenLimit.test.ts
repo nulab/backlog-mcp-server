@@ -1,5 +1,5 @@
 import { wrapWithTokenLimit } from './wrapWithTokenLimit.js';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { SafeResult } from '../../types/result.js';
 
 describe('wrapWithTokenLimit', () => {
