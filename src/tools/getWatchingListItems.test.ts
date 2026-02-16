@@ -1,11 +1,11 @@
 import { getWatchingListItemsTool } from './getWatchingListItems.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getWatchingListItemsTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getWatchingListItems: jest.fn<() => Promise<any>>().mockResolvedValue([
+    getWatchingListItems: vi.fn<() => Promise<any>>().mockResolvedValue([
       {
         id: 1,
         resourceAlreadyRead: false,

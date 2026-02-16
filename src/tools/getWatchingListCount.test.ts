@@ -1,11 +1,11 @@
 import { getWatchingListCountTool } from './getWatchingListCount.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getWatchingListCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getWatchingListCount: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getWatchingListCount: vi.fn<() => Promise<any>>().mockResolvedValue({
       count: 42,
     }),
   };

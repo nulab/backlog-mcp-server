@@ -15,7 +15,7 @@
 - **graphql**: Used for field selection parsing and processing
 
 ### Development Tools
-- **Jest**: Testing framework
+- **Vitest**: Fast and modern testing framework powered by Vite
 - **ESLint**: Code quality and style validation
 - **Prettier**: Code formatting
 - **release-it**: Release management automation
@@ -109,14 +109,21 @@ graph TD
 ## Test Strategy
 
 ### Unit Tests
-- Testing framework using Jest
-- Using mocks to isolate Backlog API dependencies
+- Testing framework using Vitest (fast and modern, powered by Vite)
+- Using mocks with vi (Vitest's mocking API) to isolate Backlog API dependencies
 - Creating test files corresponding to each tool
+- Support for watch mode for better development experience
 
 ### Running Tests
 ```bash
 # Run all tests
 npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 
 # Run specific tests
 npm test -- -t "getSpace"

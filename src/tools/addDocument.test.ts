@@ -1,14 +1,21 @@
 import { addDocumentTool } from './addDocument.js';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import {
+  vi,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  type MockedFunction,
+} from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('addDocumentTool', () => {
-  let mockAddDocument: jest.MockedFunction<() => Promise<any>>;
+  let mockAddDocument: MockedFunction<() => Promise<any>>;
   let mockBacklog: Partial<Backlog>;
 
   beforeEach(() => {
-    mockAddDocument = jest.fn<() => Promise<any>>().mockResolvedValue({
+    mockAddDocument = vi.fn<() => Promise<any>>().mockResolvedValue({
       id: '1',
       projectId: 100,
       title: 'Test Document',

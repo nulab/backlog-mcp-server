@@ -1,11 +1,11 @@
 import { updateProjectTool } from './updateProject.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('updateProjectTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    patchProject: jest.fn<() => Promise<any>>().mockResolvedValue({
+    patchProject: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       projectKey: 'UPDATED',
       name: 'Updated Project',

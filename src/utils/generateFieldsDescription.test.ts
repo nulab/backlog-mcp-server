@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { generateFieldsDescription } from './generateFieldsDescription';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 describe('generateFieldsDescription', () => {
   const schema = z.object({

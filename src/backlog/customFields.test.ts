@@ -4,7 +4,7 @@ import {
   type CustomFieldInput,
   type CustomFieldFilterInput,
 } from './customFields.js';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 describe('customFieldsToPayload', () => {
   it('returns an empty object when input is undefined', () => {

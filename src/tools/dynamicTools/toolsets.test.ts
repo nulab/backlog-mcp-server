@@ -1,4 +1,4 @@
-import { describe, expect, jest, it } from '@jest/globals';
+import { describe, expect, vi, it } from 'vitest';
 import { z } from 'zod';
 import { ToolDefinition, ToolRegistrar } from '../../types/tool.js';
 import { ToolsetGroup } from '../../types/toolsets.js';
@@ -17,7 +17,7 @@ describe('dynamicTools', () => {
   };
 
   const mockToolRegistrar: ToolRegistrar = {
-    enableToolsetAndRefresh: jest
+    enableToolsetAndRefresh: vi
       .fn<() => Promise<string>>()
       .mockResolvedValue('Toolset enabled.'),
   };
@@ -67,15 +67,19 @@ describe('dynamicTools', () => {
     const tool = listAvailableToolsets(mockTranslationHelper, mockToolsetGroup);
 
     const result = await tool.handler({});
-    const json = JSON.parse(result.content[0].text as string);
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      const json = JSON.parse(content.text);
 
-    expect(Array.isArray(json)).toBe(true);
-    expect(json[0]).toEqual({
-      name: 'project',
-      description: 'Project management tools',
-      currentlyEnabled: false,
-      canEnable: true,
-    });
+      expect(Array.isArray(json)).toBe(true);
+      expect(json[0]).toEqual({
+        name: 'project',
+        description: 'Project management tools',
+        currentlyEnabled: false,
+        canEnable: true,
+      });
+    }
   });
 
   it('getToolsetTools - returns tools of a specific toolset', async () => {
@@ -84,15 +88,19 @@ describe('dynamicTools', () => {
 
     const input = schema.parse({ toolset: 'project' });
     const result = await tool.handler(input);
-    const json = JSON.parse(result.content[0].text);
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      const json = JSON.parse(content.text);
 
-    expect(Array.isArray(json)).toBe(true);
-    expect(json[0]).toEqual({
-      name: 'get_project_list',
-      description: 'Returns a list of projects',
-      toolset: 'project',
-      canEnable: true,
-    });
+      expect(Array.isArray(json)).toBe(true);
+      expect(json[0]).toEqual({
+        name: 'get_project_list',
+        description: 'Returns a list of projects',
+        toolset: 'project',
+        canEnable: true,
+      });
+    }
   });
 
   it('getToolsetTools - returns error if toolset not found', async () => {
