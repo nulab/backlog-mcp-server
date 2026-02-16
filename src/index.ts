@@ -21,12 +21,6 @@ const { version } = packageJson;
 
 dotenv.config();
 
-const domain = env.get('BACKLOG_DOMAIN').required().asString();
-
-const apiKey = env.get('BACKLOG_API_KEY').required().asString();
-
-const backlog = new backlogjs.Backlog({ host: domain, apiKey: apiKey });
-
 const argv = yargs(hideBin(process.argv))
   .option('max-tokens', {
     type: 'number',
@@ -68,6 +62,12 @@ Available toolsets:
     default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
   })
   .parseSync();
+
+const domain = env.get('BACKLOG_DOMAIN').required().asString();
+
+const apiKey = env.get('BACKLOG_API_KEY').required().asString();
+
+const backlog = new backlogjs.Backlog({ host: domain, apiKey: apiKey });
 
 const useFields = argv.optimizeResponse;
 
