@@ -1,4 +1,4 @@
-name: Release 
+name: Release
 
 on:
   workflow_dispatch:
@@ -15,9 +15,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Set Git user
         run: |
@@ -25,9 +25,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
