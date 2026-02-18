@@ -35,5 +35,8 @@ jobs:
       - name: 🧪 Run tests
         run: npm test
 
+      - name: 🔧 Type check
+        run: npm run typecheck:all
+
       - name: 🛠 Build
         run: npm run build
