@@ -12,10 +12,4 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
     },
   },
-  resolve: {
-    alias: {
-      // Handle .js imports for .ts files
-      '^(\\.{1,2}/.*)\\.js$': '$1.ts',
-    },
-  },
 });
