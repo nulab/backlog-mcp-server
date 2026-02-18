@@ -1,8 +1,8 @@
 import { vi, describe, it, expect, type Mock } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import * as Entity from 'backlog-js/dist/types/entity'; // To access Entity.Project.CustomField
-import { getCustomFieldsTool } from './getCustomFields.js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { getCustomFieldsTool } from './getCustomFields';
+import { createTranslationHelper } from '../createTranslationHelper';
 
 describe('getCustomFieldsTool', () => {
   // Define mockBacklog with the specific method we need
