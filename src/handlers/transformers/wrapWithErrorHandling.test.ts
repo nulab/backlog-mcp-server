@@ -1,6 +1,6 @@
 import { wrapWithErrorHandling } from './wrapWithErrorHandling';
 import { isErrorLike, type ErrorLike } from '../../types/result';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 describe('wrapWithErrorHandling', () => {
   it('returns success result when function resolves', async () => {

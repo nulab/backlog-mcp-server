@@ -1,11 +1,11 @@
 import { deleteProjectTool } from './deleteProject.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('deleteProjectTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    deleteProject: jest.fn<() => Promise<any>>().mockResolvedValue({
+    deleteProject: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       projectKey: 'TEST',
       name: 'Test Project',

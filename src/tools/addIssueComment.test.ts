@@ -1,11 +1,11 @@
 import { addIssueCommentTool } from './addIssueComment.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('addIssueCommentTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    postIssueComments: jest.fn<() => Promise<any>>().mockResolvedValue({
+    postIssueComments: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 3,
       content: 'This is a new comment',
       changeLog: [],

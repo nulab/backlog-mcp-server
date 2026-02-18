@@ -1,5 +1,5 @@
 import { getDocumentTreeTool } from './getDocumentTree.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 // export const DocumentTreeFullSchema = z.object({
@@ -9,7 +9,7 @@ import { createTranslationHelper } from '../createTranslationHelper.js';
 // });
 describe('getDocumentTreeTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getDocumentTree: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getDocumentTree: vi.fn<() => Promise<any>>().mockResolvedValue({
       projectId: 1,
       activeTree: {
         id: 'Active',

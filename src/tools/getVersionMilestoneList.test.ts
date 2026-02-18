@@ -1,11 +1,11 @@
 import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getVersionMilestoneTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getVersions: jest.fn<() => Promise<any>>().mockResolvedValue([
+    getVersions: vi.fn<() => Promise<any>>().mockResolvedValue([
       {
         id: 1,
         projectId: 1,

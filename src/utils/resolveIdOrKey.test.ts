@@ -1,5 +1,5 @@
 import { resolveIdOrKey, resolveIdOrName } from './resolveIdOrKey'; // Added resolveIdOrName and EntityName
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 const t = (_key: string, fallback: string) => fallback;
 

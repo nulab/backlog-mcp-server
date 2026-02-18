@@ -1,11 +1,11 @@
 import { deleteWatchingTool } from './deleteWatching.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('deleteWatchingTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    deletehWatchingListItem: jest.fn<() => Promise<any>>().mockResolvedValue({
+    deletehWatchingListItem: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       resourceAlreadyRead: false,
       note: 'Deleted watch',

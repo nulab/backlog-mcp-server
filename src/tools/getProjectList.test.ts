@@ -1,11 +1,11 @@
 import { getProjectListTool } from './getProjectList.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog, Entity } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getProjectListTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getProjects: jest
+    getProjects: vi
       .fn<() => Promise<Entity.Project.Project[]>>()
       .mockResolvedValue([
         {

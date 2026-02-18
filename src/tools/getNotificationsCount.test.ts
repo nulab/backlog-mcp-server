@@ -1,11 +1,11 @@
 import { getNotificationsCountTool } from './getNotificationsCount.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getNotificationsCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getNotificationsCount: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getNotificationsCount: vi.fn<() => Promise<any>>().mockResolvedValue({
       count: 42,
     }),
   };

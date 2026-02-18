@@ -1,11 +1,11 @@
 import { getSpaceTool } from './getSpace.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getSpaceTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getSpace: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getSpace: vi.fn<() => Promise<any>>().mockResolvedValue({
       spaceKey: 'demo',
       name: 'Demo Space',
       ownerId: 1,

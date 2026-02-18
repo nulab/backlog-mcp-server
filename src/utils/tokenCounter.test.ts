@@ -1,5 +1,5 @@
 import { countTokens } from './tokenCounter.js';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 describe('countTokens', () => {
   it('returns 0 for empty string', () => {

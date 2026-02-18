@@ -1,11 +1,11 @@
 import { getMyselfTool } from './getMyself.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getMyselfTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getMyself: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getMyself: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       userId: 'current_user',
       name: 'Current User',

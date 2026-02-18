@@ -1,11 +1,11 @@
 import { getWikiTool } from './getWiki.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getWikiTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getWiki: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getWiki: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1234,
       projectId: 100,
       name: 'Sample Wiki',

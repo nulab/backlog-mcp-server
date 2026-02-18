@@ -1,4 +1,4 @@
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect, type Mock } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import * as Entity from 'backlog-js/dist/types/entity'; // To access Entity.Project.CustomField
 import { getCustomFieldsTool } from './getCustomFields.js';
@@ -8,7 +8,7 @@ describe('getCustomFieldsTool', () => {
   // Define mockBacklog with the specific method we need
   const mockBacklog: Partial<Backlog> = {
     // Specify the correct return type for the mock
-    getCustomFields: jest.fn<() => Promise<Entity.Project.CustomField[]>>(),
+    getCustomFields: vi.fn<() => Promise<Entity.Project.CustomField[]>>(),
   };
 
   // Use the actual createTranslationHelper for consistency
@@ -45,7 +45,7 @@ describe('getCustomFieldsTool', () => {
 
     // Setup the mockResolvedValue for getCustomFields
     (
-      mockBacklog.getCustomFields as jest.Mock<
+      mockBacklog.getCustomFields as Mock<
         () => Promise<Entity.Project.CustomField[]>
       >
     ).mockResolvedValue(mockCustomFieldsData);
@@ -59,7 +59,7 @@ describe('getCustomFieldsTool', () => {
 
   it('should call backlog.getCustomFields with correct params when using project ID', async () => {
     (
-      mockBacklog.getCustomFields as jest.Mock<
+      mockBacklog.getCustomFields as Mock<
         () => Promise<Entity.Project.CustomField[]>
       >
     ).mockResolvedValue([]); // Return empty for this check
@@ -70,7 +70,7 @@ describe('getCustomFieldsTool', () => {
   it('should throw an error if getCustomFields fails', async () => {
     const apiError = new Error('API error');
     (
-      mockBacklog.getCustomFields as jest.Mock<
+      mockBacklog.getCustomFields as Mock<
         () => Promise<Entity.Project.CustomField[]>
       >
     ).mockRejectedValue(apiError);
@@ -91,7 +91,7 @@ describe('getCustomFieldsTool', () => {
       ],
     };
     (
-      mockBacklog.getCustomFields as jest.Mock<
+      mockBacklog.getCustomFields as Mock<
         () => Promise<Entity.Project.CustomField[]>
       >
     ).mockRejectedValue(structuredError);

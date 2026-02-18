@@ -1,11 +1,11 @@
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
-import { jest, describe, expect, it } from '@jest/globals';
+import { vi, describe, expect, it } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('updateVersionMilestoneTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    patchVersions: jest.fn<() => Promise<any>>().mockResolvedValue({
+    patchVersions: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       projectId: 100,
       name: 'Updated Version',

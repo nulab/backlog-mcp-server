@@ -1,11 +1,11 @@
 import { addPullRequestCommentTool } from './addPullRequestComment.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('addPullRequestCommentTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    postPullRequestComments: jest.fn<() => Promise<any>>().mockResolvedValue({
+    postPullRequestComments: vi.fn<() => Promise<any>>().mockResolvedValue({
       id: 1,
       content: 'This looks good to me!',
       changeLog: [],

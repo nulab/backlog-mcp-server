@@ -1,11 +1,11 @@
 import { getPullRequestsTool } from './getPullRequests.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getPullRequestsTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getPullRequests: jest.fn<() => Promise<any>>().mockResolvedValue([
+    getPullRequests: vi.fn<() => Promise<any>>().mockResolvedValue([
       {
         id: 1,
         projectId: 100,

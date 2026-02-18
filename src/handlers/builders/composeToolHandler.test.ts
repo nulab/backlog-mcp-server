@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import {
   CallToolResult,
@@ -57,7 +57,7 @@ describe('composeToolHandler', () => {
     const toolWithoutFields: ToolDefinition<any, any> = {
       ...tool,
       schema: baseSchema,
-      handler: jest.fn(async () => ({
+      handler: vi.fn(async () => ({
         kind: 'ok',
         data: { id: 456, name: 'hoge' },
       })),

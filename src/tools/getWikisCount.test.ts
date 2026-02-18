@@ -1,11 +1,11 @@
 import { getWikisCountTool } from './getWikisCount.js';
-import { jest, describe, it, expect } from '@jest/globals';
+import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
 describe('getWikisCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
-    getWikisCount: jest.fn<() => Promise<any>>().mockResolvedValue({
+    getWikisCount: vi.fn<() => Promise<any>>().mockResolvedValue({
       count: 42,
     }),
   };
