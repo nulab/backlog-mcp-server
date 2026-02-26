@@ -412,6 +412,16 @@ export const NotificationSchema = z.object({
   created: z.string(),
 });
 
+export const ActivitySchema = z.object({
+  id: z.number(),
+  project: ProjectSchema,
+  type: ActivityTypeSchema,
+  content: z.any(),
+  notifications: z.array(z.any()),
+  createdUser: UserSchema,
+  created: z.string(),
+});
+
 export const NotificationCountSchema = z.object({
   count: z.number(),
 });

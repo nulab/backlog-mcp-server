@@ -31,6 +31,7 @@ import { getPullRequestsTool } from './getPullRequests.js';
 import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { getResolutionsTool } from './getResolutions.js';
 import { getSpaceTool } from './getSpace.js';
+import { getSpaceActivitiesTool } from './getSpaceActivities.js';
 import { getUsersTool } from './getUsers.js';
 import { getWatchingListCountTool } from './getWatchingListCount.js';
 import { getWatchingListItemsTool } from './getWatchingListItems.js';
@@ -69,6 +70,7 @@ export const allTools = (
         enabled: false,
         tools: [
           getSpaceTool(backlog, helper),
+          getSpaceActivitiesTool(backlog, helper),
           getUsersTool(backlog, helper),
           getMyselfTool(backlog, helper),
         ],
