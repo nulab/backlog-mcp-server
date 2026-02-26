@@ -24,6 +24,8 @@ const getSpaceActivitiesSchema = buildToolSchema((t) => ({
     .describe(t('TOOL_GET_SPACE_ACTIVITIES_MAX_ID', 'Maximum activity ID')),
   count: z
     .number()
+    .min(1)
+    .max(100)
     .optional()
     .describe(
       t('TOOL_GET_SPACE_ACTIVITIES_COUNT', 'Number of activities to retrieve')

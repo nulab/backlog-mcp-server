@@ -54,4 +54,14 @@ describe('getSpaceActivitiesTool', () => {
 
     expect(mockBacklog.getSpaceActivities).toHaveBeenCalledWith(params);
   });
+
+  it('rejects count less than 1', () => {
+    const result = tool.schema.safeParse({ count: 0 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects count greater than 100', () => {
+    const result = tool.schema.safeParse({ count: 101 });
+    expect(result.success).toBe(false);
+  });
 });
