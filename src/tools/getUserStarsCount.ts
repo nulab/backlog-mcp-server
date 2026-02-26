@@ -12,13 +12,19 @@ const getUserStarsCountSchema = buildToolSchema((t) => ({
     .string()
     .optional()
     .describe(
-      t('TOOL_GET_USER_STARS_COUNT_SINCE', 'Count stars received after this date (yyyy-MM-dd)')
+      t(
+        'TOOL_GET_USER_STARS_COUNT_SINCE',
+        'Count stars received after this date (yyyy-MM-dd)'
+      )
     ),
   until: z
     .string()
     .optional()
     .describe(
-      t('TOOL_GET_USER_STARS_COUNT_UNTIL', 'Count stars received before this date (yyyy-MM-dd)')
+      t(
+        'TOOL_GET_USER_STARS_COUNT_UNTIL',
+        'Count stars received before this date (yyyy-MM-dd)'
+      )
     ),
 }));
 
