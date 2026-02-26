@@ -7,15 +7,7 @@ description: Implements a new MCP tool for a Backlog API endpoint from its docum
 
 ## Overview
 
-Given a Backlog API documentation URL, this skill reads the spec and implements the corresponding MCP tool following the project's conventions.
-
-## Input
-
-A URL pointing to a Backlog API reference page:
-
-```
-https://developer.nulab.com/docs/backlog/api/2/<endpoint-name>/
-```
+Implement a new MCP tool for the Backlog API endpoint documented at $ARGUMENTS.
 
 ## Steps
 
@@ -24,7 +16,7 @@ https://developer.nulab.com/docs/backlog/api/2/<endpoint-name>/
 Fetch the documentation page and extract the following:
 
 ```bash
-curl -s "<URL>" | sed 's/<[^>]*>//g' | sed '/^[[:space:]]*$/d'
+curl -s "$ARGUMENTS" | sed 's/<[^>]*>//g' | sed '/^[[:space:]]*$/d'
 ```
 
 Identify:
