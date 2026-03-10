@@ -13,11 +13,7 @@ Implement a new MCP tool for the Backlog API endpoint documented at $ARGUMENTS.
 
 ### 1. Read the API spec
 
-Fetch the documentation page and extract the following:
-
-```bash
-curl -s "$ARGUMENTS" | sed 's/<[^>]*>//g' | sed '/^[[:space:]]*$/d'
-```
+Fetch the documentation page using the `fetch_webpage` tool with the URL `$ARGUMENTS` and extract the following:
 
 Identify:
 
@@ -28,13 +24,19 @@ Identify:
 
 ### 2. Check the backlog-js client
 
-Verify the corresponding method exists in the `backlog-js` client:
+Find the corresponding method in the `backlog-js` type definitions:
 
 ```bash
-grep -r "<methodName>" node_modules/backlog-js/dist
+grep "methodName" node_modules/backlog-js/dist/types/backlog.d.ts
 ```
 
-Use the client method name and its type signatures as the basis for implementation.
+Replace `methodName` with the actual method name (e.g. `getSpace`, `postIssue`). If unsure of the name, read the full file to browse all available methods:
+
+```bash
+cat node_modules/backlog-js/dist/types/backlog.d.ts
+```
+
+Use the method's name and type signature as the basis for implementation.
 
 ### 3. Read an existing similar tool for reference
 
