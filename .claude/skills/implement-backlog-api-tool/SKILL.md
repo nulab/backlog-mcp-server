@@ -42,7 +42,7 @@ Use the method's name and type signature as the basis for implementation.
 
 ```bash
 cat src/tools/getSpace.ts
-cat src/handlers/transformers/getSpaceTransformer.ts
+cat src/handlers/builders/composeToolHandler.ts
 ```
 
 ### 4. Implement the tool
@@ -53,10 +53,9 @@ Create or update these files following the existing patterns:
 
 - Define the tool name, description, and input schema using `zod`
 - Map each API parameter to a zod field with an appropriate description
-
-#### `src/handlers/transformers/<toolName>Transformer.ts` (if needed)
-
-- Transform the raw API response into an MCP-friendly format
+- Set `outputSchema` to a Zod schema matching the API response shape (see `src/types/zod/backlogOutputDefinition.ts`)
+- Set `importantFields` to the subset of fields that are most relevant to the user
+- Implement `handler` to call the corresponding `backlog-js` client method
 
 #### `src/tools/tools.ts`
 
