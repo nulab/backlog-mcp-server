@@ -10,7 +10,7 @@ import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createTranslationHelper } from './createTranslationHelper.js';
-import { registerDyamicTools, registerTools } from './registerTools.js';
+import { registerDynamicTools, registerTools } from './registerTools.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import { logger } from './utils/logger.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
@@ -105,7 +105,7 @@ if (argv.dynamicToolsets) {
     toolsetGroup
   );
 
-  registerDyamicTools(server, dynamicToolsetGroup, prefix);
+  registerDynamicTools(server, dynamicToolsetGroup, prefix);
 }
 
 if (argv.exportTranslations) {
