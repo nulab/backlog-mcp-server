@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/nulab/backlog-mcp-server/compare/v0.7.0...v0.8.0) (2026-03-24)
+
+### Features
+
+* add implement-backlog-api-tool skill for MCP server ([3714461](https://github.com/nulab/backlog-mcp-server/commit/37144614384ef57ba70d43a169e974fd3416b683))
+* enable npm trusted publishing via GitHub Actions OIDC ([#70](https://github.com/nulab/backlog-mcp-server/issues/70)) ([bd452c9](https://github.com/nulab/backlog-mcp-server/commit/bd452c9dbb6735d279771af65f604cff1057282a))
+
+### Bug Fixes
+
+* correct type annotation in eslint configuration ([5bef60a](https://github.com/nulab/backlog-mcp-server/commit/5bef60a98f03f05992f97113e0fe308ee0f6d4dc))
+* correct typo in function name from registerDyamicTools to registerDynamicTools ([7a25d25](https://github.com/nulab/backlog-mcp-server/commit/7a25d25a130ddab1c9114412ef29d8229e61be50))
+* improve clarity in SKILL.md by updating API spec fetching instructions ([a02559b](https://github.com/nulab/backlog-mcp-server/commit/a02559b9635171c00b0cbb69d3e70aa00ae4fe5b))
+* improve formatting and clarity in README files ([41407cc](https://github.com/nulab/backlog-mcp-server/commit/41407cc77d9733bfc10d9d2ef61e9cc2c2dcd510))
+* **test:** resolve TypeScript type errors in composeToolHandler test ([275570b](https://github.com/nulab/backlog-mcp-server/commit/275570b6c260239a1e9e571670541b4e5040ed27))
+* update example values in .env.example for clarity ([2ff9421](https://github.com/nulab/backlog-mcp-server/commit/2ff942166d2d18f942623c9d31bced10352617bc))
+* update overview and input sections in SKILL.md for clarity ([c719496](https://github.com/nulab/backlog-mcp-server/commit/c719496faae281e11093e9273e6a6eb61daf9bae))
+* update references in SKILL.md for implementing backlog API tool ([a564977](https://github.com/nulab/backlog-mcp-server/commit/a564977da8146887a0c75f1648b4909138482b84))
+
 ## [0.7.0](https://github.com/nulab/backlog-mcp-server/compare/v0.6.0...v0.7.0) (2026-02-13)
 
 ## Features
