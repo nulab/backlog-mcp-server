@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.1](https://github.com/nulab/backlog-mcp-server/compare/v0.8.0...v0.8.1) (2026-03-24)
+
+### Bug Fixes
+
+* add build step before npm publish in release workflow ([#73](https://github.com/nulab/backlog-mcp-server/issues/73)) ([2a66956](https://github.com/nulab/backlog-mcp-server/commit/2a669562a7b0d7009b90817fd5ee4f36f92e99bc))
+
 ## [0.8.0](https://github.com/nulab/backlog-mcp-server/compare/v0.7.0...v0.8.0) (2026-03-24)
 
 ### Features
