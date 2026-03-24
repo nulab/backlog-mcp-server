@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build
+        run: npm run build
+
       - name: Set up QEMU for cross-platform builds
         uses: docker/setup-qemu-action@v3
 
