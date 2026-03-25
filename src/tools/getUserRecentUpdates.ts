@@ -11,13 +11,19 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
   userId: z
     .number()
     .describe(
-      t('TOOL_GET_USER_RECENT_UPDATES_USER_ID', 'ID of the user to retrieve activities for')
+      t(
+        'TOOL_GET_USER_RECENT_UPDATES_USER_ID',
+        'ID of the user to retrieve activities for'
+      )
     ),
   activityTypeId: z
     .array(ActivityTypeSchema)
     .optional()
     .describe(
-      t('TOOL_GET_USER_RECENT_UPDATES_ACTIVITY_TYPE_ID', 'Activity type IDs to filter by')
+      t(
+        'TOOL_GET_USER_RECENT_UPDATES_ACTIVITY_TYPE_ID',
+        'Activity type IDs to filter by'
+      )
     ),
   minId: z
     .number()
@@ -31,8 +37,8 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
     .number()
     .min(1)
     .max(100)
-    .optional()
     .default(20)
+    .optional()
     .describe(
       t(
         'TOOL_GET_USER_RECENT_UPDATES_COUNT',
@@ -41,9 +47,14 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
     ),
   order: z
     .enum(['asc', 'desc'])
-    .optional()
     .default('desc')
-    .describe(t('TOOL_GET_USER_RECENT_UPDATES_ORDER', 'Sort order ("asc" or "desc", default: "desc")')),
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_USER_RECENT_UPDATES_ORDER',
+        'Sort order ("asc" or "desc", default: "desc")'
+      )
+    ),
 }));
 
 export const getUserRecentUpdatesTool = (
