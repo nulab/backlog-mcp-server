@@ -32,6 +32,7 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
     .min(1)
     .max(100)
     .optional()
+    .default(20)
     .describe(
       t(
         'TOOL_GET_USER_RECENT_UPDATES_COUNT',
@@ -41,6 +42,7 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
   order: z
     .enum(['asc', 'desc'])
     .optional()
+    .default('desc')
     .describe(t('TOOL_GET_USER_RECENT_UPDATES_ORDER', 'Sort order ("asc" or "desc", default: "desc")')),
 }));
 
