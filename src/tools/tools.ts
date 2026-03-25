@@ -32,6 +32,7 @@ import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { getResolutionsTool } from './getResolutions.js';
 import { getSpaceTool } from './getSpace.js';
 import { getSpaceActivitiesTool } from './getSpaceActivities.js';
+import { getUserStarsCountTool } from './getUserStarsCount.js';
 import { getUsersTool } from './getUsers.js';
 import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
 import { getWatchingListCountTool } from './getWatchingListCount.js';
@@ -74,6 +75,7 @@ export const allTools = (
           getSpaceTool(backlog, helper),
           getSpaceActivitiesTool(backlog, helper),
           getUsersTool(backlog, helper),
+          getUserStarsCountTool(backlog, helper),
           getMyselfTool(backlog, helper),
           getUserRecentUpdatesTool(backlog, helper),
         ],

@@ -446,6 +446,10 @@ export const WatchingListCountSchema = z.object({
   count: z.number(),
 });
 
+export const StarCountSchema = z.object({
+  count: z.number(),
+});
+
 export const WikiListItemSchema = z.object({
   id: z.number(),
   projectId: z.number(),
