@@ -32,6 +32,7 @@ import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { getResolutionsTool } from './getResolutions.js';
 import { getSpaceTool } from './getSpace.js';
 import { getSpaceActivitiesTool } from './getSpaceActivities.js';
+import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
 import { getUsersTool } from './getUsers.js';
 import { getWatchingListCountTool } from './getWatchingListCount.js';
 import { getWatchingListItemsTool } from './getWatchingListItems.js';
@@ -56,7 +57,7 @@ import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
 import { deleteVersionTool } from './deleteVersion.js';
 import { addDocumentTool } from './addDocument.js';
-import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
+import { deleteDocumentTool } from './deleteDocument.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -158,6 +159,7 @@ export const allTools = (
           getDocumentTreeTool(backlog, helper),
           getDocumentTool(backlog, helper),
           addDocumentTool(backlog, helper),
+          deleteDocumentTool(backlog, helper),
         ],
       },
       {
