@@ -39,7 +39,7 @@ export const getUserStarsCountTool = (
     name: 'get_user_stars_count',
     description: t(
       'TOOL_GET_USER_STARS_COUNT_DESCRIPTION',
-      'Returns number of stars that user received'
+      'Returns the count of stars received by a user'
     ),
     schema: z.object(getUserStarsCountSchema(t)),
     outputSchema: StarCountSchema,
