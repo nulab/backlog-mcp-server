@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/nulab/backlog-mcp-server/compare/v0.8.1...v0.9.0) (2026-03-25)
+
+### Features
+
+* add delete_document tool ([0b6fdc0](https://github.com/nulab/backlog-mcp-server/commit/0b6fdc0cc215157e60e7bdf6ff5afecb7c7f9d9b)), closes [#64](https://github.com/nulab/backlog-mcp-server/issues/64)
+* add get_user_recent_updates tool ([1c68e14](https://github.com/nulab/backlog-mcp-server/commit/1c68e146893142db373145facdde9ee43e46d011))
+* set default values for user recent updates schema ([6f611b0](https://github.com/nulab/backlog-mcp-server/commit/6f611b00a11370f04011bd878ac7bde1b603ba9e))
+
+### Reverts
+
+* reset version to 0.8.1 for proper release-it workflow ([793d142](https://github.com/nulab/backlog-mcp-server/commit/793d142305f117c7bbeb7d0f9e7d1591b1c42bd3))
+
 ## [0.8.1](https://github.com/nulab/backlog-mcp-server/compare/v0.8.0...v0.8.1) (2026-03-24)
 
 ### Bug Fixes
