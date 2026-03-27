@@ -1,4 +1,4 @@
-name: Release 
+name: Release
 
 on:
   workflow_dispatch:
@@ -9,13 +9,16 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set Git user
         run: |
@@ -23,12 +26,20 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Set up QEMU for cross-platform builds
         uses: docker/setup-qemu-action@v3

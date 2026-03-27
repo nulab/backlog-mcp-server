@@ -1,10 +1,10 @@
-import { DynamicToolDefinition, ToolDefinition } from "./tool.js";
+import { DynamicToolDefinition, ToolDefinition } from './tool.js';
 
 type BaseToolset<TTool> = {
-    name: string;
-    description: string;
-    enabled: boolean;
-    tools: TTool[];
+  name: string;
+  description: string;
+  enabled: boolean;
+  tools: TTool[];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,4 +1,4 @@
-name: CI 
+name: CI
 
 on:
   push:
@@ -11,14 +11,14 @@ jobs:
   ci:
     if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    name: 🧪 Lint, Test, Build
+    name: 🧪 Lint, Format, TypeCheck, Test, Build
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -26,9 +26,14 @@ jobs:
       - name: 📦 Install deps
         run: npm ci
 
-      - name: 🔍 Lint (if exists)
+      - name: 🔍 Lint
         run: npm run lint
-        continue-on-error: true  # 任意
+
+      - name: 🎨 Format check (Prettier)
+        run: npm run format
+
+      - name: ✅ Type check
+        run: npm run typecheck:all
 
       - name: 🧪 Run tests
         run: npm test

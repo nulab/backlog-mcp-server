@@ -1,9 +1,9 @@
-import { backlogErrorHandler } from "./backlog/backlogErrorHandler.js";
-import { composeToolHandler } from "./handlers/builders/composeToolHandler.js";
-import { MCPOptions } from "./types/mcp.js";
-import { DynamicToolDefinition, ToolDefinition } from "./types/tool.js";
-import { DynamicToolsetGroup, ToolsetGroup } from "./types/toolsets.js";
-import { BacklogMCPServer } from "./utils/wrapServerWithToolRegistry.js";
+import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
+import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
+import { MCPOptions } from './types/mcp.js';
+import { DynamicToolDefinition, ToolDefinition } from './types/tool.js';
+import { DynamicToolsetGroup, ToolsetGroup } from './types/toolsets.js';
+import { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
 type ToolsetSource = ToolsetGroup | DynamicToolsetGroup;
 
@@ -12,8 +12,11 @@ type RegisterOptions = {
   toolsetGroup: ToolsetSource;
   prefix: string;
   onlyEnabled?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handlerStrategy: (tool: ToolDefinition<any, any> | DynamicToolDefinition<any>) => (...args: any[]) => any;
+  handlerStrategy: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tool: ToolDefinition<any, any> | DynamicToolDefinition<any>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) => (...args: any[]) => any;
 };
 
 export function registerTools(
@@ -29,7 +32,7 @@ export function registerTools(
     prefix,
     handlerStrategy: (tool) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      composeToolHandler(tool as  ToolDefinition<any, any>, {
+      composeToolHandler(tool as ToolDefinition<any, any>, {
         useFields,
         errorHandler: backlogErrorHandler,
         maxTokens,
@@ -37,19 +40,18 @@ export function registerTools(
   });
 }
 
-export function registerDyamicTools(
+export function registerDynamicTools(
   server: BacklogMCPServer,
   dynamicToolsetGroup: DynamicToolsetGroup,
-  prefix: string,
+  prefix: string
 ) {
   registerToolsets({
     server,
     toolsetGroup: dynamicToolsetGroup,
     prefix,
-    handlerStrategy: (tool) => tool.handler, 
+    handlerStrategy: (tool) => tool.handler,
   });
 }
-
 
 function registerToolsets({
   server,
@@ -65,8 +67,13 @@ function registerToolsets({
     for (const tool of toolset.tools) {
       const toolNameWithPrefix = `${prefix}${tool.name}`;
       const handler = handlerStrategy(tool);
-      
-      server.registerOnce(toolNameWithPrefix, tool.description, tool.schema.shape, handler);
+
+      server.registerOnce(
+        toolNameWithPrefix,
+        tool.description,
+        tool.schema.shape,
+        handler
+      );
     }
   }
 }

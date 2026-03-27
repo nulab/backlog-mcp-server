@@ -12,6 +12,7 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
 
 - プロジェクトツール（作成、読み取り、更新、削除）
 - 課題とコメントの追跡（作成、更新、削除、一覧表示）
+- 発生バージョン/マイルストーンの管理（作成、読み取り、更新、削除）
 - Wikiページサポート
 - Gitリポジトリとプルリクエストツール
 - 通知ツール
@@ -41,11 +42,14 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
       "command": "docker",
       "args": [
         "run",
-        "--pull", "always",
+        "--pull",
+        "always",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -65,9 +69,35 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
 docker pull ghcr.io/nulab/backlog-mcp-server:latest
 ```
 
-### オプション2: 手動セットアップ (Node.js)
+### オプション2: npx経由でのインストール
+
+リポジトリをクローンせずに `npx` を使用してサーバーを直接実行することもできます。これは、完全なインストールなしでサーバーを実行する便利な方法です。
+
+1. MCP設定を開きます
+2. MCP設定セクションに移動します
+3. 次の設定を追加します：
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": ["backlog-mcp-server"],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+`your-domain.backlog.com` を実際のBacklogドメインに、`your-api-key` を実際のBacklog APIキーに置き換えてください。
+
+### オプション3: 手動セットアップ (Node.js)
 
 1. クローンしてインストール：
+
    ```bash
    git clone https://github.com/nulab/backlog-mcp-server.git
    cd backlog-mcp-server
@@ -75,23 +105,39 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
    npm run build
    ```
 
-2. MCPとして使用するJSONを設定します：
-  ```json
-  {
-    "mcpServers": {
-      "backlog": {
-        "command": "node",
-        "args": [
-          "your-repository-location/build/index.js"
-        ],
-        "env": {
-          "BACKLOG_DOMAIN": "your-domain.backlog.com",
-          "BACKLOG_API_KEY": "your-api-key"
-        }
+2. テンプレートから `.env` を作成し、必須の環境変数を設定します：
+
+```bash
+cp .env.example .env
+```
+
+`.env` に以下を設定してください：
+
+- `BACKLOG_DOMAIN=your-domain.backlog.com`
+- `BACKLOG_API_KEY=your-api-key`
+
+3. ローカルで起動します：
+
+```bash
+npm run dev
+```
+
+4. MCPとして使用するJSONを設定します：
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "node",
+      "args": ["your-repository-location/build/index.js"],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
       }
     }
   }
-  ```
+}
+```
 
 ### オプション3: Desktop Extension (DXT)
 
@@ -118,14 +164,15 @@ Desktop Extensionには、サーバー設定と利用可能なツールを定義
 
 次のツールセットが利用可能です（`"all"` が使用されるとデフォルトで有効になります）：
 
-| ツールセット    | 説明                                                                 |
-|-----------------|--------------------------------------------------------------------------------------|
-| `space`         | Backlogスペース設定と一般情報を管理するためのツール                                  |
-| `project`       | プロジェクト、カテゴリ、カスタムフィールド、課題タイプを管理するためのツール             |
-| `issue`         | 課題とそのコメントを管理するためのツール                                             |
-| `wiki`          | Wikiページを管理するためのツール                                                     |
-| `git`           | Gitリポジトリとプルリクエストを管理するためのツール                                    |
-| `notifications` | ユーザー通知を管理するためのツール                                                   |
+| ツールセット    | 説明                                                                         |
+| --------------- | ---------------------------------------------------------------------------- |
+| `space`         | Backlogスペース設定と一般情報を管理するためのツール                          |
+| `project`       | プロジェクト、カテゴリ、カスタムフィールド、課題タイプを管理するためのツール |
+| `issue`         | 課題とそのコメント、発生バージョン/マイルストーンを管理するためのツール      |
+| `wiki`          | Wikiページを管理するためのツール                                             |
+| `git`           | Gitリポジトリとプルリクエストを管理するためのツール                          |
+| `notifications` | ユーザー通知を管理するためのツール                                           |
+| `document`      | ドキュメントおよびドキュメントツリーを参照するためのツール                   |
 
 ### ツールセットの指定
 
@@ -170,6 +217,7 @@ CLI経由での有効化：
 ## 利用可能なツール
 
 以下のような Backlog 機能に対応するツールを提供しています：
+
 [Available Tools セクションへ](https://github.com/nulab/backlog-mcp-server?tab=readme-ov-file#available-tools)
 
 ## 使用例
@@ -177,29 +225,41 @@ CLI経由での有効化：
 MCPサーバーがAIエージェントで設定されると、会話で直接ツールを使用できます。以下にいくつかの例を示します：
 
 - プロジェクトの一覧表示
+
 ```
 私のBacklogプロジェクトをすべてリストアップしてください。
 ```
+
 - 新しい課題の作成
+
 ```
 PROJECT-KEYプロジェクトに「ログインページのエラーを修正」というタイトルの高優先度のバグ課題を作成してください。
 ```
+
 - プロジェクト詳細の取得
+
 ```
 PROJECT-KEYプロジェクトの詳細を表示してください。
 ```
+
 - Gitリポジトリの操作
+
 ```
 PROJECT-KEYプロジェクト内のすべてのGitリポジトリをリストアップしてください。
 ```
+
 - プルリクエストの管理
+
 ```
 PROJECT-KEYプロジェクトの「repo-name」リポジトリ内のすべてのオープンなプルリクエストを表示してください。
 ```
+
 ```
 PROJECT-KEYプロジェクトの「repo-name」リポジトリで、ブランチ「feature/new-feature」から「main」への新しいプルリクエストを作成してください。
 ```
+
 - ウォッチアイテム
+
 ```
 私がウォッチしているすべてのアイテムを表示してください。
 ```
@@ -235,9 +295,12 @@ PROJECT-KEYプロジェクトの「repo-name」リポジトリで、ブランチ
         "run",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
-        "-v", "/yourcurrentdir/.backlog-mcp-serverrc.json:/root/.backlog-mcp-serverrc.json:ro",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
+        "-v",
+        "/yourcurrentdir/.backlog-mcp-serverrc.json:/root/.backlog-mcp-serverrc.json:ro",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -268,6 +331,7 @@ npx github:nulab/backlog-mcp-server --export-translations
 ```
 
 ### 日本語翻訳テンプレートの使用
+
 サンプルの日本語設定ファイルは次の場所に提供されています：
 
 ```bash
@@ -279,6 +343,7 @@ translationConfig/.backlog-mcp-serverrc.json.example
 その後、必要に応じてファイルを編集して説明をカスタマイズできます。
 
 ### 環境変数の使用
+
 または、環境変数を介してツールの説明をオーバーライドすることもできます。
 
 環境変数名は、ツールキーに基づいており、`BACKLOG_MCP_` がプレフィックスとして付き、大文字で記述されます。
@@ -295,9 +360,12 @@ translationConfig/.backlog-mcp-serverrc.json.example
         "run",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
-        "-e", "BACKLOG_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
+        "-e",
+        "BACKLOG_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -359,6 +427,7 @@ get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
 ```
 
 利点：
+
 - 必要なフィールドのみを要求することでレスポンスサイズを削減
 - 特定のデータポイントに焦点を当てる
 - 大規模なレスポンスのパフォーマンスを向上
@@ -366,6 +435,7 @@ get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
 #### トークン制限
 
 大規模なレスポンスは、トークン制限を超えないように自動的に制限されます：
+
 - デフォルト制限：50,000トークン
 - `MAX_TOKENS` 環境変数で設定可能
 - 制限を超えるレスポンスはメッセージと共に切り捨てられます
@@ -377,6 +447,7 @@ MAX_TOKENS=10000
 ```
 
 レスポンスが制限を超えた場合、警告と共に切り捨てられます。
+
 > 注：これはベストエフォートの緩和策であり、保証された強制ではありません。
 
 ### 完全なカスタム設定例
@@ -392,12 +463,18 @@ MAX_TOKENS=10000
         "run",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
-        "-e", "MAX_TOKENS",
-        "-e", "OPTIMIZE_RESPONSE",
-        "-e", "PREFIX",
-        "-e", "ENABLE_TOOLSETS",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
+        "-e",
+        "MAX_TOKENS",
+        "-e",
+        "OPTIMIZE_RESPONSE",
+        "-e",
+        "PREFIX",
+        "-e",
+        "ENABLE_TOOLSETS",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -459,6 +536,7 @@ npx dxt pack
 `manifest.json` ファイルは、Desktop Extensionインストール用の拡張機能メタデータ、サーバー設定、利用可能なツールを定義します。
 
 例：
+
 ```bash
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
 ```

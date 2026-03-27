@@ -1,8 +1,8 @@
-import { parse, SelectionSetNode } from "graphql";
-import { isErrorLike, SafeResult } from "../../types/result.js";
+import { parse, SelectionSetNode } from 'graphql';
+import { isErrorLike, SafeResult } from '../../types/result.js';
 
 export function wrapWithFieldPicking<I extends { fields?: string }, O>(
-  fn: (input: I) => Promise<SafeResult<O>>,
+  fn: (input: I) => Promise<SafeResult<O>>
 ): (input: I) => Promise<SafeResult<O>> {
   return async (input: I) => {
     const { fields, ...rest } = input;
@@ -13,23 +13,28 @@ export function wrapWithFieldPicking<I extends { fields?: string }, O>(
     }
 
     const selectionSet = parseFieldsSelection(fields);
-    const resultData = result.data
+    const resultData = result.data;
 
     if (Array.isArray(resultData)) {
       return {
-        kind: "ok",
-        data: resultData.map(item => pickFieldsFromData(item, selectionSet)) as unknown as O
-      }
-    } else if (typeof result === "object" && result !== null) {
+        kind: 'ok',
+        data: resultData.map((item) =>
+          pickFieldsFromData(item, selectionSet)
+        ) as unknown as O,
+      };
+    } else if (typeof result === 'object' && result !== null) {
       return {
-        kind: "ok",
-        data: pickFieldsFromData(resultData as Record<string, unknown>, selectionSet) as O
-      }
+        kind: 'ok',
+        data: pickFieldsFromData(
+          resultData as Record<string, unknown>,
+          selectionSet
+        ) as O,
+      };
     } else {
-      return result
+      return result;
     }
-  }
-};
+  };
+}
 
 function parseFieldsSelection(fieldsString: string): SelectionSetNode {
   const query = `query Dummy ${fieldsString}`;
@@ -41,7 +46,10 @@ function parseFieldsSelection(fieldsString: string): SelectionSetNode {
   return opDef.selectionSet;
 }
 
-function pickFieldsFromData(data: Record<string, unknown> | null | undefined, selectionSet: SelectionSetNode): Record<string, unknown> {
+function pickFieldsFromData(
+  data: Record<string, unknown> | null | undefined,
+  selectionSet: SelectionSetNode
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const selection of selectionSet.selections) {
@@ -50,7 +58,10 @@ function pickFieldsFromData(data: Record<string, unknown> | null | undefined, se
       if (data != null && key in data) {
         const value = data[key];
         if (selection.selectionSet && value != null) {
-          result[key] = pickFieldsFromData(data[key] as Record<string, unknown>, selection.selectionSet);
+          result[key] = pickFieldsFromData(
+            data[key] as Record<string, unknown>,
+            selection.selectionSet
+          );
         } else {
           result[key] = data[key];
         }
