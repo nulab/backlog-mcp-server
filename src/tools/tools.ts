@@ -58,7 +58,6 @@ import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
 import { deleteVersionTool } from './deleteVersion.js';
 import { addDocumentTool } from './addDocument.js';
-import { deleteDocumentTool } from './deleteDocument.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -161,7 +160,6 @@ export const allTools = (
           getDocumentTreeTool(backlog, helper),
           getDocumentTool(backlog, helper),
           addDocumentTool(backlog, helper),
-          deleteDocumentTool(backlog, helper),
         ],
       },
       {
