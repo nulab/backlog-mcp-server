@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1](https://github.com/nulab/backlog-mcp-server/compare/v0.9.0...v0.9.1) (2026-03-27)
+
+### Bug Fixes
+
+* move env variable initialization after yargs parsing ([8c1dc11](https://github.com/nulab/backlog-mcp-server/commit/8c1dc11672038364b219ecdda6901a44906d0bdb))
+
 ## [0.9.0](https://github.com/nulab/backlog-mcp-server/compare/v0.8.1...v0.9.0) (2026-03-25)
 
 ### Features
