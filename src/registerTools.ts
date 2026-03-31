@@ -38,6 +38,23 @@ export function registerTools(
         maxTokens,
       }),
   });
+
+  // Register dynamic tools within toolsets (e.g., attachment downloads)
+  for (const toolset of toolsetGroup.toolsets) {
+    if (!toolset.enabled || !toolset.dynamicTools) {
+      continue;
+    }
+
+    for (const tool of toolset.dynamicTools) {
+      const toolNameWithPrefix = `${prefix}${tool.name}`;
+      server.registerOnce(
+        toolNameWithPrefix,
+        tool.description,
+        tool.schema.shape,
+        tool.handler
+      );
+    }
+  }
 }
 
 export function registerDynamicTools(

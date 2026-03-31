@@ -8,7 +8,10 @@ type BaseToolset<TTool> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Toolset = BaseToolset<ToolDefinition<any, any>>;
+export type Toolset = BaseToolset<ToolDefinition<any, any>> & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dynamicTools?: DynamicToolDefinition<any>[];
+};
 export type ToolsetGroup = { toolsets: Toolset[] };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

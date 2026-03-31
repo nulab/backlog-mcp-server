@@ -77,8 +77,9 @@ describe('registerTools', () => {
       prefix: '',
     });
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(
-      toolsetGroup.toolsets.flatMap((a) => a.tools).length
-    );
+    const totalTools =
+      toolsetGroup.toolsets.flatMap((a) => a.tools).length +
+      toolsetGroup.toolsets.flatMap((a) => a.dynamicTools ?? []).length;
+    expect(mockServer.tool).toHaveBeenCalledTimes(totalTools);
   });
 });
