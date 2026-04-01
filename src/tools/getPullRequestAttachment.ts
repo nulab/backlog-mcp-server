@@ -5,17 +5,17 @@ import { TranslationHelper } from '../createTranslationHelper.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 import { streamToBase64 } from '../utils/streamToBase64.js';
 import { getMimeType } from '../utils/getMimeType.js';
-import { buildFileContent } from '../utils/buildFileContent.js';
+import {
+  buildFileContent,
+  tryDecodeFilename,
+} from '../utils/buildFileContent.js';
 
 const getPullRequestAttachmentSchema = buildToolSchema((t) => ({
   projectId: z
     .number()
     .optional()
     .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENT_PROJECT_ID',
-        'The numeric ID of the project'
-      )
+      t('TOOL_GET_PR_ATTACHMENT_PROJECT_ID', 'The numeric ID of the project')
     ),
   projectKey: z
     .string()
@@ -28,20 +28,10 @@ const getPullRequestAttachmentSchema = buildToolSchema((t) => ({
     ),
   repoIdOrName: z
     .string()
-    .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENT_REPO',
-        'The repository ID or name'
-      )
-    ),
+    .describe(t('TOOL_GET_PR_ATTACHMENT_REPO', 'The repository ID or name')),
   number: z
     .number()
-    .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENT_NUMBER',
-        'The pull request number'
-      )
-    ),
+    .describe(t('TOOL_GET_PR_ATTACHMENT_NUMBER', 'The pull request number')),
   attachmentId: z
     .number()
     .describe(
@@ -88,8 +78,9 @@ export const getPullRequestAttachmentTool = (
         number,
         attachmentId
       );
-      const filename =
-        'filename' in fileData ? (fileData.filename as string) : 'attachment';
+      const rawFilename =
+        'filename' in fileData ? (fileData.filename as string) : '';
+      const filename = tryDecodeFilename(rawFilename);
       const mimeType = getMimeType(filename);
       const base64 = await streamToBase64(fileData.body);
 

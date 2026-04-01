@@ -54,6 +54,43 @@ describe('getWikiAttachmentTool', () => {
     expect(result.content[0]).toHaveProperty('type', 'resource');
   });
 
+  it('decodes URL-encoded filename (dot encoded) when determining MIME type', async () => {
+    const mockBacklog: Partial<Backlog> = {
+      getWikiAttachment: vi.fn<() => Promise<any>>().mockResolvedValue({
+        filename: 'diagram%2Epng',
+        url: 'https://example.backlog.com/file/diagram.png',
+        body: createMockStream('fake-image-data'),
+      }),
+    };
+
+    const tool = getWikiAttachmentTool(
+      mockBacklog as Backlog,
+      mockTranslationHelper
+    );
+
+    const result = await tool.handler({ wikiId: 10, attachmentId: 200 });
+    expect(result.content[0]).toHaveProperty('type', 'image');
+    expect(result.content[0]).toHaveProperty('mimeType', 'image/png');
+  });
+
+  it('does not throw when filename contains malformed percent-encoding', async () => {
+    const mockBacklog: Partial<Backlog> = {
+      getWikiAttachment: vi.fn<() => Promise<any>>().mockResolvedValue({
+        filename: 'file%GGname.png',
+        url: 'https://example.backlog.com/file/filename.png',
+        body: createMockStream('fake-image-data'),
+      }),
+    };
+
+    const tool = getWikiAttachmentTool(
+      mockBacklog as Backlog,
+      mockTranslationHelper
+    );
+
+    const result = await tool.handler({ wikiId: 10, attachmentId: 200 });
+    expect(result.content[0]).toHaveProperty('type', 'image');
+  });
+
   it('calls backlog.getWikiAttachment with correct params', async () => {
     const mockBacklog: Partial<Backlog> = {
       getWikiAttachment: vi.fn<() => Promise<any>>().mockResolvedValue({

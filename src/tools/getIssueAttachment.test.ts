@@ -83,6 +83,52 @@ describe('getIssueAttachmentTool', () => {
     expect(mockBacklog.getIssueAttachment).toHaveBeenCalledWith(42, 100);
   });
 
+  it('decodes URL-encoded filename (dot encoded) when determining MIME type', async () => {
+    // backlog-js extracts filename from Content-Disposition header via RFC 5987.
+    // In rare cases the dot may be percent-encoded: "screenshot%2Epng"
+    const mockBacklog: Partial<Backlog> = {
+      getIssueAttachment: vi.fn<() => Promise<any>>().mockResolvedValue({
+        filename: 'screenshot%2Epng',
+        url: 'https://example.backlog.com/file/screenshot.png',
+        body: createMockStream('fake-png-data'),
+      }),
+    };
+
+    const tool = getIssueAttachmentTool(
+      mockBacklog as Backlog,
+      mockTranslationHelper
+    );
+
+    const result = await tool.handler({
+      issueKey: 'TEST-1',
+      attachmentId: 100,
+    });
+    expect(result.content[0]).toHaveProperty('type', 'image');
+    expect(result.content[0]).toHaveProperty('mimeType', 'image/png');
+  });
+
+  it('does not throw when filename contains malformed percent-encoding', async () => {
+    const mockBacklog: Partial<Backlog> = {
+      getIssueAttachment: vi.fn<() => Promise<any>>().mockResolvedValue({
+        filename: 'file%GGname.png',
+        url: 'https://example.backlog.com/file/filename.png',
+        body: createMockStream('fake-png-data'),
+      }),
+    };
+
+    const tool = getIssueAttachmentTool(
+      mockBacklog as Backlog,
+      mockTranslationHelper
+    );
+
+    // Should not throw — falls back to raw filename, still detects .png
+    const result = await tool.handler({
+      issueKey: 'TEST-1',
+      attachmentId: 100,
+    });
+    expect(result.content[0]).toHaveProperty('type', 'image');
+  });
+
   it('returns error if neither issueId nor issueKey is provided', async () => {
     const mockBacklog: Partial<Backlog> = {
       getIssueAttachment: vi.fn(),

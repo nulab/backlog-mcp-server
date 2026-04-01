@@ -4,16 +4,16 @@ import { buildToolSchema, DynamicToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from '../createTranslationHelper.js';
 import { streamToBase64 } from '../utils/streamToBase64.js';
 import { getMimeType } from '../utils/getMimeType.js';
-import { buildFileContent } from '../utils/buildFileContent.js';
+import {
+  buildFileContent,
+  tryDecodeFilename,
+} from '../utils/buildFileContent.js';
 
 const getWikiAttachmentSchema = buildToolSchema((t) => ({
   wikiId: z
     .number()
     .describe(
-      t(
-        'TOOL_GET_WIKI_ATTACHMENT_WIKI_ID',
-        'The numeric ID of the wiki page'
-      )
+      t('TOOL_GET_WIKI_ATTACHMENT_WIKI_ID', 'The numeric ID of the wiki page')
     ),
   attachmentId: z
     .number()
@@ -38,8 +38,9 @@ export const getWikiAttachmentTool = (
     schema: z.object(getWikiAttachmentSchema(t)),
     handler: async ({ wikiId, attachmentId }) => {
       const fileData = await backlog.getWikiAttachment(wikiId, attachmentId);
-      const filename =
-        'filename' in fileData ? (fileData.filename as string) : 'attachment';
+      const rawFilename =
+        'filename' in fileData ? (fileData.filename as string) : '';
+      const filename = tryDecodeFilename(rawFilename);
       const mimeType = getMimeType(filename);
       const base64 = await streamToBase64(fileData.body);
 
