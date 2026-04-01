@@ -11,7 +11,10 @@ export type ToolDefinition<
   schema: z.ZodObject<Shape>;
   outputSchema: z.ZodObject<OutputShape>;
   handler: (
-    input: z.infer<z.ZodObject<Shape>> & { fields?: string }
+    input: z.infer<z.ZodObject<Shape>> & {
+      fields?: string;
+      organization?: string;
+    }
   ) => Promise<
     z.infer<z.ZodObject<OutputShape>> | z.infer<z.ZodObject<OutputShape>>[]
   >;

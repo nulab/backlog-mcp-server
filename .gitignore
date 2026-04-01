@@ -17,6 +17,8 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+backlog-organizations.yml
+.codex/
 
 # Editor directories and files
 .idea/

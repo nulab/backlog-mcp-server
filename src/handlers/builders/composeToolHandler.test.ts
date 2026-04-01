@@ -44,7 +44,10 @@ describe('composeToolHandler', () => {
 
     expect(tool.schema.shape).toHaveProperty('fields');
 
-    const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
+    const result = await composed(
+      { id: 123, fields: '{ id }' } as any,
+      dummyExtra
+    );
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
@@ -69,8 +72,9 @@ describe('composeToolHandler', () => {
     });
 
     expect(toolWithoutFields.schema.shape).not.toHaveProperty('fields');
+    expect(toolWithoutFields.schema.shape).toHaveProperty('organization');
 
-    const result = await composed({ id: 456 }, dummyExtra);
+    const result = await composed({ id: 456 } as any, dummyExtra);
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
@@ -87,7 +91,7 @@ describe('composeToolHandler', () => {
     });
 
     const input = { name: 'test', fields: '{ id name }' };
-    const result = await composed(input, {} as any);
+    const result = await composed(input as any, {} as any);
     expect(result).toHaveProperty('content');
     const content = result.content[0];
     expect(content.type).toBe('text');
@@ -95,6 +99,22 @@ describe('composeToolHandler', () => {
       expect(content.text).toContain('"id": 1');
       expect(content.text).toContain('"name": "Sample"');
     }
+  });
+
+  it("adds 'organization' to the schema when composing handlers", async () => {
+    const orgTool: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({
+        name: z.string(),
+      }),
+    };
+
+    composeToolHandler(orgTool, {
+      useFields: true,
+      maxTokens: 100,
+    });
+
+    expect(orgTool.schema.shape).toHaveProperty('organization');
   });
 
   it('handles error with provided errorHandler', async () => {
@@ -112,7 +132,7 @@ describe('composeToolHandler', () => {
     });
 
     const input = { name: 'test', fields: '{ id name }' };
-    const result = await composed(input, {} as any);
+    const result = await composed(input as any, {} as any);
     expect(result).toHaveProperty('isError', true);
     const content = result.content[0];
     if (content.type === 'text') {

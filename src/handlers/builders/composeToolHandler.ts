@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { wrapWithErrorHandling } from '../transformers/wrapWithErrorHandling.js';
 import { wrapWithFieldPicking } from '../transformers/wrapWithFieldPicking.js';
+import { wrapWithOrganizationContext } from '../transformers/wrapWithOrganizationContext.js';
 import { wrapWithTokenLimit } from '../transformers/wrapWithTokenLimit.js';
 import { wrapWithToolResult } from '../transformers/wrapWithToolResult.js';
 import { z } from 'zod';
@@ -21,17 +22,20 @@ export function composeToolHandler(
   const { useFields, errorHandler, maxTokens } = options;
 
   // Step 1: Add `fields` to schema if needed
-  if (useFields) {
-    const fieldDesc = generateFieldsDescription(
-      tool.outputSchema,
-      (tool.importantFields as string[]) ?? [],
-      tool.name
-    );
-    tool.schema = extendSchema(tool.schema, fieldDesc);
-  }
+  const fieldDesc = useFields
+    ? generateFieldsDescription(
+        tool.outputSchema,
+        (tool.importantFields as string[]) ?? [],
+        tool.name
+      )
+    : undefined;
+  tool.schema = extendSchema(tool.schema, fieldDesc);
 
   // Step 2: Compose
-  let handler = wrapWithErrorHandling(tool.handler, errorHandler);
+  let handler: any = wrapWithErrorHandling(
+    wrapWithOrganizationContext(tool.handler as any),
+    errorHandler
+  );
 
   if (useFields) {
     handler = wrapWithFieldPicking(handler);
@@ -42,9 +46,30 @@ export function composeToolHandler(
 
 function extendSchema<I extends z.ZodRawShape>(
   schema: z.ZodObject<I>,
-  desc: string
-): z.ZodObject<I & { fields: z.ZodString }> {
-  return schema.extend({
-    fields: z.string().describe(desc),
-  }) as z.ZodObject<I & { fields: z.ZodString }>;
+  desc?: string
+): z.ZodObject<
+  I & {
+    organization: z.ZodOptional<z.ZodString>;
+    fields?: z.ZodString;
+  }
+> {
+  const extension: Record<string, z.ZodTypeAny> = {
+    organization: z
+      .string()
+      .optional()
+      .describe(
+        'Optional organization name. Use list_organizations to inspect available organizations.'
+      ),
+  };
+
+  if (desc) {
+    extension.fields = z.string().describe(desc);
+  }
+
+  return schema.extend(extension) as z.ZodObject<
+    I & {
+      organization: z.ZodOptional<z.ZodString>;
+      fields?: z.ZodString;
+    }
+  >;
 }

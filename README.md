@@ -594,3 +594,79 @@ This project is licensed under the [MIT License](./LICENSE).
 Please note: This tool is provided under the MIT License **without any warranty or official support**.  
 Use it at your own risk after reviewing the contents and determining its suitability for your needs.  
 If you encounter any issues, please report them via [GitHub Issues](../../issues).
+
+## Multi-Organization Support
+
+This server can be configured to access multiple Backlog organizations from a single MCP server instance.
+
+### Configuration
+
+Set `BACKLOG_ORGANIZATIONS_CONFIG` to the path of a YAML file:
+
+```yaml
+defaultOrg: org1
+organizations:
+  org1:
+    domain: org1.backlog.com
+    apiKey: your-org1-api-key
+  org2:
+    domain: org2.backlog.com
+    apiKey: your-org2-api-key
+```
+
+Example `.env`:
+
+```bash
+BACKLOG_ORGANIZATIONS_CONFIG=./backlog-organizations.yml
+```
+
+If `BACKLOG_ORGANIZATIONS_CONFIG` is not set, the server falls back to the existing single-organization configuration:
+
+```bash
+BACKLOG_DOMAIN=your-domain.backlog.com
+BACKLOG_API_KEY=your-api-key
+```
+
+### Tool Usage
+
+All normal tools accept an optional `organization` input field. When provided, the tool call is routed to that Backlog organization.
+
+Examples:
+
+```json
+{
+  "organization": "org2",
+  "projectKey": "PROJECT"
+}
+```
+
+If `organization` is omitted:
+
+- the `defaultOrg` from the YAML file is used
+- if multiple organizations are configured and no `defaultOrg` is set, the tool returns an error asking for `organization`
+
+### Organization Discovery
+
+The server provides a `list_organizations` tool that returns the configured organization names, their domains, and which one is the default.
+
+Example response:
+
+```json
+[
+  {
+    "name": "org1",
+    "domain": "org1.backlog.com",
+    "isDefault": true
+  },
+  {
+    "name": "org2",
+    "domain": "org2.backlog.com",
+    "isDefault": false
+  }
+]
+```
+
+### Notes
+
+- YAML config files should not be committed if they contain real API keys.
+- A sample file is available at `backlog-organizations.yml.example`.

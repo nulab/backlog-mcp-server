@@ -1,0 +1,8 @@
+defaultOrg: org1
+organizations:
+  org1:
+    domain: org1.backlog.com
+    apiKey: your-org1-api-key
+  org2:
+    domain: org2.backlog.com
+    apiKey: your-org2-api-key
