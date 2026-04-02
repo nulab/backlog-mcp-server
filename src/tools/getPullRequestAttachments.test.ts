@@ -33,7 +33,7 @@ describe('getPullRequestAttachmentsTool', () => {
   it('returns pull request attachments', async () => {
     const result = await tool.handler({
       projectKey: 'PROJ',
-      repoIdOrName: 'my-repo',
+      repoName: 'my-repo',
       number: 1,
     });
 
@@ -48,7 +48,7 @@ describe('getPullRequestAttachmentsTool', () => {
   it('calls backlog.getPullRequestAttachments with correct params', async () => {
     await tool.handler({
       projectId: 5,
-      repoIdOrName: 'my-repo',
+      repoName: 'my-repo',
       number: 1,
     });
 
@@ -61,7 +61,27 @@ describe('getPullRequestAttachmentsTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     await expect(
-      tool.handler({ repoIdOrName: 'my-repo', number: 1 })
+      tool.handler({ repoName: 'my-repo', number: 1 })
+    ).rejects.toThrow(Error);
+  });
+
+  it('accepts repoId as an alternative to repoName', async () => {
+    await tool.handler({
+      projectId: 5,
+      repoId: 99,
+      number: 1,
+    });
+
+    expect(mockBacklog.getPullRequestAttachments).toHaveBeenCalledWith(
+      5,
+      '99',
+      1
+    );
+  });
+
+  it('throws an error if neither repoId nor repoName is provided', async () => {
+    await expect(
+      tool.handler({ projectKey: 'PROJ', number: 1 })
     ).rejects.toThrow(Error);
   });
 });

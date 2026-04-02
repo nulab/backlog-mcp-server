@@ -2,6 +2,8 @@ import { streamToBase64 } from './streamToBase64.js';
 import { describe, it, expect } from 'vitest';
 import { PassThrough } from 'stream';
 import { Buffer } from 'node:buffer';
+import { ReadableStream } from 'node:stream/web';
+import { TextEncoder } from 'node:util';
 
 describe('streamToBase64', () => {
   it('converts a PassThrough stream to base64', async () => {

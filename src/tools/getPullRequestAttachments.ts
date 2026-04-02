@@ -3,7 +3,7 @@ import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from '../createTranslationHelper.js';
 import { PullRequestFileInfoSchema } from '../types/zod/backlogOutputDefinition.js';
-import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
+import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
 const getPullRequestAttachmentsSchema = buildToolSchema((t) => ({
   projectId: z
@@ -24,14 +24,14 @@ const getPullRequestAttachmentsSchema = buildToolSchema((t) => ({
         "The key of the project (e.g., 'PROJ')"
       )
     ),
-  repoIdOrName: z
+  repoId: z
+    .number()
+    .optional()
+    .describe(t('TOOL_GET_PR_ATTACHMENTS_REPO_ID', 'Repository ID')),
+  repoName: z
     .string()
-    .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENTS_REPO',
-        'The repository ID or name'
-      )
-    ),
+    .optional()
+    .describe(t('TOOL_GET_PR_ATTACHMENTS_REPO_NAME', 'Repository name')),
   number: z
     .number()
     .describe(
@@ -57,7 +57,7 @@ export const getPullRequestAttachmentsTool = (
     ),
     schema: z.object(getPullRequestAttachmentsSchema(t)),
     outputSchema: PullRequestFileInfoSchema,
-    handler: async ({ projectId, projectKey, repoIdOrName, number }) => {
+    handler: async ({ projectId, projectKey, repoId, repoName, number }) => {
       const result = resolveIdOrKey(
         'project',
         { id: projectId, key: projectKey },
@@ -66,9 +66,19 @@ export const getPullRequestAttachmentsTool = (
       if (!result.ok) {
         throw result.error;
       }
+
+      const repoResult = resolveIdOrName(
+        'repository',
+        { id: repoId, name: repoName },
+        t
+      );
+      if (!repoResult.ok) {
+        throw repoResult.error;
+      }
+
       return backlog.getPullRequestAttachments(
         result.value,
-        repoIdOrName,
+        String(repoResult.value),
         number
       );
     },

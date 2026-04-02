@@ -7,6 +7,8 @@ import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import type { Toolset } from './types/toolsets.js';
+import { z } from 'zod';
+import type { DynamicToolDefinition } from './types/tool.js';
 
 vi.mock('./handlers/builders/composeToolHandler');
 
@@ -81,5 +83,52 @@ describe('registerTools', () => {
       toolsetGroup.toolsets.flatMap((a) => a.tools).length +
       toolsetGroup.toolsets.flatMap((a) => a.dynamicTools ?? []).length;
     expect(mockServer.tool).toHaveBeenCalledTimes(totalTools);
+  });
+
+  it('wraps dynamic tool errors with backlog error handling', async () => {
+    const mockServer = wrapServerWithToolRegistry({
+      tool: vi.fn(),
+    } as unknown as McpServer);
+    const throwingDynamicTool: DynamicToolDefinition<{ attachmentId: z.ZodNumber }> =
+      {
+        name: 'broken_dynamic_tool',
+        description: 'Broken dynamic tool',
+        schema: z.object({
+          attachmentId: z.number(),
+        }),
+        handler: async () => {
+          throw new Error('boom');
+        },
+      };
+
+    registerTools(
+      mockServer,
+      {
+        toolsets: [
+          {
+            name: 'broken',
+            description: 'Broken toolset',
+            enabled: true,
+            tools: [],
+            dynamicTools: [throwingDynamicTool],
+          },
+        ],
+      },
+      {
+        useFields: false,
+        prefix: '',
+        maxTokens: 5000,
+      }
+    );
+
+    const handler = (mockServer.tool as Mock).mock.calls.find(
+      (call) => call[0] === 'broken_dynamic_tool'
+    )?.[3];
+
+    expect(handler).toBeTypeOf('function');
+    await expect(handler({ attachmentId: 1 }, {})).resolves.toEqual({
+      isError: true,
+      content: [{ type: 'text', text: 'boom' }],
+    });
   });
 });

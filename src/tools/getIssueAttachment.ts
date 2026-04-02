@@ -3,12 +3,7 @@ import { Backlog } from 'backlog-js';
 import { buildToolSchema, DynamicToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from '../createTranslationHelper.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
-import { streamToBase64 } from '../utils/streamToBase64.js';
-import { getMimeType } from '../utils/getMimeType.js';
-import {
-  buildFileContent,
-  tryDecodeFilename,
-} from '../utils/buildFileContent.js';
+import { buildAttachmentResult } from '../utils/buildAttachmentResult.js';
 
 const getIssueAttachmentSchema = buildToolSchema((t) => ({
   issueId: z
@@ -37,6 +32,69 @@ const getIssueAttachmentSchema = buildToolSchema((t) => ({
         'The numeric ID of the attachment'
       )
     ),
+  responseMode: z
+    .enum(['metadata', 'auto', 'inline'])
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_RESPONSE_MODE',
+        "Response mode: 'metadata' returns only attachment details, 'auto' inlines only images within size limits, 'inline' always attempts inline content first."
+      )
+    ),
+  maxInlineBytes: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_MAX_INLINE_BYTES',
+        'Maximum attachment size in bytes to inline when using auto or inline mode.'
+      )
+    ),
+  maxVideoInlineBytes: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_MAX_VIDEO_INLINE_BYTES',
+        'Maximum video size in bytes to inline when using inline mode.'
+      )
+    ),
+  maxImageWidth: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_MAX_IMAGE_WIDTH',
+        'Maximum image width used when preparing inline-ready images.'
+      )
+    ),
+  imageQuality: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_IMAGE_QUALITY',
+        'Preferred image quality used when compressing inline-ready images.'
+      )
+    ),
+  fallbackToMetadata: z
+    .boolean()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_ISSUE_ATTACHMENT_FALLBACK_TO_METADATA',
+        'When true, returns metadata instead of an error if inline mode exceeds the byte limit.'
+      )
+    ),
 }));
 
 export const getIssueAttachmentTool = (
@@ -50,7 +108,17 @@ export const getIssueAttachmentTool = (
       'Downloads an attachment file from an issue. Returns the file content as base64-encoded data with its MIME type.'
     ),
     schema: z.object(getIssueAttachmentSchema(t)),
-    handler: async ({ issueId, issueKey, attachmentId }) => {
+    handler: async ({
+      issueId,
+      issueKey,
+      attachmentId,
+      responseMode,
+      maxInlineBytes,
+      maxVideoInlineBytes,
+      maxImageWidth,
+      imageQuality,
+      fallbackToMetadata,
+    }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);
       if (!result.ok) {
         return {
@@ -63,13 +131,17 @@ export const getIssueAttachmentTool = (
         result.value,
         attachmentId
       );
-      const rawFilename =
-        'filename' in fileData ? (fileData.filename as string) : '';
-      const filename = tryDecodeFilename(rawFilename);
-      const mimeType = getMimeType(filename);
-      const base64 = await streamToBase64(fileData.body);
-
-      return buildFileContent(filename, mimeType, base64, fileData.url);
+      return buildAttachmentResult({
+        body: fileData.body,
+        filename: 'filename' in fileData ? (fileData.filename as string) : '',
+        responseMode,
+        maxInlineBytes,
+        maxVideoInlineBytes,
+        maxImageWidth,
+        imageQuality,
+        fallbackToMetadata,
+        url: fileData.url,
+      });
     },
   };
 };

@@ -1,36 +1,22 @@
 import { PassThrough } from 'stream';
-import { ReadableStream } from 'node:stream/web';
 import { Buffer } from 'node:buffer';
+import { ReadableStream } from 'node:stream/web';
+import { MaxInlineBytesExceededError } from './streamToBase64.js';
 
-export class MaxInlineBytesExceededError extends Error {
-  constructor(
-    public readonly maxInlineBytes: number,
-    public readonly actualBytes: number
-  ) {
-    super(
-      `Attachment size ${actualBytes} bytes exceeds maxInlineBytes ${maxInlineBytes}`
-    );
-    this.name = 'MaxInlineBytesExceededError';
-  }
-}
-
-type StreamToBase64Options = {
+type StreamToBufferOptions = {
   maxBytes?: number;
 };
 
-function ensureWithinLimit(
-  totalBytes: number,
-  maxBytes?: number
-): asserts totalBytes is number {
+function ensureWithinLimit(totalBytes: number, maxBytes?: number): void {
   if (maxBytes !== undefined && totalBytes > maxBytes) {
     throw new MaxInlineBytesExceededError(maxBytes, totalBytes);
   }
 }
 
-export async function streamToBase64(
+export async function streamToBuffer(
   stream: PassThrough | ReadableStream | unknown,
-  options?: StreamToBase64Options
-): Promise<string> {
+  options?: StreamToBufferOptions
+): Promise<Buffer> {
   const { maxBytes } = options ?? {};
 
   if (
@@ -47,13 +33,8 @@ export async function streamToBase64(
       totalBytes += value.length;
       ensureWithinLimit(totalBytes, maxBytes);
     }
-    const merged = new Uint8Array(totalBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      merged.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return Buffer.from(merged).toString('base64');
+
+    return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
   }
 
   if (
@@ -67,7 +48,7 @@ export async function streamToBase64(
     const readable = stream as PassThrough;
     let totalBytes = 0;
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<Buffer>((resolve, reject) => {
       readable.on('data', (chunk: Buffer) => {
         const buffer = Buffer.from(chunk);
         totalBytes += buffer.length;
@@ -79,22 +60,21 @@ export async function streamToBase64(
         }
         chunks.push(buffer);
       });
-      readable.on('end', () =>
-        resolve(Buffer.concat(chunks).toString('base64'))
-      );
+      readable.on('end', () => resolve(Buffer.concat(chunks)));
       readable.on('error', reject);
     });
   }
 
   if (typeof stream === 'string') {
-    ensureWithinLimit(Buffer.byteLength(stream), maxBytes);
-    return Buffer.from(stream).toString('base64');
+    const buffer = Buffer.from(stream);
+    ensureWithinLimit(buffer.length, maxBytes);
+    return buffer;
   }
 
   if (Buffer.isBuffer(stream)) {
     ensureWithinLimit(stream.length, maxBytes);
-    return stream.toString('base64');
+    return stream;
   }
 
-  throw new Error('Unsupported body type for base64 conversion');
+  throw new Error('Unsupported body type for buffer conversion');
 }
