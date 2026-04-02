@@ -12,19 +12,17 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
-type ToolsetSource = ToolsetGroup | DynamicToolsetGroup;
-
-type RegisterOptions = {
-  server: BacklogMCPServer;
-  toolsetGroup: ToolsetSource;
-  prefix: string;
-  onlyEnabled?: boolean;
-  handlerStrategy: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tool: ToolDefinition<any, any> | DynamicToolDefinition<any>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) => (...args: any[]) => any;
-};
+type RegisterOptions<TToolsetGroup extends ToolsetGroup | DynamicToolsetGroup> =
+  {
+    server: BacklogMCPServer;
+    toolsetGroup: TToolsetGroup;
+    prefix: string;
+    onlyEnabled?: boolean;
+    handlerStrategy: (
+      tool: TToolsetGroup['toolsets'][number]['tools'][number]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) => (...args: any[]) => any;
+  };
 
 export function registerTools(
   server: BacklogMCPServer,
@@ -77,12 +75,14 @@ export function registerDynamicTools(
   });
 }
 
-function registerToolsets({
+function registerToolsets<
+  TToolsetGroup extends ToolsetGroup | DynamicToolsetGroup,
+>({
   server,
   toolsetGroup,
   prefix,
   handlerStrategy,
-}: RegisterOptions) {
+}: RegisterOptions<TToolsetGroup>) {
   for (const toolset of toolsetGroup.toolsets) {
     if (!toolset.enabled) {
       continue;

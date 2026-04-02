@@ -8,10 +8,7 @@ const getWikiAttachmentsSchema = buildToolSchema((t) => ({
   wikiId: z
     .number()
     .describe(
-      t(
-        'TOOL_GET_WIKI_ATTACHMENTS_WIKI_ID',
-        'The numeric ID of the wiki page'
-      )
+      t('TOOL_GET_WIKI_ATTACHMENTS_WIKI_ID', 'The numeric ID of the wiki page')
     ),
 }));
 

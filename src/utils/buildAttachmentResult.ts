@@ -2,10 +2,7 @@ import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { PassThrough } from 'stream';
 import { Buffer } from 'node:buffer';
 import { ReadableStream } from 'node:stream/web';
-import {
-  buildFileContent,
-  tryDecodeFilename,
-} from './buildFileContent.js';
+import { buildFileContent, tryDecodeFilename } from './buildFileContent.js';
 import {
   MaxInlineBytesExceededError,
   streamToBase64,
@@ -114,7 +111,8 @@ export async function buildAttachmentResult({
   imageQuality = DEFAULT_IMAGE_QUALITY,
   url,
 }: BuildAttachmentResultParams): Promise<CallToolResult> {
-  const effectiveResponseMode: AttachmentResponseMode = responseMode ?? 'legacy';
+  const effectiveResponseMode: AttachmentResponseMode =
+    responseMode ?? 'legacy';
   const filename = tryDecodeFilename(rawFilename ?? '');
   const mimeType = getMimeType(filename);
   const effectiveInlineLimit = isVideoMimeType(mimeType)

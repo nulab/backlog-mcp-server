@@ -21,8 +21,7 @@ const MIME_TYPES: Record<string, string> = {
   '.docx':
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.xls': 'application/vnd.ms-excel',
-  '.xlsx':
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.ppt': 'application/vnd.ms-powerpoint',
   '.pptx':
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -46,8 +45,9 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export function getMimeType(filename: string): string {
-  const ext = filename.lastIndexOf('.') >= 0
-    ? filename.slice(filename.lastIndexOf('.')).toLowerCase()
-    : '';
+  const ext =
+    filename.lastIndexOf('.') >= 0
+      ? filename.slice(filename.lastIndexOf('.')).toLowerCase()
+      : '';
   return MIME_TYPES[ext] ?? 'application/octet-stream';
 }

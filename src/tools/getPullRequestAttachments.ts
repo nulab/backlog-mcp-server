@@ -10,10 +10,7 @@ const getPullRequestAttachmentsSchema = buildToolSchema((t) => ({
     .number()
     .optional()
     .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENTS_PROJECT_ID',
-        'The numeric ID of the project'
-      )
+      t('TOOL_GET_PR_ATTACHMENTS_PROJECT_ID', 'The numeric ID of the project')
     ),
   projectKey: z
     .string()
@@ -34,12 +31,7 @@ const getPullRequestAttachmentsSchema = buildToolSchema((t) => ({
     .describe(t('TOOL_GET_PR_ATTACHMENTS_REPO_NAME', 'Repository name')),
   number: z
     .number()
-    .describe(
-      t(
-        'TOOL_GET_PR_ATTACHMENTS_NUMBER',
-        'The pull request number'
-      )
-    ),
+    .describe(t('TOOL_GET_PR_ATTACHMENTS_NUMBER', 'The pull request number')),
 }));
 
 export const getPullRequestAttachmentsTool = (

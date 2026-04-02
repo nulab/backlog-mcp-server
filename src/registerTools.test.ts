@@ -89,17 +89,18 @@ describe('registerTools', () => {
     const mockServer = wrapServerWithToolRegistry({
       tool: vi.fn(),
     } as unknown as McpServer);
-    const throwingDynamicTool: DynamicToolDefinition<{ attachmentId: z.ZodNumber }> =
-      {
-        name: 'broken_dynamic_tool',
-        description: 'Broken dynamic tool',
-        schema: z.object({
-          attachmentId: z.number(),
-        }),
-        handler: async () => {
-          throw new Error('boom');
-        },
-      };
+    const throwingDynamicTool: DynamicToolDefinition<{
+      attachmentId: z.ZodNumber;
+    }> = {
+      name: 'broken_dynamic_tool',
+      description: 'Broken dynamic tool',
+      schema: z.object({
+        attachmentId: z.number(),
+      }),
+      handler: async () => {
+        throw new Error('boom');
+      },
+    };
 
     registerTools(
       mockServer,
