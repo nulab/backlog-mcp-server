@@ -14,7 +14,7 @@ export function tryDecodeFilename(raw: string): string {
 }
 
 export function buildFileContent(
-  filename: string,
+  _filename: string,
   mimeType: string,
   base64: string,
   url: string
