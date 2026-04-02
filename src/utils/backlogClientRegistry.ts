@@ -17,8 +17,10 @@ export type BacklogClientRegistry = {
   getDefaultOrganization: () => string | undefined;
 };
 
+type Environment = Record<string, string | undefined>;
+
 type RegistryInput = {
-  env?: NodeJS.ProcessEnv;
+  env?: Environment;
 };
 
 export function createBacklogClientRegistry(
@@ -65,7 +67,7 @@ export function createBacklogClientRegistry(
 }
 
 function createMultiOrganizationRegistryFromEnv(
-  env: NodeJS.ProcessEnv
+  env: Environment
 ): BacklogClientRegistry | undefined {
   const organizations = new Map<
     string,
