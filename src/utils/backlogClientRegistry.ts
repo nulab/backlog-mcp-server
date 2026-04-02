@@ -1,19 +1,6 @@
 import { Backlog } from 'backlog-js';
 import * as backlogjs from 'backlog-js';
-import { cosmiconfigSync } from 'cosmiconfig';
-import { extname } from 'node:path';
-import { z } from 'zod';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
-
-const organizationSchema = z.object({
-  domain: z.string().min(1),
-  apiKey: z.string().min(1),
-});
-
-const organizationsConfigSchema = z.object({
-  defaultOrg: z.string().min(1).optional(),
-  organizations: z.record(z.string().min(1), organizationSchema),
-});
 
 export type BacklogOrganizationInfo = {
   name: string;
@@ -38,10 +25,10 @@ export function createBacklogClientRegistry(
   input: RegistryInput = {}
 ): BacklogClientRegistry {
   const env = input.env ?? process.env;
-  const configuredPath = env.BACKLOG_ORGANIZATIONS_CONFIG;
+  const multiOrgRegistry = createMultiOrganizationRegistryFromEnv(env);
 
-  if (configuredPath != null && configuredPath.trim().length > 0) {
-    return createMultiOrganizationRegistryFromPath(configuredPath);
+  if (multiOrgRegistry) {
+    return multiOrgRegistry;
   }
 
   const domain = env.BACKLOG_DOMAIN;
@@ -49,7 +36,7 @@ export function createBacklogClientRegistry(
 
   if (!domain || !apiKey) {
     throw new Error(
-      'Either BACKLOG_ORGANIZATIONS_CONFIG (path to a YAML config file) or both BACKLOG_DOMAIN and BACKLOG_API_KEY are required.'
+      'Configure either BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY with BACKLOG_DEFAULT_ORG, or both BACKLOG_DOMAIN and BACKLOG_API_KEY.'
     );
   }
 
@@ -77,128 +64,103 @@ export function createBacklogClientRegistry(
   };
 }
 
-function createMultiOrganizationRegistryFromPath(
-  configPath: string
-): BacklogClientRegistry {
-  const extension = extname(configPath).toLowerCase();
-  if (extension !== '.yml' && extension !== '.yaml') {
+function createMultiOrganizationRegistryFromEnv(
+  env: NodeJS.ProcessEnv
+): BacklogClientRegistry | undefined {
+  const organizations = new Map<
+    string,
+    { domain?: string; apiKey?: string }
+  >();
+  let hasMultiOrgKeys = false;
+
+  for (const [key, value] of Object.entries(env)) {
+    const match = /^BACKLOG_ORG_(.+)_(DOMAIN|API_KEY)$/.exec(key);
+    if (!match) {
+      continue;
+    }
+
+    hasMultiOrgKeys = true;
+
+    const [, organization, field] = match;
+    const config = organizations.get(organization) ?? {};
+
+    if (field === 'DOMAIN') {
+      config.domain = value;
+    } else {
+      config.apiKey = value;
+    }
+
+    organizations.set(organization, config);
+  }
+
+  if (!hasMultiOrgKeys) {
+    return undefined;
+  }
+
+  const invalidOrganizations = Array.from(organizations.entries())
+    .filter(([, config]) => !config.domain || !config.apiKey)
+    .map(([organization]) => organization)
+    .sort();
+
+  if (invalidOrganizations.length > 0) {
     throw new Error(
-      'BACKLOG_ORGANIZATIONS_CONFIG must point to a .yml or .yaml file.'
+      `Each multi-organization config must define both BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY. Incomplete organizations: ${invalidOrganizations.join(', ')}.`
     );
   }
 
-  const explorer = cosmiconfigSync('backlog-mcp-server');
-
-  let loadedConfig: unknown;
-
-  try {
-    const result = explorer.load(configPath);
-    loadedConfig = result?.config;
-  } catch (error) {
+  if (organizations.size === 0) {
     throw new Error(
-      `BACKLOG_ORGANIZATIONS_CONFIG must point to a readable YAML config file: ${(error as Error).message}`
+      'No valid multi-organization configuration was found. Define BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY pairs.'
     );
   }
 
-  if (loadedConfig == null) {
+  const defaultOrganization = env.BACKLOG_DEFAULT_ORG;
+  if (!defaultOrganization) {
     throw new Error(
-      `BACKLOG_ORGANIZATIONS_CONFIG did not load any configuration from '${configPath}'.`
-    );
-  }
-
-  const parsed = organizationsConfigSchema.safeParse(loadedConfig);
-
-  if (!parsed.success) {
-    throw new Error(
-      `Organization config at '${configPath}' is invalid: ${parsed.error.issues
-        .map((issue) => issue.message)
-        .join(', ')}`
-    );
-  }
-
-  const organizations = Object.entries(parsed.data.organizations);
-
-  if (organizations.length === 0) {
-    throw new Error(
-      `Organization config at '${configPath}' must define at least one organization.`
-    );
-  }
-
-  if (
-    parsed.data.defaultOrg &&
-    !(parsed.data.defaultOrg in parsed.data.organizations)
-  ) {
-    throw new Error(
-      `Organization config at '${configPath}' declares defaultOrg '${parsed.data.defaultOrg}' that does not exist in organizations.`
+      'BACKLOG_DEFAULT_ORG is required when using BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY.'
     );
   }
 
   const clients = new Map<string, Backlog>();
-  const organizationInfo = organizations.map(([name, config]) => {
-    clients.set(
-      name,
-      new backlogjs.Backlog({ host: config.domain, apiKey: config.apiKey })
+  const organizationInfo = Array.from(organizations.entries()).map(
+    ([name, config]) => {
+      clients.set(
+        name,
+        new backlogjs.Backlog({
+          host: config.domain as string,
+          apiKey: config.apiKey as string,
+        })
+      );
+
+      return {
+        name,
+        domain: config.domain as string,
+        isDefault: name === defaultOrganization,
+      };
+    }
+  );
+
+  if (!clients.has(defaultOrganization)) {
+    throw new Error(
+      `BACKLOG_DEFAULT_ORG '${defaultOrganization}' does not match any configured organization. Use list_organizations to inspect available organizations.`
     );
-
-    return {
-      name,
-      domain: config.domain,
-      isDefault: name === parsed.data.defaultOrg,
-    };
-  });
-
-  const defaultOrganization =
-    parsed.data.defaultOrg ?? (organizationInfo.length === 1
-      ? organizationInfo[0].name
-      : undefined);
+  }
 
   return {
     resolveClient: (organization?: string) => {
       const orgName = organization ?? defaultOrganization;
-
-      if (!orgName) {
-        throw new Error(
-          'Multiple organizations are configured. Provide the organization field or configure defaultOrg.'
-        );
-      }
-
-      const client = clients.get(orgName);
-
-      if (!client) {
-        throw new Error(
-          `Unknown organization '${orgName}'. Use list_organizations to inspect available organizations.`
-        );
-      }
-
-      return client;
+      return resolveKnownClient(clients, orgName);
     },
     createScopedClient: () =>
       createBacklogClientProxy(() => {
         const organization = getCurrentOrganization();
         return organization === undefined
-          ? resolveDefaultClient(clients, defaultOrganization)
+          ? resolveKnownClient(clients, defaultOrganization)
           : resolveKnownClient(clients, organization);
       }),
-    listOrganizations: () =>
-      organizationInfo.map((organization) => ({
-        ...organization,
-        isDefault: organization.name === defaultOrganization,
-      })),
+    listOrganizations: () => organizationInfo,
     getDefaultOrganization: () => defaultOrganization,
   };
-}
-
-function resolveDefaultClient(
-  clients: Map<string, Backlog>,
-  defaultOrganization: string | undefined
-): Backlog {
-  if (defaultOrganization) {
-    return resolveKnownClient(clients, defaultOrganization);
-  }
-
-  throw new Error(
-    'Multiple organizations are configured. Provide the organization field or configure defaultOrg.'
-  );
 }
 
 function resolveKnownClient(

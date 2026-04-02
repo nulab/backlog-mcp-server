@@ -1,7 +1,4 @@
-import { afterAll, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('backlog-js', () => ({
   Backlog: class Backlog {
@@ -28,26 +25,7 @@ import { getSpaceTool } from '../tools/getSpace.js';
 import { createBacklogClientRegistry } from './backlogClientRegistry.js';
 
 describe('createBacklogClientRegistry', () => {
-  const tempDirs: string[] = [];
-
-  function writeOrgConfig(
-    filename: string,
-    content: string
-  ): string {
-    const dir = mkdtempSync(join(tmpdir(), 'backlog-org-config-'));
-    tempDirs.push(dir);
-    const filepath = join(dir, filename);
-    writeFileSync(filepath, content);
-    return filepath;
-  }
-
-  afterAll(() => {
-    for (const dir of tempDirs) {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  it('uses single-org fallback env vars when multi-org config is absent', async () => {
+  it('uses single-org fallback env vars when multi-org env is absent', async () => {
     const registry = createBacklogClientRegistry({
       env: {
         BACKLOG_DOMAIN: 'single.backlog.com',
@@ -74,24 +52,13 @@ describe('createBacklogClientRegistry', () => {
   });
 
   it('routes a request to the selected organization', async () => {
-    const configPath = writeOrgConfig(
-      'organizations.yml',
-      [
-        'defaultOrg: primary',
-        'organizations:',
-        '  primary:',
-        '    domain: primary.backlog.com',
-        '    apiKey: primary-key',
-        '  secondary:',
-        '    domain: secondary.backlog.com',
-        '    apiKey: secondary-key',
-        '',
-      ].join('\n')
-    );
-
     const registry = createBacklogClientRegistry({
       env: {
-        BACKLOG_ORGANIZATIONS_CONFIG: configPath,
+        BACKLOG_DEFAULT_ORG: 'PRIMARY',
+        BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+        BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
+        BACKLOG_ORG_SECONDARY_DOMAIN: 'secondary.backlog.com',
+        BACKLOG_ORG_SECONDARY_API_KEY: 'secondary-key',
       },
     });
 
@@ -104,7 +71,7 @@ describe('createBacklogClientRegistry', () => {
       maxTokens: 5000,
     });
 
-    const result = await handler({ organization: 'secondary' }, {} as never);
+    const result = await handler({ organization: 'SECONDARY' }, {} as never);
     const content = result.content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
@@ -113,48 +80,41 @@ describe('createBacklogClientRegistry', () => {
     }
   });
 
-  it('requires organization when multiple organizations exist without a default', async () => {
-    const configPath = writeOrgConfig(
-      'organizations.yml',
-      [
-        'organizations:',
-        '  first:',
-        '    domain: first.backlog.com',
-        '    apiKey: first-key',
-        '  second:',
-        '    domain: second.backlog.com',
-        '    apiKey: second-key',
-        '',
-      ].join('\n')
-    );
-
+  it('uses the default organization when organization is omitted', async () => {
     const registry = createBacklogClientRegistry({
       env: {
-        BACKLOG_ORGANIZATIONS_CONFIG: configPath,
+        BACKLOG_DEFAULT_ORG: 'SECONDARY',
+        BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+        BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
+        BACKLOG_ORG_SECONDARY_DOMAIN: 'secondary.backlog.com',
+        BACKLOG_ORG_SECONDARY_API_KEY: 'secondary-key',
       },
     });
 
-    expect(() => registry.resolveClient()).toThrow(
-      'Multiple organizations are configured. Provide the organization field or configure defaultOrg.'
+    const tool = getSpaceTool(
+      registry.createScopedClient(),
+      createTranslationHelper()
     );
+    const handler = composeToolHandler(tool, {
+      useFields: false,
+      maxTokens: 5000,
+    });
+
+    const result = await handler({}, {} as never);
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain('secondary.backlog.com');
+      expect(content.text).toContain('secondary-key');
+    }
   });
 
   it('rejects unknown organizations', async () => {
-    const configPath = writeOrgConfig(
-      'organizations.yaml',
-      [
-        'defaultOrg: primary',
-        'organizations:',
-        '  primary:',
-        '    domain: primary.backlog.com',
-        '    apiKey: primary-key',
-        '',
-      ].join('\n')
-    );
-
     const registry = createBacklogClientRegistry({
       env: {
-        BACKLOG_ORGANIZATIONS_CONFIG: configPath,
+        BACKLOG_DEFAULT_ORG: 'PRIMARY',
+        BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+        BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
       },
     });
 
@@ -163,32 +123,74 @@ describe('createBacklogClientRegistry', () => {
     );
   });
 
-  it('fails clearly when the config file cannot be read', () => {
+  it('requires a default organization in multi-org mode', () => {
     expect(() =>
       createBacklogClientRegistry({
         env: {
-          BACKLOG_ORGANIZATIONS_CONFIG: '/tmp/does-not-exist-backlog-orgs.yml',
+          BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+          BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
         },
       })
     ).toThrow(
-      'BACKLOG_ORGANIZATIONS_CONFIG must point to a readable YAML config file:'
+      'BACKLOG_DEFAULT_ORG is required when using BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY.'
     );
   });
 
-  it('rejects non-yaml config paths', () => {
-    const configPath = writeOrgConfig(
-      'organizations.json',
-      '{"defaultOrg":"primary","organizations":{"primary":{"domain":"primary.backlog.com","apiKey":"primary-key"}}}'
-    );
-
+  it('requires the default organization to match a configured organization', () => {
     expect(() =>
       createBacklogClientRegistry({
         env: {
-          BACKLOG_ORGANIZATIONS_CONFIG: configPath,
+          BACKLOG_DEFAULT_ORG: 'missing',
+          BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+          BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
         },
       })
     ).toThrow(
-      'BACKLOG_ORGANIZATIONS_CONFIG must point to a .yml or .yaml file.'
+      "BACKLOG_DEFAULT_ORG 'missing' does not match any configured organization. Use list_organizations to inspect available organizations."
     );
+  });
+
+  it('rejects incomplete multi-org definitions', () => {
+    expect(() =>
+      createBacklogClientRegistry({
+        env: {
+          BACKLOG_DEFAULT_ORG: 'PRIMARY',
+          BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+          BACKLOG_ORG_SECONDARY_API_KEY: 'secondary-key',
+        },
+      })
+    ).toThrow(
+      'Each multi-organization config must define both BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY. Incomplete organizations: PRIMARY, SECONDARY.'
+    );
+  });
+
+  it('prefers multi-org env config over single-org fallback env vars', async () => {
+    const registry = createBacklogClientRegistry({
+      env: {
+        BACKLOG_DOMAIN: 'single.backlog.com',
+        BACKLOG_API_KEY: 'single-key',
+        BACKLOG_DEFAULT_ORG: 'PRIMARY',
+        BACKLOG_ORG_PRIMARY_DOMAIN: 'primary.backlog.com',
+        BACKLOG_ORG_PRIMARY_API_KEY: 'primary-key',
+      },
+    });
+
+    const tool = getSpaceTool(
+      registry.createScopedClient(),
+      createTranslationHelper()
+    );
+    const handler = composeToolHandler(tool, {
+      useFields: false,
+      maxTokens: 5000,
+    });
+
+    const result = await handler({}, {} as never);
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain('primary.backlog.com');
+      expect(content.text).toContain('primary-key');
+      expect(content.text).not.toContain('single.backlog.com');
+    }
   });
 });
