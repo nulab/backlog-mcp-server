@@ -69,10 +69,7 @@ export function createBacklogClientRegistry(
 function createMultiOrganizationRegistryFromEnv(
   env: Environment
 ): BacklogClientRegistry | undefined {
-  const organizations = new Map<
-    string,
-    { domain?: string; apiKey?: string }
-  >();
+  const organizations = new Map<string, { domain?: string; apiKey?: string }>();
   let hasMultiOrgKeys = false;
 
   for (const [key, value] of Object.entries(env)) {
