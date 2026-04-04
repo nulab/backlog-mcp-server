@@ -103,6 +103,15 @@ const getPullRequestAttachmentSchema = buildToolSchema((t) => ({
         'When true, returns metadata instead of an error if inline mode exceeds the byte limit.'
       )
     ),
+  outputFormat: z
+    .enum(['default', 'raw_base64'])
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_PR_ATTACHMENT_OUTPUT_FORMAT',
+        "Output format: 'default' renders images inline or as resource blobs, 'raw_base64' returns the raw base64 string as text so it can be passed to other tools."
+      )
+    ),
 }));
 
 export const getPullRequestAttachmentTool = (
@@ -129,6 +138,7 @@ export const getPullRequestAttachmentTool = (
       maxImageWidth,
       imageQuality,
       fallbackToMetadata,
+      outputFormat,
     }) => {
       const result = resolveIdOrKey(
         'project',
@@ -164,6 +174,7 @@ export const getPullRequestAttachmentTool = (
         body: fileData.body,
         filename: 'filename' in fileData ? (fileData.filename as string) : '',
         responseMode,
+        outputFormat,
         maxInlineBytes,
         maxVideoInlineBytes,
         maxImageWidth,

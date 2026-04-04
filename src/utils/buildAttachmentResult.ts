@@ -37,6 +37,7 @@ type BuildAttachmentResultParams = {
   body: PassThrough | ReadableStream | unknown;
   filename?: string;
   responseMode?: Exclude<AttachmentResponseMode, 'legacy'>;
+  outputFormat?: 'default' | 'raw_base64';
   fallbackToMetadata?: boolean;
   maxInlineBytes?: number;
   maxVideoInlineBytes?: number;
@@ -100,10 +101,26 @@ function buildImageContent(
   return buildFileContent(filename, mimeType, buffer.toString('base64'), url);
 }
 
+function buildRawBase64Result(
+  filename: string,
+  mimeType: string,
+  base64: string
+): CallToolResult {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ base64, mimeType, filename }),
+      },
+    ],
+  };
+}
+
 export async function buildAttachmentResult({
   body,
   filename: rawFilename,
   responseMode,
+  outputFormat = 'default',
   fallbackToMetadata = true,
   maxInlineBytes = DEFAULT_MAX_INLINE_BYTES,
   maxVideoInlineBytes = DEFAULT_MAX_VIDEO_INLINE_BYTES,
@@ -118,6 +135,11 @@ export async function buildAttachmentResult({
   const effectiveInlineLimit = isVideoMimeType(mimeType)
     ? maxVideoInlineBytes
     : maxInlineBytes;
+
+  if (outputFormat === 'raw_base64') {
+    const base64 = await streamToBase64(body);
+    return buildRawBase64Result(filename, mimeType, base64);
+  }
 
   if (effectiveResponseMode === 'metadata') {
     return buildMetadataResult({
