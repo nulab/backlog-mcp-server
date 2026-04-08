@@ -66,6 +66,11 @@ export function createBacklogClientRegistry(
   };
 }
 
+type ValidatedOrganizationConfig = {
+  domain: string;
+  apiKey: string;
+};
+
 function createMultiOrganizationRegistryFromEnv(
   env: Environment
 ): BacklogClientRegistry | undefined {
@@ -98,12 +103,17 @@ function createMultiOrganizationRegistryFromEnv(
 
   const invalidOrganizations = Array.from(organizations.entries())
     .filter(([, config]) => !config.domain || !config.apiKey)
-    .map(([organization]) => organization)
+    .map(([organization, config]) => {
+      const missing = [];
+      if (!config.domain) missing.push(`BACKLOG_ORG_${organization}_DOMAIN`);
+      if (!config.apiKey) missing.push(`BACKLOG_ORG_${organization}_API_KEY`);
+      return `${organization} (missing: ${missing.join(', ')})`;
+    })
     .sort();
 
   if (invalidOrganizations.length > 0) {
     throw new Error(
-      `Each multi-organization config must define both BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY. Incomplete organizations: ${invalidOrganizations.join(', ')}.`
+      `Incomplete multi-organization configuration. ${invalidOrganizations.join('; ')}`
     );
   }
 
@@ -121,19 +131,24 @@ function createMultiOrganizationRegistryFromEnv(
   }
 
   const clients = new Map<string, Backlog>();
-  const organizationInfo = Array.from(organizations.entries()).map(
+  // At this point, all organizations have been validated to have both domain and apiKey
+  const validatedOrganizations = organizations as Map<
+    string,
+    ValidatedOrganizationConfig
+  >;
+  const organizationInfo = Array.from(validatedOrganizations.entries()).map(
     ([name, config]) => {
       clients.set(
         name,
         new backlogjs.Backlog({
-          host: config.domain as string,
-          apiKey: config.apiKey as string,
+          host: config.domain,
+          apiKey: config.apiKey,
         })
       );
 
       return {
         name,
-        domain: config.domain as string,
+        domain: config.domain,
         isDefault: name === defaultOrganization,
       };
     }

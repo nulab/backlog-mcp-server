@@ -159,9 +159,7 @@ describe('createBacklogClientRegistry', () => {
           BACKLOG_ORG_SECONDARY_API_KEY: 'secondary-key',
         },
       })
-    ).toThrow(
-      'Each multi-organization config must define both BACKLOG_ORG_<NAME>_DOMAIN and BACKLOG_ORG_<NAME>_API_KEY. Incomplete organizations: PRIMARY, SECONDARY.'
-    );
+    ).toThrow('Incomplete multi-organization configuration');
   });
 
   it('prefers multi-org env config over single-org fallback env vars', async () => {
