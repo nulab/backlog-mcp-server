@@ -130,7 +130,11 @@ export async function runHttpMcpServer(
   };
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString(), version });
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version,
+    });
   });
 
   app.post(mcpPath, mcpPostHandler);
