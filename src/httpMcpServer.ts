@@ -117,7 +117,7 @@ export async function runHttpMcpServer(
     try {
       await transports[sessionId].handleRequest(req, res);
     } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code;
+      const code = (error as { code?: string }).code;
       if (code === 'ECONNRESET' || code === 'EPIPE') {
         logger.debug({ err: error }, `MCP ${req.method} client disconnected`);
         return;
