@@ -32,6 +32,7 @@
     "cosmiconfig": "^9.0.0",
     "dotenv": "^16.5.0",
     "env-var": "^7.5.0",
+    "express": "^5.2.1",
     "graphql": "^16.11.0",
     "pino": "^9.9.0",
     "pino-pretty": "^13.1.1",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@eslint/js": "^9.24.0",
     "@release-it/conventional-changelog": "^10.0.2",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.14.1",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
