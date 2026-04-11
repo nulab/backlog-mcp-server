@@ -162,6 +162,31 @@ describe('createBacklogClientRegistry', () => {
     ).toThrow('Incomplete multi-organization configuration');
   });
 
+  it('rejects unknown organizations in single-org mode via scoped client', async () => {
+    const registry = createBacklogClientRegistry({
+      env: {
+        BACKLOG_DOMAIN: 'single.backlog.com',
+        BACKLOG_API_KEY: 'single-key',
+      },
+    });
+
+    const tool = getSpaceTool(
+      registry.createScopedClient(),
+      createTranslationHelper()
+    );
+    const handler = composeToolHandler(tool, {
+      useFields: false,
+      maxTokens: 5000,
+    });
+
+    const result = await handler({ organization: 'NONEXISTENT' }, {} as never);
+    expect(result.isError).toBe(true);
+    const content = result.content[0];
+    if (content.type === 'text') {
+      expect(content.text).toContain("Unknown organization 'NONEXISTENT'");
+    }
+  });
+
   it('prefers multi-org env config over single-org fallback env vars', async () => {
     const registry = createBacklogClientRegistry({
       env: {

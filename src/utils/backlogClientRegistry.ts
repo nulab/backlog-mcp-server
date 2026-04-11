@@ -59,7 +59,16 @@ export function createBacklogClientRegistry(
       }
       return client;
     },
-    createScopedClient: () => createBacklogClientProxy(() => client),
+    createScopedClient: () =>
+      createBacklogClientProxy(() => {
+        const organization = getCurrentOrganization();
+        if (organization && organization !== defaultName) {
+          throw new Error(
+            `Unknown organization '${organization}'. Use list_organizations to inspect available organizations.`
+          );
+        }
+        return client;
+      }),
     listOrganizations: () => [info],
     getDefaultOrganization: () => defaultName,
   };
