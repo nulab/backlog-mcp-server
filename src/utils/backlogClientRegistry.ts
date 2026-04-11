@@ -1,5 +1,4 @@
 import { Backlog } from 'backlog-js';
-import * as backlogjs from 'backlog-js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
 
 export type BacklogOrganizationInfo = {
@@ -43,7 +42,7 @@ export function createBacklogClientRegistry(
   }
 
   const defaultName = 'default';
-  const client = new backlogjs.Backlog({ host: domain, apiKey });
+  const client = new Backlog({ host: domain, apiKey });
 
   const info: BacklogOrganizationInfo = {
     name: defaultName,
@@ -140,9 +139,9 @@ function createMultiOrganizationRegistryFromEnv(
     ([name, config]) => {
       clients.set(
         name,
-        new backlogjs.Backlog({
-          host: config.domain,
-          apiKey: config.apiKey,
+        new Backlog({
+          host: config.domain as string,
+          apiKey: config.apiKey as string,
         })
       );
 
