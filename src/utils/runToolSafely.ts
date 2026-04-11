@@ -1,5 +1,4 @@
-import { ErrorLike, SafeResult } from "../types/result.js";
-
+import { ErrorLike, SafeResult } from '../types/result.js';
 
 /**
  * Runs a tool handler safely, catching any errors and converting to SafeResult.
@@ -12,12 +11,12 @@ export function runToolSafely<I, O>(
   return async (input: I) => {
     try {
       const data = await fn(input);
-      return { kind: "ok", data };
+      return { kind: 'ok', data };
     } catch (err) {
-      if(onError) {
+      if (onError) {
         return onError(err);
       }
-      return { kind: "error", message: "Unknown: " + err };
+      return { kind: 'error', message: 'Unknown: ' + err };
     }
   };
 }

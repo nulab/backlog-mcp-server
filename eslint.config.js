@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import parser from '@typescript-eslint/parser';
 import plugin from '@typescript-eslint/eslint-plugin';
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
+/** @type {import("eslint").Linter.Config[]} */
 export default [
   {
     ignores: ['build/**', 'node_modules/**'],

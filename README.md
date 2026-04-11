@@ -12,6 +12,7 @@ A Model Context Protocol (MCP) server for interacting with the Backlog API. This
 
 - Project tools (create, read, update, delete)
 - Issue tracking and comments (create, update, delete, list)
+- Version/Milestone management (create, read, update, delete)
 - Wiki page support
 - Git repository and pull request tools
 - Notification tools
@@ -41,11 +42,14 @@ The easiest way to use this MCP server is through MCP configurations:
       "command": "docker",
       "args": [
         "run",
-        "--pull", "always",
+        "--pull",
+        "always",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -65,9 +69,35 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
 docker pull ghcr.io/nulab/backlog-mcp-server:latest
 ```
 
-### Option 2: Manual Setup (Node.js)
+### Option 2: Install via npx
+
+You can also run the server directly using `npx` without cloning the repository. This is a convenient way to run the server without a full installation.
+
+1. Open MCP settings
+2. Navigate to the MCP configuration section
+3. Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": ["backlog-mcp-server"],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` with your Backlog API key.
+
+### Option 3: Manual Setup (Node.js)
 
 1. Clone and install:
+
    ```bash
    git clone https://github.com/nulab/backlog-mcp-server.git
    cd backlog-mcp-server
@@ -75,23 +105,39 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
    npm run build
    ```
 
-2. Set your json to use as MCP
-  ```json
-  {
-    "mcpServers": {
-      "backlog": {
-        "command": "node",
-        "args": [
-          "your-repository-location/build/index.js"
-        ],
-        "env": {
-          "BACKLOG_DOMAIN": "your-domain.backlog.com",
-          "BACKLOG_API_KEY": "your-api-key"
-        }
+2. Create `.env` from template and set required variables:
+
+```bash
+cp .env.example .env
+```
+
+Set the following values in `.env`:
+
+- `BACKLOG_DOMAIN=your-domain.backlog.com`
+- `BACKLOG_API_KEY=your-api-key`
+
+3. Run locally:
+
+```bash
+npm run dev
+```
+
+4. Set your json to use as MCP
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "node",
+      "args": ["your-repository-location/build/index.js"],
+      "env": {
+        "BACKLOG_DOMAIN": "your-domain.backlog.com",
+        "BACKLOG_API_KEY": "your-api-key"
       }
     }
   }
-  ```
+}
+```
 
 ### Option 3: Desktop Extension (DXT)
 
@@ -118,14 +164,15 @@ You can selectively enable or disable specific **toolsets** using the `--enable-
 
 The following toolsets are available (enabled by default when `"all"` is used):
 
-| Toolset         | Description                                                                          |
-|-----------------|--------------------------------------------------------------------------------------|
-| `space`         | Tools for managing Backlog space settings and general information                   |
-| `project`       | Tools for managing projects, categories, custom fields, and issue types              |
-| `issue`         | Tools for managing issues and their comments                                         |
-| `wiki`          | Tools for managing wiki pages                                                        |
-| `git`           | Tools for managing Git repositories and pull requests                                |
-| `notifications` | Tools for managing user notifications                                                |
+| Toolset         | Description                                                             |
+| --------------- | ----------------------------------------------------------------------- |
+| `space`         | Tools for managing Backlog space settings and general information       |
+| `project`       | Tools for managing projects, categories, custom fields, and issue types |
+| `issue`         | Tools for managing issues and their comments, version milestones        |
+| `wiki`          | Tools for managing wiki pages                                           |
+| `git`           | Tools for managing Git repositories and pull requests                   |
+| `notifications` | Tools for managing user notifications                                   |
+| `document`      | Tools for viewing documents and document trees                          |
 
 ### Specifying Toolsets
 
@@ -170,13 +217,17 @@ With dynamic toolsets enabled, the LLM will be able to list and activate toolset
 ## Available Tools
 
 ### Toolset: `space`
+
 Tools for managing Backlog space settings and general information.
+
 - `get_space`: Returns information about the Backlog space.
 - `get_users`: Returns list of users in the Backlog space.
 - `get_myself`: Returns information about the authenticated user.
 
 ### Toolset: `project`
+
 Tools for managing projects, categories, custom fields, and issue types.
+
 - `get_project_list`: Returns list of projects.
 - `add_project`: Creates a new project.
 - `get_project`: Returns information about a specific project.
@@ -184,7 +235,9 @@ Tools for managing projects, categories, custom fields, and issue types.
 - `delete_project`: Deletes a project.
 
 ### Toolset: `issue`
+
 Tools for managing issues, their comments, and related items like priorities, categories, custom fields, issue types, resolutions, and watching lists.
+
 - `get_issue`: Returns information about a specific issue.
 - `get_issues`: Returns list of issues.
 - `count_issues`: Returns count of issues.
@@ -200,16 +253,28 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `get_resolutions`: Returns list of issue resolutions.
 - `get_watching_list_items`: Returns list of watching items for a user.
 - `get_watching_list_count`: Returns count of watching items for a user.
+- `add_watching`: Adds a new watch to an issue.
+- `update_watching`: Updates an existing watch note.
+- `delete_watching`: Deletes a watch from an issue.
+- `mark_watching_as_read`: Marks a watch as read.
+- `get_version_milestone_list`: Returns list of version milestones for a project.
+- `add_version_milestone`: Creates a new version milestone for a project.
+- `update_version_milestone`: Updates an existing version milestone.
+- `delete_version_milestone`: Deletes a version milestone.
 
 ### Toolset: `wiki`
+
 Tools for managing wiki pages.
+
 - `get_wiki_pages`: Returns list of Wiki pages.
 - `get_wikis_count`: Returns count of wiki pages in a project.
 - `get_wiki`: Returns information about a specific wiki page.
 - `add_wiki`: Creates a new wiki page.
 
 ### Toolset: `git`
+
 Tools for managing Git repositories and pull requests.
+
 - `get_git_repositories`: Returns list of Git repositories for a project.
 - `get_git_repository`: Returns information about a specific Git repository.
 - `get_pull_requests`: Returns list of pull requests for a repository.
@@ -222,40 +287,62 @@ Tools for managing Git repositories and pull requests.
 - `update_pull_request_comment`: Updates a comment on a pull request.
 
 ### Toolset: `notifications`
+
 Tools for managing user notifications.
+
 - `get_notifications`: Returns list of notifications.
 - `get_notifications_count`: Returns count of notifications.
 - `reset_unread_notification_count`: Resets unread notification count.
 - `mark_notification_as_read`: Marks a notification as read.
+
+### Toolset: `document`
+
+Tools for managing documents and document trees in Backlog projects.
+
+- `get_document_tree`: Returns the hierarchical tree of documents for a project, including folders and ne
+- `get_documents`: Returns a flat list of documents in a project or folder.
+- `get_document`: Returns detailed information about a specific document, including metadata, content, an
 
 ## Usage Examples
 
 Once the MCP server is configured in AI agents, you can use the tools directly in your conversations. Here are some examples:
 
 - Listing Projects
+
 ```
 Could you list all my Backlog projects?
 ```
+
 - Creating a New Issue
+
 ```
 Create a new bug issue in the PROJECT-KEY project with high priority titled "Fix login page error"
 ```
+
 - Getting Project Details
+
 ```
 Show me the details of the PROJECT-KEY project
 ```
+
 - Working with Git Repositories
+
 ```
 List all Git repositories in the PROJECT-KEY project
 ```
+
 - Managing Pull Requests
+
 ```
 Show me all open pull requests in the repository "repo-name" of PROJECT-KEY project
 ```
+
 ```
 Create a new pull request from branch "feature/new-feature" to "main" in the repository "repo-name" of PROJECT-KEY project
 ```
+
 - Watching Items
+
 ```
 Show me all items I'm watching
 ```
@@ -291,9 +378,12 @@ Sample config:
         "run",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
-        "-v", "/yourcurrentdir/.backlog-mcp-serverrc.json:/root/.backlog-mcp-serverrc.json:ro",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
+        "-v",
+        "/yourcurrentdir/.backlog-mcp-serverrc.json:/root/.backlog-mcp-serverrc.json:ro",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -324,6 +414,7 @@ npx github:nulab/backlog-mcp-server --export-translations
 ```
 
 ### Using a Japanese Translation Template
+
 A sample Japanese configuration file is provided at:
 
 ```bash
@@ -335,9 +426,10 @@ To use it, copy it to your home directory as .backlog-mcp-serverrc.json:
 You can then edit the file to customize the descriptions as needed.
 
 ### Using Environment Variables
+
 Alternatively, you can override tool descriptions via environment variables.
 
-The environment variable names are based on the tool keys, prefixed with BACKLOG_MCP_ and written in uppercase.
+The environment variable names are based on the tool keys, prefixed with BACKLOG*MCP* and written in uppercase.
 
 Example:
 To override the TOOL_ADD_ISSUE_COMMENT_DESCRIPTION:
@@ -415,6 +507,7 @@ get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
 ```
 
 Benefits:
+
 - Reduce response size by requesting only needed fields
 - Focus on specific data points
 - Improve performance for large responses
@@ -422,6 +515,7 @@ Benefits:
 #### Token Limiting
 
 Large responses are automatically limited to prevent exceeding token limits:
+
 - Default limit: 50,000 tokens
 - Configurable via `MAX_TOKENS` environment variable
 - Responses exceeding the limit are truncated with a message
@@ -433,6 +527,7 @@ MAX_TOKENS=10000
 ```
 
 If a response exceeds the limit, it will be truncated with a warning.
+
 > Note: This is a best-effort mitigation, not a guaranteed enforcement.
 
 ### Full Custom Configuration Example
@@ -448,12 +543,18 @@ This section demonstrates advanced configuration using multiple environment vari
         "run",
         "-i",
         "--rm",
-        "-e", "BACKLOG_DOMAIN",
-        "-e", "BACKLOG_API_KEY",
-        "-e", "MAX_TOKENS",
-        "-e", "OPTIMIZE_RESPONSE",
-        "-e", "PREFIX",
-        "-e", "ENABLE_TOOLSETS",
+        "-e",
+        "BACKLOG_DOMAIN",
+        "-e",
+        "BACKLOG_API_KEY",
+        "-e",
+        "MAX_TOKENS",
+        "-e",
+        "OPTIMIZE_RESPONSE",
+        "-e",
+        "PREFIX",
+        "-e",
+        "ENABLE_TOOLSETS",
         "ghcr.io/nulab/backlog-mcp-server"
       ],
       "env": {
@@ -515,6 +616,7 @@ npx dxt pack
 The `manifest.json` file defines the extension metadata, server configuration, and available tools for Desktop Extension installation.
 
 Example:
+
 ```bash
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
 ```

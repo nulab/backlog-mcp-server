@@ -2,7 +2,6 @@
   "git": {
     "tagName": "v${version}",
     "commitMessage": "chore(bump): v${version}",
-    "tagMatch": "*",
     "requireCleanWorkingDir": true
   },
   "plugins": {
@@ -17,8 +16,10 @@
     "releaseName": "v${version}",
     "tokenRef": "GITHUB_TOKEN"
   },
-  "npm": false,
-  "bumpFiles": ["package.json"],
+  "npm": {
+    "publish": true,
+    "skipChecks": true
+  },
   "hooks": {
     "after:bump": "docker buildx build --platform linux/amd64,linux/arm64 --provenance=false --sbom=false --build-arg VERSION=${version} -t ghcr.io/nulab/backlog-mcp-server:v${version} -t ghcr.io/nulab/backlog-mcp-server:latest --push ."
   }

@@ -1,10 +1,13 @@
-import { Backlog } from "backlog-js";
-import { ToolsetGroup, Toolset } from "../types/toolsets.js";
-import { allTools } from "../tools/tools.js";
-import { TranslationHelper } from "../createTranslationHelper.js";
+import { Backlog } from 'backlog-js';
+import { ToolsetGroup, Toolset } from '../types/toolsets.js';
+import { allTools } from '../tools/tools.js';
+import { TranslationHelper } from '../createTranslationHelper.js';
 
-export function getToolset(group: ToolsetGroup, name: string): Toolset | undefined {
-  return group.toolsets.find(t => t.name === name);
+export function getToolset(
+  group: ToolsetGroup,
+  name: string
+): Toolset | undefined {
+  return group.toolsets.find((t) => t.name === name);
 }
 
 export function enableToolset(group: ToolsetGroup, name: string): string {
@@ -16,28 +19,28 @@ export function enableToolset(group: ToolsetGroup, name: string): string {
 }
 
 export function getEnabledTools(group: ToolsetGroup) {
-  return group.toolsets
-    .filter(ts => ts.enabled)
-    .flatMap(ts => ts.tools);
+  return group.toolsets.filter((ts) => ts.enabled).flatMap((ts) => ts.tools);
 }
 
 export function listAvailableToolsets(group: ToolsetGroup) {
-  return group.toolsets.map(ts => ({
+  return group.toolsets.map((ts) => ({
     name: ts.name,
     description: ts.description,
     currentlyEnabled: ts.enabled,
-    canEnable: true
+    canEnable: true,
   }));
 }
 
 export function listToolsetTools(group: ToolsetGroup, name: string) {
   const ts = getToolset(group, name);
-  return ts?.tools.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    toolset: name,
-    canEnable: true
-  })) ?? [];
+  return (
+    ts?.tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      toolset: name,
+      canEnable: true,
+    })) ?? []
+  );
 }
 
 export const buildToolsetGroup = (
@@ -46,19 +49,21 @@ export const buildToolsetGroup = (
   enabledToolsets: string[]
 ): ToolsetGroup => {
   const toolsetGroup = allTools(backlog, helper);
-  const knownNames = toolsetGroup.toolsets.map(ts => ts.name);
-  const unknown = enabledToolsets.filter(name => name !== "all" && !knownNames.includes(name));
+  const knownNames = toolsetGroup.toolsets.map((ts) => ts.name);
+  const unknown = enabledToolsets.filter(
+    (name) => name !== 'all' && !knownNames.includes(name)
+  );
 
   if (unknown.length > 0) {
-    console.warn(`⚠️ Unknown toolsets: ${unknown.join(", ")}`);
+    console.warn(`⚠️ Unknown toolsets: ${unknown.join(', ')}`);
   }
 
-  const allEnabled = enabledToolsets.includes("all");
+  const allEnabled = enabledToolsets.includes('all');
 
   return {
-    toolsets: toolsetGroup.toolsets.map(ts => ({
+    toolsets: toolsetGroup.toolsets.map((ts) => ({
       ...ts,
-      enabled: allEnabled || enabledToolsets.includes(ts.name)
-    }))
+      enabled: allEnabled || enabledToolsets.includes(ts.name),
+    })),
   };
 };
