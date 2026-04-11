@@ -44,10 +44,7 @@ describe('composeToolHandler', () => {
 
     expect(tool.schema.shape).toHaveProperty('fields');
 
-    const result = await composed(
-      { id: 123, fields: '{ id }' },
-      dummyExtra
-    );
+    const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
