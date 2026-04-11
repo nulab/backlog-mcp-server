@@ -17,7 +17,6 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
-.codex/
 
 # Editor directories and files
 .idea/
