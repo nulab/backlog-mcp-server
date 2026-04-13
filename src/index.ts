@@ -4,14 +4,15 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import * as backlogjs from 'backlog-js';
 import dotenv from 'dotenv';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
+import { organizationTools } from './tools/dynamicTools/organizations.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
+import { createBacklogClientRegistry } from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -63,11 +64,8 @@ Available toolsets:
   })
   .parseSync();
 
-const domain = env.get('BACKLOG_DOMAIN').required().asString();
-
-const apiKey = env.get('BACKLOG_API_KEY').required().asString();
-
-const backlog = new backlogjs.Backlog({ host: domain, apiKey: apiKey });
+const clientRegistry = createBacklogClientRegistry();
+const backlog = clientRegistry.createScopedClient();
 
 const useFields = argv.optimizeResponse;
 
@@ -95,6 +93,11 @@ const toolsetGroup = buildToolsetGroup(backlog, transHelper, enabledToolsets);
 
 // Register all tools
 registerTools(server, toolsetGroup, mcpOption);
+registerDynamicTools(
+  server,
+  organizationTools(clientRegistry, transHelper),
+  prefix
+);
 
 // Register dynamic tool management tools if enabled
 if (argv.dynamicToolsets) {
