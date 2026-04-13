@@ -139,6 +139,23 @@ npm run dev
 }
 ```
 
+### Option 3: Desktop Extension (DXT)
+
+For Claude Desktop users, you can create a Desktop Extension for one-click installation:
+
+1. Create a Desktop Extension package:
+   ```bash
+   # Initialize manifest (if not already present)
+   dxt init
+
+   # Package the extension
+   dxt pack
+   ```
+
+2. Install the generated `.dxt` file in Claude Desktop by double-clicking it or using the Extensions menu.
+
+The Desktop Extension includes a `manifest.json` file that defines the server configuration and available tools, making installation seamless for end users.
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.
@@ -334,7 +351,7 @@ Show me all items I'm watching
 
 You can override the descriptions of tools by creating a `.backlog-mcp-serverrc.json` file in your **home directory**.
 
-The file should contain a JSON object with the tool names as keys and the new descriptions as values.  
+The file should contain a JSON object with the tool names as keys and the new descriptions as values.
 For example:
 
 ```json
@@ -581,6 +598,23 @@ The server supports several command line options:
   Example: `--enable-toolsets space,project` or `--enable-toolsets issue --enable-toolsets git`
   Available toolsets: `space`, `project`, `issue`, `wiki`, `git`, `notifications`.
 
+### Desktop Extension Development
+
+For developing Desktop Extensions, you can use the DXT CLI tools:
+
+```bash
+# Initialize a new manifest.json (interactive)
+npx dxt init
+
+# Validate the current manifest.json
+npx dxt validate
+
+# Package the extension into a .dxt file
+npx dxt pack
+```
+
+The `manifest.json` file defines the extension metadata, server configuration, and available tools for Desktop Extension installation.
+
 Example:
 
 ```bash
@@ -674,6 +708,6 @@ Example response:
 
 This project is licensed under the [MIT License](./LICENSE).
 
-Please note: This tool is provided under the MIT License **without any warranty or official support**.  
-Use it at your own risk after reviewing the contents and determining its suitability for your needs.  
+Please note: This tool is provided under the MIT License **without any warranty or official support**.
+Use it at your own risk after reviewing the contents and determining its suitability for your needs.
 If you encounter any issues, please report them via [GitHub Issues](../../issues).

@@ -1,0 +1,204 @@
+{
+  "dxt_version": "0.1",
+  "name": "backlog-mcp-server",
+  "version": "0.1.1",
+  "display_name": "Backlog MCP Server",
+  "description": "Model Context Protocol server for interacting with the Backlog API. Provides tools for managing projects, issues, Wiki pages, and more on Backlog through AI agents.",
+  "author": {
+    "name": "Nulab",
+    "url": "https://github.com/nulab/backlog-mcp-server"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "build/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/build/index.js"]
+    }
+  },
+  "user_config": {
+    "BACKLOG_DOMAIN": {
+      "type": "string",
+      "title": "Backlog Domain",
+      "description": "Your Backlog domain (e.g., your-company.backlog.com)",
+      "required": true
+    },
+    "BACKLOG_API_KEY": {
+      "type": "string", 
+      "title": "Backlog API Key",
+      "description": "Your Backlog API key",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "tools": [
+    {
+      "name": "getProjectList",
+      "description": "Get list of projects"
+    },
+    {
+      "name": "getProject",
+      "description": "Get specific project details"
+    },
+    {
+      "name": "addProject",
+      "description": "Create a new project"
+    },
+    {
+      "name": "updateProject",
+      "description": "Update an existing project"
+    },
+    {
+      "name": "deleteProject",
+      "description": "Delete a project"
+    },
+    {
+      "name": "getIssues",
+      "description": "Get list of issues"
+    },
+    {
+      "name": "getIssue",
+      "description": "Get specific issue details"
+    },
+    {
+      "name": "addIssue",
+      "description": "Create a new issue"
+    },
+    {
+      "name": "updateIssue",
+      "description": "Update an existing issue"
+    },
+    {
+      "name": "deleteIssue",
+      "description": "Delete an issue"
+    },
+    {
+      "name": "countIssues",
+      "description": "Count issues matching criteria"
+    },
+    {
+      "name": "getIssueComments",
+      "description": "Get comments for an issue"
+    },
+    {
+      "name": "addIssueComment",
+      "description": "Add a comment to an issue"
+    },
+    {
+      "name": "getWikiPages",
+      "description": "Get list of Wiki pages"
+    },
+    {
+      "name": "getWiki",
+      "description": "Get specific Wiki page content"
+    },
+    {
+      "name": "addWiki",
+      "description": "Create a new Wiki page"
+    },
+    {
+      "name": "getPullRequests",
+      "description": "Get list of pull requests"
+    },
+    {
+      "name": "getPullRequest",
+      "description": "Get specific pull request details"
+    },
+    {
+      "name": "addPullRequest",
+      "description": "Create a new pull request"
+    },
+    {
+      "name": "updatePullRequest",
+      "description": "Update an existing pull request"
+    },
+    {
+      "name": "getPullRequestComments",
+      "description": "Get comments for a pull request"
+    },
+    {
+      "name": "addPullRequestComment",
+      "description": "Add a comment to a pull request"
+    },
+    {
+      "name": "updatePullRequestComment",
+      "description": "Update a pull request comment"
+    },
+    {
+      "name": "getNotifications",
+      "description": "Get user notifications"
+    },
+    {
+      "name": "getNotificationsCount",
+      "description": "Get count of notifications"
+    },
+    {
+      "name": "markNotificationAsRead",
+      "description": "Mark a notification as read"
+    },
+    {
+      "name": "resetUnreadNotificationCount",
+      "description": "Reset unread notification count"
+    },
+    {
+      "name": "getUsers",
+      "description": "Get list of users"
+    },
+    {
+      "name": "getMyself",
+      "description": "Get current user information"
+    },
+    {
+      "name": "getSpace",
+      "description": "Get space information"
+    },
+    {
+      "name": "getCategories",
+      "description": "Get project categories"
+    },
+    {
+      "name": "getIssueTypes",
+      "description": "Get issue types"
+    },
+    {
+      "name": "getPriorities",
+      "description": "Get issue priorities"
+    },
+    {
+      "name": "getResolutions",
+      "description": "Get issue resolutions"
+    },
+    {
+      "name": "getCustomFields",
+      "description": "Get custom fields"
+    },
+    {
+      "name": "getGitRepositories",
+      "description": "Get Git repositories"
+    },
+    {
+      "name": "getGitRepository",
+      "description": "Get specific Git repository"
+    },
+    {
+      "name": "getWatchingListItems",
+      "description": "Get watching list items"
+    },
+    {
+      "name": "getWatchingListCount",
+      "description": "Get watching list count"
+    },
+    {
+      "name": "getWikisCount",
+      "description": "Get Wiki pages count"
+    },
+    {
+      "name": "getPullRequestsCount",
+      "description": "Get pull requests count"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "node_version": ">=18.0.0"
+  }
+}
