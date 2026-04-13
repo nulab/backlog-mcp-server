@@ -206,7 +206,7 @@ function createBacklogClientProxy(resolveClient: () => Backlog): Backlog {
     {
       get(_target, prop) {
         const client = resolveClient();
-        const value = Reflect.get(client as object, prop);
+        const value = Reflect.get(client, prop);
 
         if (typeof value === 'function') {
           return value.bind(client);

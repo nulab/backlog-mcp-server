@@ -6,7 +6,7 @@ import { wrapWithTokenLimit } from '../transformers/wrapWithTokenLimit.js';
 import { wrapWithToolResult } from '../transformers/wrapWithToolResult.js';
 import { z } from 'zod';
 import { generateFieldsDescription } from '../../utils/generateFieldsDescription.js';
-import { ErrorLike } from '../../types/result.js';
+import { ErrorLike, SafeResult } from '../../types/result.js';
 import { ToolDefinition } from '../../types/tool.js';
 
 interface ComposeOptions {
@@ -14,6 +14,13 @@ interface ComposeOptions {
   errorHandler?: (err: unknown) => ErrorLike;
   maxTokens: number;
 }
+
+type ComposedInput = {
+  fields?: string;
+  organization?: string;
+} & Record<string, unknown>;
+
+type ComposedHandler = (input: ComposedInput) => Promise<SafeResult<unknown>>;
 
 export function composeToolHandler(
   tool: ToolDefinition<any, any>,
@@ -32,8 +39,8 @@ export function composeToolHandler(
   tool.schema = extendSchema(tool.schema, fieldDesc);
 
   // Step 2: Compose
-  let handler: any = wrapWithErrorHandling(
-    wrapWithOrganizationContext(tool.handler as any),
+  let handler: ComposedHandler = wrapWithErrorHandling(
+    wrapWithOrganizationContext(tool.handler),
     errorHandler
   );
 

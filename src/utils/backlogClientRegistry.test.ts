@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createTranslationHelper } from '../createTranslationHelper.js';
+import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
+import { getSpaceTool } from '../tools/getSpace.js';
+import { createBacklogClientRegistry } from './backlogClientRegistry.js';
 
 vi.mock('backlog-js', () => ({
   Backlog: class Backlog {
@@ -18,11 +22,6 @@ vi.mock('backlog-js', () => ({
     }
   },
 }));
-
-import { createTranslationHelper } from '../createTranslationHelper.js';
-import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
-import { getSpaceTool } from '../tools/getSpace.js';
-import { createBacklogClientRegistry } from './backlogClientRegistry.js';
 
 describe('createBacklogClientRegistry', () => {
   it('uses single-org fallback env vars when multi-org env is absent', async () => {
