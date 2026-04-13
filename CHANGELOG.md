@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/nulab/backlog-mcp-server/compare/v0.9.1...v0.10.0) (2026-04-13)
+
+### Features
+
+* add multi-organization support ([7f2d60a](https://github.com/nulab/backlog-mcp-server/commit/7f2d60a1ec0e47902231830257e58f1e98e761e6))
+* add test for rejecting unknown organizations in single-org mode ([ed81fac](https://github.com/nulab/backlog-mcp-server/commit/ed81facaee38228c21bf12c295779271139eef2b))
+* enhance composeToolHandler with type safety and clean up imports in tests ([b7f50cd](https://github.com/nulab/backlog-mcp-server/commit/b7f50cda124baa42942c68c3b7aabed9ebaee7a2))
+* support env-based multi-org backlog config ([63eb78e](https://github.com/nulab/backlog-mcp-server/commit/63eb78e25e037c0c3f9f0241f8704bc072d52207))
+
+### Bug Fixes
+
+* avoid NodeJS namespace in env typing ([bd0effb](https://github.com/nulab/backlog-mcp-server/commit/bd0effb0cb5bcedb3672bad48448e57405ac7df5))
+* **ci:** pin npm to 11.5.1 in release workflow ([54aece7](https://github.com/nulab/backlog-mcp-server/commit/54aece7883376cf31a73ccfaf3b778ef1de3e471))
+
 ## [0.9.1](https://github.com/nulab/backlog-mcp-server/compare/v0.9.0...v0.9.1) (2026-03-27)
 
 ### Bug Fixes
