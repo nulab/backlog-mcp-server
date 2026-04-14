@@ -507,6 +507,93 @@ npm test
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
 ```
 
+## 複数組織対応
+
+このサーバーは、1つのMCPサーバーインスタンスから複数のBacklog組織にアクセスできるよう設定できます。
+
+### 設定
+
+組織ごとに環境変数のペアを定義し、デフォルト組織を設定します。
+
+```bash
+BACKLOG_DEFAULT_ORG=COMPANY_A
+BACKLOG_ORG_COMPANY_A_DOMAIN=company-a.backlog.com
+BACKLOG_ORG_COMPANY_A_API_KEY=your-company-a-api-key
+BACKLOG_ORG_COMPANY_B_DOMAIN=company-b.backlog.com
+BACKLOG_ORG_COMPANY_B_API_KEY=your-company-b-api-key
+```
+
+これらの変数は、ローカルの`.env`、シェル環境変数、またはMCPクライアント設定の`env`ブロックのいずれからでも利用できます。
+
+MCP設定例：
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "env": {
+        "BACKLOG_DEFAULT_ORG": "COMPANY_A",
+        "BACKLOG_ORG_COMPANY_A_DOMAIN": "company-a.backlog.com",
+        "BACKLOG_ORG_COMPANY_A_API_KEY": "your-company-a-api-key",
+        "BACKLOG_ORG_COMPANY_B_DOMAIN": "company-b.backlog.com",
+        "BACKLOG_ORG_COMPANY_B_API_KEY": "your-company-b-api-key"
+      }
+    }
+  }
+}
+```
+
+複数組織用の環境変数が設定されていない場合、サーバーは従来どおり単一組織用の設定にフォールバックします。
+
+```bash
+BACKLOG_DOMAIN=your-domain.backlog.com
+BACKLOG_API_KEY=your-api-key
+```
+
+### ツールの使い方
+
+通常のツールはすべて、任意の`organization`入力フィールドを受け付けます。指定した場合、そのBacklog組織に対してツールが実行されます。
+
+例：
+
+```json
+{
+  "organization": "COMPANY_B",
+  "projectKey": "PROJECT"
+}
+```
+
+`organization`を省略した場合：
+
+- `BACKLOG_DEFAULT_ORG`で指定した組織が使われます
+- 複数組織用の環境変数が存在するのに`BACKLOG_DEFAULT_ORG`が未設定の場合、サーバーは起動時に失敗します
+
+### 組織一覧の確認
+
+サーバーは `list_organizations` ツールを提供しており、設定済みの組織名、ドメイン、デフォルト組織かどうかを返します。
+
+レスポンス例：
+
+```json
+[
+  {
+    "name": "COMPANY_A",
+    "domain": "company-a.backlog.com",
+    "isDefault": true
+  },
+  {
+    "name": "COMPANY_B",
+    "domain": "company-b.backlog.com",
+    "isDefault": false
+  }
+]
+```
+
+### 注意
+
+- 複数組織モードでは、各組織に対して `BACKLOG_ORG_<NAME>_DOMAIN` と `BACKLOG_ORG_<NAME>_API_KEY` の両方を定義する必要があります
+- `<NAME>` の部分が、`organization`入力や `list_organizations` に表示される組織名になります
+
 ## ライセンス
 
 このプロジェクトは [MITライセンス](./LICENSE) のもとでライセンスされています。

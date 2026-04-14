@@ -69,6 +69,7 @@ describe('composeToolHandler', () => {
     });
 
     expect(toolWithoutFields.schema.shape).not.toHaveProperty('fields');
+    expect(toolWithoutFields.schema.shape).toHaveProperty('organization');
 
     const result = await composed({ id: 456 }, dummyExtra);
     const content = (result as CallToolResult).content[0];
@@ -95,6 +96,22 @@ describe('composeToolHandler', () => {
       expect(content.text).toContain('"id": 1');
       expect(content.text).toContain('"name": "Sample"');
     }
+  });
+
+  it("adds 'organization' to the schema when composing handlers", async () => {
+    const orgTool: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({
+        name: z.string(),
+      }),
+    };
+
+    composeToolHandler(orgTool, {
+      useFields: true,
+      maxTokens: 100,
+    });
+
+    expect(orgTool.schema.shape).toHaveProperty('organization');
   });
 
   it('handles error with provided errorHandler', async () => {

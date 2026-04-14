@@ -621,6 +621,89 @@ HTTP example:
 node build/index.js --transport http --http-port 3333 --http-path /mcp
 ```
 
+## Multi-Organization Support
+
+This server can be configured to access multiple Backlog organizations from a single MCP server instance.
+
+### Configuration
+
+Configure one env pair per organization and set a default organization:
+
+```bash
+BACKLOG_DEFAULT_ORG=COMPANY_A
+BACKLOG_ORG_COMPANY_A_DOMAIN=company-a.backlog.com
+BACKLOG_ORG_COMPANY_A_API_KEY=your-company-a-api-key
+BACKLOG_ORG_COMPANY_B_DOMAIN=company-b.backlog.com
+BACKLOG_ORG_COMPANY_B_API_KEY=your-company-b-api-key
+```
+
+This works whether the variables come from a local `.env`, your shell environment, or an MCP client config `env` block.
+
+Example MCP config:
+
+```json
+{
+  "env": {
+    "BACKLOG_DEFAULT_ORG": "COMPANY_A",
+    "BACKLOG_ORG_COMPANY_A_DOMAIN": "company-a.backlog.com",
+    "BACKLOG_ORG_COMPANY_A_API_KEY": "your-company-a-api-key",
+    "BACKLOG_ORG_COMPANY_B_DOMAIN": "company-b.backlog.com",
+    "BACKLOG_ORG_COMPANY_B_API_KEY": "your-company-b-api-key"
+  }
+}
+```
+
+If no multi-organization env vars are set, the server falls back to the existing single-organization configuration:
+
+```bash
+BACKLOG_DOMAIN=your-domain.backlog.com
+BACKLOG_API_KEY=your-api-key
+```
+
+### Tool Usage
+
+All normal tools accept an optional `organization` input field. When provided, the tool call is routed to that Backlog organization.
+
+Examples:
+
+```json
+{
+  "organization": "COMPANY_B",
+  "projectKey": "PROJECT"
+}
+```
+
+If `organization` is omitted:
+
+- the organization named by `BACKLOG_DEFAULT_ORG` is used
+- if multi-organization env vars are present and `BACKLOG_DEFAULT_ORG` is missing, the server fails at startup
+
+### Organization Discovery
+
+The server provides a `list_organizations` tool that returns the configured organization names, their domains, and which one is the default.
+
+Example response:
+
+```json
+[
+  {
+    "name": "COMPANY_A",
+    "domain": "company-a.backlog.com",
+    "isDefault": true
+  },
+  {
+    "name": "COMPANY_B",
+    "domain": "company-b.backlog.com",
+    "isDefault": false
+  }
+]
+```
+
+### Notes
+
+- For multi-org mode, every organization must define both `BACKLOG_ORG_<NAME>_DOMAIN` and `BACKLOG_ORG_<NAME>_API_KEY`.
+- The `<NAME>` part is the organization name exposed through the `organization` tool input and `list_organizations`.
+
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
