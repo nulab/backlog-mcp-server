@@ -26,7 +26,11 @@ export type HttpMcpServerHandle = {
   shutdown: () => Promise<void>;
 };
 
-type JsonRpcErrorBody = { jsonrpc: '2.0'; error: { code: number; message: string }; id: null };
+type JsonRpcErrorBody = {
+  jsonrpc: '2.0';
+  error: { code: number; message: string };
+  id: null;
+};
 
 function jsonRpcError(code: number, message: string): JsonRpcErrorBody {
   return { jsonrpc: '2.0', error: { code, message }, id: null };
@@ -36,10 +40,15 @@ function bodyContainsInitialize(body: unknown): boolean {
   return (Array.isArray(body) ? body : [body]).some(isInitializeRequest);
 }
 
-function buildAllowedHostnames(host: string, allowedHosts?: string[]): string[] | undefined {
+function buildAllowedHostnames(
+  host: string,
+  allowedHosts?: string[]
+): string[] | undefined {
   if (allowedHosts?.length) return allowedHosts;
   const localhostHosts = ['127.0.0.1', 'localhost', '::1'];
-  return localhostHosts.includes(host) ? ['localhost', '127.0.0.1', '[::1]'] : undefined;
+  return localhostHosts.includes(host)
+    ? ['localhost', '127.0.0.1', '[::1]']
+    : undefined;
 }
 
 function checkHostHeader(
@@ -53,7 +62,9 @@ function checkHostHeader(
   } catch {
     return jsonRpcError(-32000, `Invalid Host header: ${hostHeader}`);
   }
-  return allowedHostnames.includes(hostname) ? null : jsonRpcError(-32000, `Invalid Host: ${hostname}`);
+  return allowedHostnames.includes(hostname)
+    ? null
+    : jsonRpcError(-32000, `Invalid Host: ${hostname}`);
 }
 
 async function startNewSession(
@@ -83,8 +94,15 @@ async function startNewSession(
 export async function runHttpMcpServer(
   options: RunHttpMcpServerOptions
 ): Promise<HttpMcpServerHandle> {
-  const { host, port, path: mcpPath, version, enableJsonResponse, allowedHosts, createServer } =
-    options;
+  const {
+    host,
+    port,
+    path: mcpPath,
+    version,
+    enableJsonResponse,
+    allowedHosts,
+    createServer,
+  } = options;
 
   if ((host === '0.0.0.0' || host === '::') && !allowedHosts?.length) {
     logger.warn(
@@ -94,7 +112,8 @@ export async function runHttpMcpServer(
   }
 
   const app = new Hono();
-  const transports: Record<string, WebStandardStreamableHTTPServerTransport> = {};
+  const transports: Record<string, WebStandardStreamableHTTPServerTransport> =
+    {};
   const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
 
   app.get('/health', (c) =>
@@ -127,7 +146,10 @@ export async function runHttpMcpServer(
       }
 
       if (req.method !== 'POST') {
-        return c.json(jsonRpcError(-32000, 'Bad Request: No mcp-session-id header.'), 400);
+        return c.json(
+          jsonRpcError(-32000, 'Bad Request: No mcp-session-id header.'),
+          400
+        );
       }
 
       let body: unknown;
@@ -145,7 +167,13 @@ export async function runHttpMcpServer(
         return c.json(Array.isArray(body) ? [err] : err, 400);
       }
 
-      return startNewSession(req, body, enableJsonResponse, transports, createServer);
+      return startNewSession(
+        req,
+        body,
+        enableJsonResponse,
+        transports,
+        createServer
+      );
     } catch (error) {
       logger.error({ err: error }, 'Error handling MCP request');
       return c.json(jsonRpcError(-32603, 'Internal server error'), 500);
@@ -153,7 +181,9 @@ export async function runHttpMcpServer(
   });
 
   const httpServer = await new Promise<Server>((resolve, reject) => {
-    const srv = serve({ fetch: app.fetch, port, hostname: host }, () => resolve(srv as Server));
+    const srv = serve({ fetch: app.fetch, port, hostname: host }, () =>
+      resolve(srv as Server)
+    );
     srv.on('error', reject);
   });
 
