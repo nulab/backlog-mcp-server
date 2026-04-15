@@ -3,10 +3,11 @@
 
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
-import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { serve } from '@hono/node-server';
+
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
-import type { Request, Response } from 'express';
+import { Hono } from 'hono';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
@@ -25,25 +26,65 @@ export type HttpMcpServerHandle = {
   shutdown: () => Promise<void>;
 };
 
+type JsonRpcErrorBody = { jsonrpc: '2.0'; error: { code: number; message: string }; id: null };
+
+function jsonRpcError(code: number, message: string): JsonRpcErrorBody {
+  return { jsonrpc: '2.0', error: { code, message }, id: null };
+}
+
 function bodyContainsInitialize(body: unknown): boolean {
-  if (Array.isArray(body)) {
-    return body.some((msg) => isInitializeRequest(msg));
+  return (Array.isArray(body) ? body : [body]).some(isInitializeRequest);
+}
+
+function buildAllowedHostnames(host: string, allowedHosts?: string[]): string[] | undefined {
+  if (allowedHosts?.length) return allowedHosts;
+  const localhostHosts = ['127.0.0.1', 'localhost', '::1'];
+  return localhostHosts.includes(host) ? ['localhost', '127.0.0.1', '[::1]'] : undefined;
+}
+
+function checkHostHeader(
+  hostHeader: string | undefined,
+  allowedHostnames: string[]
+): JsonRpcErrorBody | null {
+  if (!hostHeader) return jsonRpcError(-32000, 'Missing Host header');
+  let hostname: string;
+  try {
+    hostname = new URL(`http://${hostHeader}`).hostname;
+  } catch {
+    return jsonRpcError(-32000, `Invalid Host header: ${hostHeader}`);
   }
-  return isInitializeRequest(body);
+  return allowedHostnames.includes(hostname) ? null : jsonRpcError(-32000, `Invalid Host: ${hostname}`);
+}
+
+async function startNewSession(
+  req: Request,
+  body: unknown,
+  enableJsonResponse: boolean,
+  transports: Record<string, WebStandardStreamableHTTPServerTransport>,
+  createServer: () => BacklogMCPServer
+): Promise<Response> {
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: () => randomUUID(),
+    enableJsonResponse,
+    onsessioninitialized: (sid) => {
+      transports[sid] = transport;
+    },
+  });
+
+  transport.onclose = () => {
+    const sid = transport.sessionId;
+    if (sid) delete transports[sid];
+  };
+
+  await createServer().connect(transport);
+  return transport.handleRequest(req, { parsedBody: body });
 }
 
 export async function runHttpMcpServer(
   options: RunHttpMcpServerOptions
 ): Promise<HttpMcpServerHandle> {
-  const {
-    host,
-    port,
-    path: mcpPath,
-    version,
-    enableJsonResponse,
-    allowedHosts,
-    createServer,
-  } = options;
+  const { host, port, path: mcpPath, version, enableJsonResponse, allowedHosts, createServer } =
+    options;
 
   if ((host === '0.0.0.0' || host === '::') && !allowedHosts?.length) {
     logger.warn(
@@ -52,97 +93,67 @@ export async function runHttpMcpServer(
     );
   }
 
-  const app = createMcpExpressApp({ host, allowedHosts });
-  const transports: Record<string, StreamableHTTPServerTransport> = {};
+  const app = new Hono();
+  const transports: Record<string, WebStandardStreamableHTTPServerTransport> = {};
+  const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
 
-  const mcpPostHandler = async (req: Request, res: Response) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+  app.get('/health', (c) =>
+    c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
+  );
+
+  app.all(mcpPath, async (c) => {
+    const req = c.req.raw;
+
+    if (allowedHostnames) {
+      const hostError = checkHostHeader(c.req.header('host'), allowedHostnames);
+      if (hostError) return c.json(hostError, 403);
+    }
+
+    const sessionId = req.headers.get('mcp-session-id') ?? undefined;
+
     try {
       if (sessionId && transports[sessionId]) {
-        await transports[sessionId].handleRequest(req, res, req.body);
-        return;
+        return transports[sessionId].handleRequest(req);
       }
 
-      if (!sessionId && bodyContainsInitialize(req.body)) {
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          enableJsonResponse,
-          onsessioninitialized: (sid) => {
-            transports[sid] = transport;
-          },
-        });
-
-        transport.onclose = () => {
-          const sid = transport.sessionId;
-          if (sid && transports[sid]) {
-            delete transports[sid];
-          }
-        };
-
-        const server = createServer();
-        await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
-        return;
+      if (sessionId) {
+        return c.json(
+          jsonRpcError(
+            -32000,
+            'Bad Request: Unknown or expired session ID. Send a new initialize request without mcp-session-id.'
+          ),
+          400
+        );
       }
 
-      const errorObj = {
-        jsonrpc: '2.0',
-        error: {
-          code: -32000,
-          message: sessionId
-            ? 'Bad Request: Unknown or expired session ID. Send a new initialize request without mcp-session-id.'
-            : 'Bad Request: No mcp-session-id header and body is not an initialize request.',
-        },
-        id: null,
-      };
-      res.status(400).json(Array.isArray(req.body) ? [errorObj] : errorObj);
+      if (req.method !== 'POST') {
+        return c.json(jsonRpcError(-32000, 'Bad Request: No mcp-session-id header.'), 400);
+      }
+
+      let body: unknown;
+      try {
+        body = await req.json();
+      } catch {
+        return c.json(jsonRpcError(-32700, 'Parse error: Invalid JSON'), 400);
+      }
+
+      if (!bodyContainsInitialize(body)) {
+        const err = jsonRpcError(
+          -32000,
+          'Bad Request: No mcp-session-id header and body is not an initialize request.'
+        );
+        return c.json(Array.isArray(body) ? [err] : err, 400);
+      }
+
+      return startNewSession(req, body, enableJsonResponse, transports, createServer);
     } catch (error) {
-      logger.error({ err: error }, 'Error handling MCP POST');
-      if (!res.headersSent) {
-        res.status(500).json({
-          jsonrpc: '2.0',
-          error: { code: -32603, message: 'Internal server error' },
-          id: null,
-        });
-      }
+      logger.error({ err: error }, 'Error handling MCP request');
+      return c.json(jsonRpcError(-32603, 'Internal server error'), 500);
     }
-  };
-
-  const mcpSessionHandler = async (req: Request, res: Response) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    if (!sessionId || !transports[sessionId]) {
-      res.status(400).send('Invalid or missing session ID');
-      return;
-    }
-    try {
-      await transports[sessionId].handleRequest(req, res);
-    } catch (error) {
-      const code = (error as { code?: string }).code;
-      if (code === 'ECONNRESET' || code === 'EPIPE') {
-        logger.debug({ err: error }, `MCP ${req.method} client disconnected`);
-        return;
-      }
-      logger.error({ err: error }, `Error handling MCP ${req.method}`);
-      if (!res.headersSent) {
-        res.status(500).send('Internal server error');
-      }
-    }
-  };
-
-  app.get('/health', (_req, res) => {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version,
-    });
   });
 
-  app.post(mcpPath, mcpPostHandler);
-  app.get(mcpPath, mcpSessionHandler);
-  app.delete(mcpPath, mcpSessionHandler);
-
   const httpServer = await new Promise<Server>((resolve, reject) => {
-    const srv = app.listen(port, host, () => resolve(srv));
+    const srv = serve({ fetch: app.fetch, port, hostname: host }, () => resolve(srv as Server));
     srv.on('error', reject);
   });
 
@@ -156,9 +167,7 @@ export async function runHttpMcpServer(
       delete transports[sid];
     }
     httpServer.closeAllConnections();
-    await new Promise<void>((resolve) => {
-      httpServer.close(() => resolve());
-    });
+    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
   };
 
   return { httpServer, shutdown };
