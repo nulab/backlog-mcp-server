@@ -28,19 +28,15 @@ export type CreateBacklogMcpServerConfig = {
  * Builds a fresh MCP server instance with all Backlog tools registered.
  * Used once for stdio; one instance per HTTP session for Streamable HTTP.
  */
-export function createBacklogMcpServer(
-  config: CreateBacklogMcpServerConfig
-): BacklogMCPServer {
-  const {
-    version,
-    useFields,
-    backlog,
-    transHelper,
-    enabledToolsets,
-    mcpOption,
-    dynamicToolsets,
-  } = config;
-
+export function createBacklogMcpServer({
+  version,
+  useFields,
+  backlog,
+  transHelper,
+  enabledToolsets,
+  mcpOption,
+  dynamicToolsets,
+}: CreateBacklogMcpServerConfig): BacklogMCPServer {
   const server = wrapServerWithToolRegistry(
     new McpServer({
       name: 'backlog',

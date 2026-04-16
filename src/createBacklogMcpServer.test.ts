@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
@@ -103,6 +104,53 @@ describe('createBacklogMcpServer', () => {
       expect.anything(),
       expect.anything(),
       'backlog_'
+    );
+  });
+
+  it('sets title with field selection when useFields is true', () => {
+    createBacklogMcpServer({ ...baseConfig, useFields: true });
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'backlog (field selection enabled)',
+      })
+    );
+  });
+
+  it('sets default title when useFields is false', () => {
+    createBacklogMcpServer({ ...baseConfig, useFields: false });
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'backlog',
+      })
+    );
+  });
+
+  it('passes version to McpServer', () => {
+    createBacklogMcpServer({ ...baseConfig, version: '2.0.0' });
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: '2.0.0',
+      })
+    );
+  });
+
+  it('passes correct arguments to dynamicTools when dynamicToolsets is true', () => {
+    const mockToolsetGroup = { toolsets: [] };
+    const mockRegistrar = { register: vi.fn() };
+    vi.mocked(buildToolsetGroup).mockReturnValue(mockToolsetGroup as any);
+    vi.mocked(createToolRegistrar).mockReturnValue(mockRegistrar as any);
+
+    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
+
+    expect(createToolRegistrar).toHaveBeenCalledWith(
+      expect.anything(),
+      mockToolsetGroup,
+      mcpOption
+    );
+    expect(dynamicTools).toHaveBeenCalledWith(
+      mockRegistrar,
+      mockTransHelper,
+      mockToolsetGroup
     );
   });
 });

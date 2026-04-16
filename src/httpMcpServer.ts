@@ -11,7 +11,7 @@ import { Hono } from 'hono';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
-export type RunHttpMcpServerOptions = {
+type RunHttpMcpServerOptions = {
   host: string;
   port: number;
   path: string;
@@ -21,7 +21,7 @@ export type RunHttpMcpServerOptions = {
   createServer: () => BacklogMCPServer;
 };
 
-export type HttpMcpServerHandle = {
+type HttpMcpServerHandle = {
   httpServer: Server;
   shutdown: () => Promise<void>;
 };
