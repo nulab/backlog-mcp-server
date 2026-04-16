@@ -8,15 +8,9 @@ import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createTranslationHelper } from './createTranslationHelper.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
-import { registerDynamicTools, registerTools } from './registerTools.js';
-import { organizationTools } from './tools/dynamicTools/organizations.js';
-import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import { createBacklogClientRegistry } from './utils/backlogClientRegistry.js';
-import { createToolRegistrar } from './utils/toolRegistrar.js';
-import { buildToolsetGroup } from './utils/toolsetUtils.js';
-import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import { logger } from './utils/logger.js';
 import packageJson from '../package.json' with { type: 'json' };
 
@@ -144,32 +138,17 @@ const mcpOption = { useFields: useFields, maxTokens, prefix };
 
 // Factory: creates a fresh MCP server with all tools registered.
 // Used once for stdio; one fresh instance per HTTP session for Streamable HTTP.
-const createServer = () => {
-  const server = wrapServerWithToolRegistry(
-    new McpServer({
-      name: 'backlog',
-      title: useFields ? 'backlog (field selection enabled)' : 'backlog',
-      version,
-    })
-  );
-  const toolsetGroup = buildToolsetGroup(backlog, transHelper, enabledToolsets);
-  registerTools(server, toolsetGroup, mcpOption);
-  registerDynamicTools(
-    server,
-    organizationTools(clientRegistry, transHelper),
-    prefix
-  );
-  if (argv.dynamicToolsets) {
-    const registrar = createToolRegistrar(server, toolsetGroup, mcpOption);
-    const dynamicToolsetGroup = dynamicTools(
-      registrar,
-      transHelper,
-      toolsetGroup
-    );
-    registerDynamicTools(server, dynamicToolsetGroup, prefix);
-  }
-  return server;
-};
+const createServer = () =>
+  createBacklogMcpServer({
+    version,
+    useFields,
+    backlog,
+    clientRegistry,
+    transHelper,
+    enabledToolsets,
+    mcpOption,
+    dynamicToolsets: argv.dynamicToolsets,
+  });
 
 if (argv.exportTranslations) {
   const data = transHelper.dump();
