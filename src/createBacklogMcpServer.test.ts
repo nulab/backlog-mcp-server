@@ -4,9 +4,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
+import { organizationTools } from './tools/dynamicTools/organizations.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
+import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
   McpServer: vi.fn(function (this: Record<string, unknown>) {
@@ -31,8 +33,13 @@ vi.mock('./tools/dynamicTools/toolsets.js', () => ({
   dynamicTools: vi.fn().mockReturnValue({}),
 }));
 
+vi.mock('./tools/dynamicTools/organizations.js', () => ({
+  organizationTools: vi.fn().mockReturnValue({ toolsets: [] }),
+}));
+
 describe('createBacklogMcpServer', () => {
   const mockBacklog = {} as Backlog;
+  const mockClientRegistry = {} as BacklogClientRegistry;
   const mockTransHelper = createTranslationHelper();
   const mcpOption = { useFields: false, maxTokens: 50000, prefix: '' };
 
@@ -40,6 +47,7 @@ describe('createBacklogMcpServer', () => {
     version: '1.0.0',
     useFields: false,
     backlog: mockBacklog,
+    clientRegistry: mockClientRegistry,
     transHelper: mockTransHelper,
     enabledToolsets: ['all'],
     mcpOption,
@@ -77,18 +85,24 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
-  it('does not register dynamic tools when dynamicToolsets is false', () => {
+  it('does not register dynamic toolsets when dynamicToolsets is false', () => {
     createBacklogMcpServer({ ...baseConfig, dynamicToolsets: false });
     expect(createToolRegistrar).not.toHaveBeenCalled();
     expect(dynamicTools).not.toHaveBeenCalled();
-    expect(registerDynamicTools).not.toHaveBeenCalled();
+    // organizationTools are always registered regardless of dynamicToolsets
+    expect(organizationTools).toHaveBeenCalledWith(
+      mockClientRegistry,
+      mockTransHelper
+    );
+    expect(registerDynamicTools).toHaveBeenCalledTimes(1);
   });
 
-  it('registers dynamic tools when dynamicToolsets is true', () => {
+  it('registers dynamic toolsets when dynamicToolsets is true', () => {
     createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
     expect(createToolRegistrar).toHaveBeenCalled();
     expect(dynamicTools).toHaveBeenCalled();
-    expect(registerDynamicTools).toHaveBeenCalled();
+    // organizationTools + dynamic toolsets = 2 calls
+    expect(registerDynamicTools).toHaveBeenCalledTimes(2);
   });
 
   it('passes mcpOption.prefix to registerDynamicTools', () => {
