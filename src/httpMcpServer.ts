@@ -32,48 +32,54 @@ type JsonRpcErrorBody = {
   id: null;
 };
 
-function jsonRpcError(code: number, message: string): JsonRpcErrorBody {
+const jsonRpcError = (code: number, message: string): JsonRpcErrorBody => {
   return { jsonrpc: '2.0', error: { code, message }, id: null };
-}
+};
 
-function bodyContainsInitialize(body: unknown): boolean {
+const bodyContainsInitialize = (body: unknown): boolean => {
   return (Array.isArray(body) ? body : [body]).some(isInitializeRequest);
-}
+};
 
-function buildAllowedHostnames(
+const buildAllowedHostnames = (
   host: string,
   allowedHosts?: string[]
-): string[] | undefined {
+): string[] | undefined => {
   if (allowedHosts?.length) return allowedHosts;
   const localhostHosts = ['127.0.0.1', 'localhost', '::1'];
   return localhostHosts.includes(host)
     ? ['localhost', '127.0.0.1', '[::1]']
     : undefined;
-}
+};
 
-function checkHostHeader(
-  hostHeader: string | undefined,
-  allowedHostnames: string[]
-): JsonRpcErrorBody | null {
-  if (!hostHeader) return jsonRpcError(-32000, 'Missing Host header');
-  let hostname: string;
+const parseHostname = (hostHeader: string): string | null => {
   try {
-    hostname = new URL(`http://${hostHeader}`).hostname;
+    return new URL(`http://${hostHeader}`).hostname;
   } catch {
+    return null;
+  }
+};
+
+const checkHostHeader = (
+  hostHeader: string | null,
+  allowedHostnames: string[]
+): JsonRpcErrorBody | null => {
+  if (!hostHeader) return jsonRpcError(-32000, 'Missing Host header');
+  const hostname = parseHostname(hostHeader);
+  if (hostname === null) {
     return jsonRpcError(-32000, `Invalid Host header: ${hostHeader}`);
   }
   return allowedHostnames.includes(hostname)
     ? null
     : jsonRpcError(-32000, `Invalid Host: ${hostname}`);
-}
+};
 
-async function startNewSession(
+const startNewSession = async (
   req: Request,
   body: unknown,
   enableJsonResponse: boolean,
   transports: Record<string, WebStandardStreamableHTTPServerTransport>,
   createServer: () => BacklogMCPServer
-): Promise<Response> {
+): Promise<Response> => {
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
     enableJsonResponse,
@@ -89,11 +95,11 @@ async function startNewSession(
 
   await createServer().connect(transport);
   return transport.handleRequest(req, { parsedBody: body });
-}
+};
 
-export async function runHttpMcpServer(
+export const runHttpMcpServer = async (
   options: RunHttpMcpServerOptions
-): Promise<HttpMcpServerHandle> {
+): Promise<HttpMcpServerHandle> => {
   const {
     host,
     port,
@@ -124,11 +130,14 @@ export async function runHttpMcpServer(
     const req = c.req.raw;
 
     if (allowedHostnames) {
-      const hostError = checkHostHeader(c.req.header('host'), allowedHostnames);
+      const hostError = checkHostHeader(
+        req.headers.get('host'),
+        allowedHostnames
+      );
       if (hostError) return c.json(hostError, 403);
     }
 
-    const sessionId = req.headers.get('mcp-session-id') ?? undefined;
+    const sessionId = req.headers.get('mcp-session-id');
 
     try {
       if (sessionId && transports[sessionId]) {
@@ -152,12 +161,14 @@ export async function runHttpMcpServer(
         );
       }
 
-      let body: unknown;
-      try {
-        body = await req.json();
-      } catch {
+      const parsed = await req.json().then(
+        (body: unknown) => ({ body }),
+        () => null
+      );
+      if (!parsed) {
         return c.json(jsonRpcError(-32700, 'Parse error: Invalid JSON'), 400);
       }
+      const { body } = parsed;
 
       if (!bodyContainsInitialize(body)) {
         const err = jsonRpcError(
@@ -201,4 +212,4 @@ export async function runHttpMcpServer(
   };
 
   return { httpServer, shutdown };
-}
+};
