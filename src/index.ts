@@ -127,12 +127,9 @@ const transHelper = createTranslationHelper();
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
-let enabledToolsets = argv.enableToolsets as string[];
-
-// If dynamic toolsets are enabled, remove "all" to allow for selective enabling via commands
-if (argv.dynamicToolsets) {
-  enabledToolsets = enabledToolsets.filter((a) => a !== 'all');
-}
+const enabledToolsets = argv.dynamicToolsets
+  ? (argv.enableToolsets as string[]).filter((a) => a !== 'all')
+  : (argv.enableToolsets as string[]);
 
 const mcpOption = { useFields: useFields, maxTokens, prefix };
 

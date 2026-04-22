@@ -39,14 +39,12 @@ export function composeToolHandler(
   tool.schema = extendSchema(tool.schema, fieldDesc);
 
   // Step 2: Compose
-  let handler: ComposedHandler = wrapWithErrorHandling(
+  const baseHandler: ComposedHandler = wrapWithErrorHandling(
     wrapWithOrganizationContext(tool.handler),
     errorHandler
   );
 
-  if (useFields) {
-    handler = wrapWithFieldPicking(handler);
-  }
+  const handler = useFields ? wrapWithFieldPicking(baseHandler) : baseHandler;
 
   return wrapWithToolResult(wrapWithTokenLimit(handler, maxTokens));
 }
