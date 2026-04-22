@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { wrapWithErrorHandling } from '../transformers/wrapWithErrorHandling.js';
 import { wrapWithFieldPicking } from '../transformers/wrapWithFieldPicking.js';
 import { wrapWithOrganizationContext } from '../transformers/wrapWithOrganizationContext.js';
@@ -23,7 +22,7 @@ type ComposedInput = {
 type ComposedHandler = (input: ComposedInput) => Promise<SafeResult<unknown>>;
 
 export function composeToolHandler(
-  tool: ToolDefinition<any, any>,
+  tool: ToolDefinition<z.ZodRawShape, z.ZodRawShape>,
   options: ComposeOptions
 ) {
   const { useFields, errorHandler, maxTokens } = options;
