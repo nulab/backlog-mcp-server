@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.0](https://github.com/nulab/backlog-mcp-server/compare/v0.10.0...v0.11.0) (2026-04-22)
+
+### Features
+
+* add Streamable HTTP transport ([6c8ea54](https://github.com/nulab/backlog-mcp-server/commit/6c8ea54bf2ceb0053de3255fe3a5e953e85962df)), closes [#21](https://github.com/nulab/backlog-mcp-server/issues/21) [#12](https://github.com/nulab/backlog-mcp-server/issues/12) [#21](https://github.com/nulab/backlog-mcp-server/issues/21)
+
+### Bug Fixes
+
+* replace NodeJS.ErrnoException with inline type to satisfy no-undef lint rule ([6502afd](https://github.com/nulab/backlog-mcp-server/commit/6502afdf8ca818cc91ebed96537b81030fef2c65))
+* resolve lint and prettier issues in httpMcpServer ([c6a2cca](https://github.com/nulab/backlog-mcp-server/commit/c6a2cca2dd9fd6c01898eacaad93cc4e7b2bdbf5))
+
 ## [0.10.0](https://github.com/nulab/backlog-mcp-server/compare/v0.9.1...v0.10.0) (2026-04-13)
 
 ### Features
