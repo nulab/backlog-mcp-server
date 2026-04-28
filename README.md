@@ -209,6 +209,10 @@ The server automatically exposes the following OAuth endpoints when OAuth is ena
 
 MCP clients that support the MCP authorization specification will use these endpoints automatically.
 
+> **Limitations:**
+> - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
+> - Client registrations and tokens are stored in memory and will be lost on server restart.
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.

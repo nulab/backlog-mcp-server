@@ -26,6 +26,7 @@ type PendingAuthorization = {
   mcpClientId: string;
   codeChallenge: string;
   redirectUri: string;
+  resource?: string;
   scopes: string[];
   state?: string;
   createdAt: number;
@@ -36,6 +37,7 @@ type AuthCodeEntry = {
   backlogTokens: BacklogTokenData;
   codeChallenge: string;
   redirectUri: string;
+  resource?: string;
   expiresAt: number;
 };
 
@@ -44,14 +46,27 @@ type CachedVerification = {
   expiresAt: number;
 };
 
+export type McpTokenEntry = {
+  backlogAccessToken: string;
+  clientId: string;
+  expiresAt: number;
+};
+
+type McpRefreshEntry = {
+  backlogRefreshToken: string;
+  clientId: string;
+};
+
 const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
-const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
+const MAX_CLIENTS = 1000;
 
 export class TokenStore {
   private pendingAuthorizations = new Map<string, PendingAuthorization>();
   private authorizationCodes = new Map<string, AuthCodeEntry>();
   private clients = new Map<string, OAuthClientInfo>();
   private verificationCache = new Map<string, CachedVerification>();
+  private mcpAccessTokens = new Map<string, McpTokenEntry>();
+  private mcpRefreshTokens = new Map<string, McpRefreshEntry>();
 
   storePendingAuth(backlogState: string, pending: PendingAuthorization): void {
     this.pendingAuthorizations.set(backlogState, pending);
@@ -81,8 +96,10 @@ export class TokenStore {
     return this.clients.get(clientId);
   }
 
-  registerClient(client: OAuthClientInfo): void {
+  registerClient(client: OAuthClientInfo): boolean {
+    if (this.clients.size >= MAX_CLIENTS) return false;
     this.clients.set(client.client_id, client);
+    return true;
   }
 
   getCachedVerification(token: string): AuthInfo | undefined {
@@ -102,6 +119,36 @@ export class TokenStore {
     });
   }
 
+  storeMcpToken(mcpToken: string, entry: McpTokenEntry): void {
+    this.mcpAccessTokens.set(mcpToken, entry);
+  }
+
+  getMcpToken(mcpToken: string): McpTokenEntry | undefined {
+    const entry = this.mcpAccessTokens.get(mcpToken);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expiresAt) {
+      this.mcpAccessTokens.delete(mcpToken);
+      return undefined;
+    }
+    return entry;
+  }
+
+  storeMcpRefreshToken(
+    mcpRefreshToken: string,
+    entry: McpRefreshEntry
+  ): void {
+    this.mcpRefreshTokens.set(mcpRefreshToken, entry);
+  }
+
+  consumeMcpRefreshToken(
+    mcpRefreshToken: string
+  ): McpRefreshEntry | undefined {
+    const entry = this.mcpRefreshTokens.get(mcpRefreshToken);
+    if (!entry) return undefined;
+    this.mcpRefreshTokens.delete(mcpRefreshToken);
+    return entry;
+  }
+
   cleanup(): void {
     const now = Date.now();
     for (const [key, entry] of this.pendingAuthorizations) {
@@ -113,6 +160,9 @@ export class TokenStore {
     }
     for (const [key, cached] of this.verificationCache) {
       if (now > cached.expiresAt) this.verificationCache.delete(key);
+    }
+    for (const [key, entry] of this.mcpAccessTokens) {
+      if (now > entry.expiresAt) this.mcpAccessTokens.delete(key);
     }
   }
 }

@@ -48,22 +48,43 @@ describe('createBearerAuthMiddleware', () => {
     expect(res.status).toBe(401);
   });
 
+  it('returns 401 for unknown MCP token', async () => {
+    const res = await app.request('/mcp', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer unknown-mcp-token' },
+    });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error_description).toContain('Unknown or expired');
+  });
+
   it('passes through with valid cached verification', async () => {
+    store.storeMcpToken('mcp-token-1', {
+      backlogAccessToken: 'bl-token-1',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
     store.cacheVerification(
-      'cached-token',
-      { token: 'cached-token', clientId: '1', scopes: [], expiresAt: 0 },
+      'mcp-token-1',
+      { token: 'bl-token-1', clientId: '1', scopes: [], expiresAt: 0 },
       300_000
     );
 
     const res = await app.request('/mcp', {
       method: 'POST',
-      headers: { Authorization: 'Bearer cached-token' },
+      headers: { Authorization: 'Bearer mcp-token-1' },
     });
     expect(res.status).toBe(200);
     expect(vi.mocked(verifyBacklogToken)).not.toHaveBeenCalled();
   });
 
-  it('verifies token against Backlog API when not cached', async () => {
+  it('verifies Backlog token when MCP token is valid but not cached', async () => {
+    store.storeMcpToken('mcp-token-2', {
+      backlogAccessToken: 'bl-token-2',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
+
     vi.mocked(verifyBacklogToken).mockResolvedValue({
       id: 42,
       userId: 'user42',
@@ -72,21 +93,27 @@ describe('createBearerAuthMiddleware', () => {
 
     const res = await app.request('/mcp', {
       method: 'POST',
-      headers: { Authorization: 'Bearer fresh-token' },
+      headers: { Authorization: 'Bearer mcp-token-2' },
     });
     expect(res.status).toBe(200);
     expect(verifyBacklogToken).toHaveBeenCalledWith(
       'example.backlog.com',
-      'fresh-token'
+      'bl-token-2'
     );
   });
 
-  it('returns 401 when token verification fails', async () => {
+  it('returns 401 when Backlog token verification fails', async () => {
+    store.storeMcpToken('mcp-token-3', {
+      backlogAccessToken: 'bl-bad-token',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
+
     vi.mocked(verifyBacklogToken).mockRejectedValue(new Error('invalid'));
 
     const res = await app.request('/mcp', {
       method: 'POST',
-      headers: { Authorization: 'Bearer bad-token' },
+      headers: { Authorization: 'Bearer mcp-token-3' },
     });
     expect(res.status).toBe(401);
   });

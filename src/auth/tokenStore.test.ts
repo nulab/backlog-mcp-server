@@ -38,7 +38,7 @@ describe('TokenStore', () => {
       store.storePendingAuth('state-1', {
         mcpClientId: 'c',
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         scopes: [],
         createdAt: Date.now(),
       });
@@ -50,7 +50,7 @@ describe('TokenStore', () => {
       store.storePendingAuth('state-1', {
         mcpClientId: 'c',
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         scopes: [],
         createdAt: Date.now(),
       });
@@ -70,7 +70,7 @@ describe('TokenStore', () => {
           refresh_token: 'rt',
         },
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
       };
       store.storeAuthCode('code-1', entry);
@@ -87,7 +87,7 @@ describe('TokenStore', () => {
           refresh_token: 'rt',
         },
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
       });
       vi.advanceTimersByTime(11 * 60 * 1000);
@@ -101,14 +101,32 @@ describe('TokenStore', () => {
         client_id: 'c1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://x'],
+        redirect_uris: ['http://localhost'],
       };
-      store.registerClient(client);
+      expect(store.registerClient(client)).toBe(true);
       expect(store.getClient('c1')).toEqual(client);
     });
 
     it('returns undefined for unknown client', () => {
       expect(store.getClient('unknown')).toBeUndefined();
+    });
+
+    it('rejects registration when max clients reached', () => {
+      for (let i = 0; i < 1000; i++) {
+        store.registerClient({
+          client_id: `c${i}`,
+          client_id_issued_at: 0,
+          client_secret_expires_at: 0,
+          redirect_uris: ['http://localhost'],
+        });
+      }
+      const result = store.registerClient({
+        client_id: 'overflow',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['http://localhost'],
+      });
+      expect(result).toBe(false);
     });
   });
 
@@ -127,12 +145,61 @@ describe('TokenStore', () => {
     });
   });
 
+  describe('mcpTokens', () => {
+    it('stores and retrieves an MCP token', () => {
+      const entry = {
+        backlogAccessToken: 'bl-at',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      };
+      store.storeMcpToken('mcp-t1', entry);
+      expect(store.getMcpToken('mcp-t1')).toEqual(entry);
+    });
+
+    it('returns undefined for expired MCP token', () => {
+      store.storeMcpToken('mcp-t1', {
+        backlogAccessToken: 'bl-at',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
+      vi.advanceTimersByTime(3601_000);
+      expect(store.getMcpToken('mcp-t1')).toBeUndefined();
+    });
+
+    it('returns undefined for unknown MCP token', () => {
+      expect(store.getMcpToken('unknown')).toBeUndefined();
+    });
+  });
+
+  describe('mcpRefreshTokens', () => {
+    it('stores and consumes an MCP refresh token', () => {
+      store.storeMcpRefreshToken('mcp-rt1', {
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+      });
+      const result = store.consumeMcpRefreshToken('mcp-rt1');
+      expect(result).toEqual({
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+      });
+    });
+
+    it('consumes only once', () => {
+      store.storeMcpRefreshToken('mcp-rt1', {
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+      });
+      store.consumeMcpRefreshToken('mcp-rt1');
+      expect(store.consumeMcpRefreshToken('mcp-rt1')).toBeUndefined();
+    });
+  });
+
   describe('cleanup', () => {
-    it('removes expired entries', () => {
+    it('removes expired entries including MCP tokens', () => {
       store.storePendingAuth('s1', {
         mcpClientId: 'c',
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         scopes: [],
         createdAt: Date.now(),
       });
@@ -145,7 +212,7 @@ describe('TokenStore', () => {
           refresh_token: 'rt',
         },
         codeChallenge: 'ch',
-        redirectUri: 'http://x',
+        redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
       });
       store.cacheVerification(
@@ -153,13 +220,19 @@ describe('TokenStore', () => {
         { token: 't', clientId: '1', scopes: [], expiresAt: 0 },
         300_000
       );
+      store.storeMcpToken('mcp-t1', {
+        backlogAccessToken: 'bl-at',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
 
-      vi.advanceTimersByTime(11 * 60 * 1000);
+      vi.advanceTimersByTime(2 * 60 * 60 * 1000);
       store.cleanup();
 
       expect(store.consumePendingAuth('s1')).toBeUndefined();
       expect(store.consumeAuthCode('code-1')).toBeUndefined();
       expect(store.getCachedVerification('token-1')).toBeUndefined();
+      expect(store.getMcpToken('mcp-t1')).toBeUndefined();
     });
   });
 });

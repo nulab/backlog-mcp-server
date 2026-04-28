@@ -131,6 +131,11 @@ const clientRegistry = oauthConfig
 const backlog = clientRegistry.createScopedClient();
 
 const tokenStore = oauthConfig ? new TokenStore() : undefined;
+let cleanupTimer: ReturnType<typeof setInterval> | undefined;
+if (tokenStore) {
+  cleanupTimer = setInterval(() => tokenStore.cleanup(), 5 * 60 * 1000);
+  cleanupTimer.unref();
+}
 
 const useFields = argv.optimizeResponse;
 

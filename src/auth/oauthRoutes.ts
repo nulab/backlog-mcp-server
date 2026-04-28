@@ -13,6 +13,7 @@ import type { TokenStore, OAuthClientInfo } from './tokenStore.js';
 import { logger } from '../utils/logger.js';
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
+const LOCALHOST_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
 function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
   const hash = createHash('sha256').update(codeVerifier).digest('base64url');
@@ -26,6 +27,21 @@ function oauthError(
   return { error: code, error_description: description };
 }
 
+function isValidRedirectUri(uri: string): boolean {
+  try {
+    const parsed = new URL(uri);
+    if (parsed.protocol === 'https:') return true;
+    if (
+      parsed.protocol === 'http:' &&
+      LOCALHOST_HOSTS.includes(parsed.hostname)
+    )
+      return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function createOAuthRoutes(
   config: BacklogOAuthConfig,
   store: TokenStore,
@@ -34,6 +50,7 @@ export function createOAuthRoutes(
   const app = new Hono();
   const { serverBaseUrl } = config;
   const callbackUrl = `${serverBaseUrl}/callback`;
+  const resourceUri = `${serverBaseUrl}${mcpPath}`;
 
   // RFC 8414 — OAuth Authorization Server Metadata
   app.get('/.well-known/oauth-authorization-server', (c) => {
@@ -55,7 +72,7 @@ export function createOAuthRoutes(
   app.get(`/.well-known/oauth-protected-resource${prm}`, (c) => {
     c.header('Cache-Control', 'public, max-age=3600');
     return c.json({
-      resource: `${serverBaseUrl}${mcpPath}`,
+      resource: resourceUri,
       authorization_servers: [serverBaseUrl],
     });
   });
@@ -84,6 +101,18 @@ export function createOAuthRoutes(
       );
     }
 
+    for (const uri of redirectUris as string[]) {
+      if (!isValidRedirectUri(uri)) {
+        return c.json(
+          oauthError(
+            'invalid_client_metadata',
+            `redirect_uri must use https or http://localhost: ${uri}`
+          ),
+          400
+        );
+      }
+    }
+
     const clientId = randomUUID();
     const clientSecret =
       body.token_endpoint_auth_method === 'none'
@@ -106,7 +135,12 @@ export function createOAuthRoutes(
       response_types: ['code'],
     };
 
-    store.registerClient(client);
+    if (!store.registerClient(client)) {
+      return c.json(
+        oauthError('server_error', 'Maximum number of registered clients reached'),
+        503
+      );
+    }
     logger.info({ clientId }, 'Registered new OAuth client');
 
     return c.json(client, 201);
@@ -128,6 +162,7 @@ export function createOAuthRoutes(
     const codeChallengeMethod = params.code_challenge_method;
     const scope = params.scope;
     const state = params.state;
+    const resource = params.resource;
 
     // Phase 1: Validate client and redirect_uri (errors returned directly)
     if (!clientId) {
@@ -186,12 +221,24 @@ export function createOAuthRoutes(
       return c.redirect(url.href, 302);
     }
 
+    if (resource && resource !== resourceUri) {
+      const url = new URL(effectiveRedirectUri);
+      url.searchParams.set('error', 'invalid_target');
+      url.searchParams.set(
+        'error_description',
+        'Invalid resource parameter'
+      );
+      if (state) url.searchParams.set('state', state);
+      return c.redirect(url.href, 302);
+    }
+
     // Store pending authorization and redirect to Backlog
     const backlogState = randomUUID();
     store.storePendingAuth(backlogState, {
       mcpClientId: clientId,
       codeChallenge,
       redirectUri: effectiveRedirectUri,
+      resource: resource ?? resourceUri,
       scopes: scope ? scope.split(' ') : [],
       state,
       createdAt: Date.now(),
@@ -245,6 +292,7 @@ export function createOAuthRoutes(
       backlogTokens,
       codeChallenge: pending.codeChallenge,
       redirectUri: pending.redirectUri,
+      resource: pending.resource,
       expiresAt: Date.now() + AUTH_CODE_TTL_MS,
     });
 
@@ -314,11 +362,24 @@ export function createOAuthRoutes(
         );
       }
 
+      const mcpAccessToken = randomBytes(32).toString('hex');
+      const mcpRefreshToken = randomBytes(32).toString('hex');
+
+      store.storeMcpToken(mcpAccessToken, {
+        backlogAccessToken: entry.backlogTokens.access_token,
+        clientId,
+        expiresAt: Date.now() + entry.backlogTokens.expires_in * 1000,
+      });
+      store.storeMcpRefreshToken(mcpRefreshToken, {
+        backlogRefreshToken: entry.backlogTokens.refresh_token,
+        clientId,
+      });
+
       return c.json({
-        access_token: entry.backlogTokens.access_token,
+        access_token: mcpAccessToken,
         token_type: 'bearer',
         expires_in: entry.backlogTokens.expires_in,
-        refresh_token: entry.backlogTokens.refresh_token,
+        refresh_token: mcpRefreshToken,
       });
     }
 
@@ -331,13 +392,45 @@ export function createOAuthRoutes(
         );
       }
 
+      const refreshEntry = store.consumeMcpRefreshToken(refreshToken);
+      if (!refreshEntry) {
+        return c.json(
+          oauthError('invalid_grant', 'Invalid or expired refresh token'),
+          400
+        );
+      }
+
+      if (refreshEntry.clientId !== clientId) {
+        return c.json(
+          oauthError('invalid_grant', 'Refresh token was issued to a different client'),
+          400
+        );
+      }
+
       try {
-        const tokens = await refreshBacklogToken(config, refreshToken);
+        const tokens = await refreshBacklogToken(
+          config,
+          refreshEntry.backlogRefreshToken
+        );
+
+        const mcpAccessToken = randomBytes(32).toString('hex');
+        const mcpRefreshToken = randomBytes(32).toString('hex');
+
+        store.storeMcpToken(mcpAccessToken, {
+          backlogAccessToken: tokens.access_token,
+          clientId,
+          expiresAt: Date.now() + tokens.expires_in * 1000,
+        });
+        store.storeMcpRefreshToken(mcpRefreshToken, {
+          backlogRefreshToken: tokens.refresh_token,
+          clientId,
+        });
+
         return c.json({
-          access_token: tokens.access_token,
+          access_token: mcpAccessToken,
           token_type: 'bearer',
           expires_in: tokens.expires_in,
-          refresh_token: tokens.refresh_token,
+          refresh_token: mcpRefreshToken,
         });
       } catch (err) {
         logger.error({ err }, 'Failed to refresh Backlog token');

@@ -29,8 +29,8 @@ export function createBearerAuthMiddleware(
       return c.json({ error: 'invalid_token', error_description: 'Missing Authorization header' }, 401);
     }
 
-    const [type, token] = authHeader.split(' ');
-    if (type?.toLowerCase() !== 'bearer' || !token) {
+    const [type, mcpToken] = authHeader.split(' ');
+    if (type?.toLowerCase() !== 'bearer' || !mcpToken) {
       c.header(
         'WWW-Authenticate',
         `Bearer error="invalid_token", error_description="Invalid Authorization header format", resource_metadata="${resourceMetadataUrl}"`
@@ -38,7 +38,16 @@ export function createBearerAuthMiddleware(
       return c.json({ error: 'invalid_token', error_description: 'Expected Bearer token' }, 401);
     }
 
-    const cached = store.getCachedVerification(token);
+    const tokenEntry = store.getMcpToken(mcpToken);
+    if (!tokenEntry) {
+      c.header(
+        'WWW-Authenticate',
+        `Bearer error="invalid_token", error_description="Unknown or expired token", resource_metadata="${resourceMetadataUrl}"`
+      );
+      return c.json({ error: 'invalid_token', error_description: 'Unknown or expired token' }, 401);
+    }
+
+    const cached = store.getCachedVerification(mcpToken);
     if (cached) {
       c.set('authInfo', cached);
       await next();
@@ -46,14 +55,17 @@ export function createBearerAuthMiddleware(
     }
 
     try {
-      const user = await verifyBacklogToken(config.backlogDomain, token);
+      const user = await verifyBacklogToken(
+        config.backlogDomain,
+        tokenEntry.backlogAccessToken
+      );
       const authInfo: AuthInfo = {
-        token,
+        token: tokenEntry.backlogAccessToken,
         clientId: String(user.id),
         scopes: [],
         expiresAt: Math.floor(Date.now() / 1000) + CACHE_TTL_MS / 1000,
       };
-      store.cacheVerification(token, authInfo, CACHE_TTL_MS);
+      store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       c.set('authInfo', authInfo);
       await next();
     } catch (err) {

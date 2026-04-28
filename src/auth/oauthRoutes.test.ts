@@ -71,20 +71,45 @@ describe('createOAuthRoutes', () => {
   });
 
   describe('POST /register', () => {
-    it('registers a client', async () => {
+    it('registers a client with https redirect_uri', async () => {
       const res = await app.request('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          redirect_uris: ['http://localhost:9999/callback'],
+          redirect_uris: ['https://client.example.com/callback'],
           client_name: 'test',
         }),
       });
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.client_id).toBeDefined();
-      expect(body.redirect_uris).toEqual(['http://localhost:9999/callback']);
-      expect(body.client_name).toBe('test');
+      expect(body.redirect_uris).toEqual([
+        'https://client.example.com/callback',
+      ]);
+    });
+
+    it('registers a client with localhost redirect_uri', async () => {
+      const res = await app.request('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redirect_uris: ['http://localhost:9999/callback'],
+        }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it('rejects http redirect_uri on non-localhost', async () => {
+      const res = await app.request('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redirect_uris: ['http://evil.com/callback'],
+        }),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_client_metadata');
     });
 
     it('rejects missing redirect_uris', async () => {
@@ -100,7 +125,7 @@ describe('createOAuthRoutes', () => {
   describe('GET /authorize', () => {
     it('rejects unknown client_id', async () => {
       const res = await app.request(
-        '/authorize?client_id=unknown&redirect_uri=http://x&response_type=code&code_challenge=ch&code_challenge_method=S256'
+        '/authorize?client_id=unknown&redirect_uri=https://x.com/cb&response_type=code&code_challenge=ch&code_challenge_method=S256'
       );
       expect(res.status).toBe(400);
     });
@@ -110,11 +135,11 @@ describe('createOAuthRoutes', () => {
         client_id: 'c1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
       });
 
       const res = await app.request(
-        '/authorize?client_id=c1&redirect_uri=http://localhost/cb&response_type=code&code_challenge=test-challenge&code_challenge_method=S256&state=my-state',
+        '/authorize?client_id=c1&redirect_uri=https://client.example.com/cb&response_type=code&code_challenge=test-challenge&code_challenge_method=S256&state=my-state',
         { redirect: 'manual' }
       );
       expect(res.status).toBe(302);
@@ -127,13 +152,30 @@ describe('createOAuthRoutes', () => {
         client_id: 'c1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
       });
 
       const res = await app.request(
-        '/authorize?client_id=c1&redirect_uri=http://evil.com/cb&response_type=code&code_challenge=ch&code_challenge_method=S256'
+        '/authorize?client_id=c1&redirect_uri=https://evil.com/cb&response_type=code&code_challenge=ch&code_challenge_method=S256'
       );
       expect(res.status).toBe(400);
+    });
+
+    it('rejects invalid resource parameter', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      const res = await app.request(
+        '/authorize?client_id=c1&redirect_uri=https://client.example.com/cb&response_type=code&code_challenge=ch&code_challenge_method=S256&resource=https://wrong.example.com/mcp',
+        { redirect: 'manual' }
+      );
+      expect(res.status).toBe(302);
+      const location = res.headers.get('location')!;
+      expect(location).toContain('error=invalid_target');
     });
   });
 
@@ -146,7 +188,7 @@ describe('createOAuthRoutes', () => {
       return { verifier, challenge };
     }
 
-    it('exchanges authorization code for tokens', async () => {
+    it('exchanges authorization code for opaque MCP tokens', async () => {
       const { verifier, challenge } = makePkce();
 
       store.registerClient({
@@ -154,7 +196,7 @@ describe('createOAuthRoutes', () => {
         client_secret: 's1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
       });
 
       store.storeAuthCode('mcp-code-1', {
@@ -166,7 +208,7 @@ describe('createOAuthRoutes', () => {
           refresh_token: 'bl-rt',
         },
         codeChallenge: challenge,
-        redirectUri: 'http://localhost/cb',
+        redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
       });
 
@@ -176,7 +218,7 @@ describe('createOAuthRoutes', () => {
         client_secret: 's1',
         code: 'mcp-code-1',
         code_verifier: verifier,
-        redirect_uri: 'http://localhost/cb',
+        redirect_uri: 'https://client.example.com/cb',
       });
 
       const res = await app.request('/token', {
@@ -186,8 +228,13 @@ describe('createOAuthRoutes', () => {
       });
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.access_token).toBe('bl-at');
-      expect(json.refresh_token).toBe('bl-rt');
+      expect(json.access_token).toBeDefined();
+      expect(json.refresh_token).toBeDefined();
+      // Opaque tokens must NOT be the raw Backlog tokens
+      expect(json.access_token).not.toBe('bl-at');
+      expect(json.refresh_token).not.toBe('bl-rt');
+      expect(json.token_type).toBe('bearer');
+      expect(json.expires_in).toBe(3600);
     });
 
     it('rejects invalid code_verifier', async () => {
@@ -196,7 +243,7 @@ describe('createOAuthRoutes', () => {
         client_secret: 's1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
       });
 
       store.storeAuthCode('mcp-code-2', {
@@ -208,7 +255,7 @@ describe('createOAuthRoutes', () => {
           refresh_token: 'rt',
         },
         codeChallenge: 'correct-challenge',
-        redirectUri: 'http://localhost/cb',
+        redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
       });
 
@@ -230,20 +277,25 @@ describe('createOAuthRoutes', () => {
       expect(json.error).toBe('invalid_grant');
     });
 
-    it('refreshes a token', async () => {
+    it('refreshes a token and returns new opaque MCP tokens', async () => {
       store.registerClient({
         client_id: 'c1',
         client_secret: 's1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-1', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
       });
 
       const body = new URLSearchParams({
         grant_type: 'refresh_token',
         client_id: 'c1',
         client_secret: 's1',
-        refresh_token: 'bl-refresh',
+        refresh_token: 'mcp-refresh-1',
       });
 
       const res = await app.request('/token', {
@@ -253,7 +305,61 @@ describe('createOAuthRoutes', () => {
       });
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.access_token).toBe('bl-new-access');
+      expect(json.access_token).toBeDefined();
+      expect(json.refresh_token).toBeDefined();
+      expect(json.access_token).not.toBe('bl-new-access');
+      expect(json.refresh_token).not.toBe('bl-new-refresh');
+    });
+
+    it('rejects invalid refresh token', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        refresh_token: 'unknown-refresh',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toBe('invalid_grant');
+    });
+
+    it('rejects refresh token issued to different client', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-2', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'other-client',
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        refresh_token: 'mcp-refresh-2',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(400);
     });
 
     it('rejects unsupported grant_type', async () => {
@@ -261,7 +367,7 @@ describe('createOAuthRoutes', () => {
         client_id: 'c1',
         client_id_issued_at: 0,
         client_secret_expires_at: 0,
-        redirect_uris: ['http://localhost/cb'],
+        redirect_uris: ['https://client.example.com/cb'],
       });
 
       const body = new URLSearchParams({
