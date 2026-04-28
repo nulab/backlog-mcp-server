@@ -163,6 +163,52 @@ Environment variables (CLI flags override when both are set):
 | `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported |
 | `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
 
+### OAuth 2.0 Authentication (Remote MCP)
+
+When exposing the MCP server over a network, you can enable OAuth 2.0 authentication so that each user authenticates with their own Backlog account instead of sharing a single API key.
+
+The server implements the [MCP Third-Party Authorization Flow](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) by acting as both an OAuth authorization server (for MCP clients) and an OAuth client (for Backlog).
+
+#### Prerequisites
+
+1. Register an OAuth application in your Backlog space:
+   - Go to your Backlog space → Personal Settings → Register Application
+   - Set the **Redirect URI** to `<MCP_SERVER_BASE_URL>/callback` (e.g., `https://mcp.example.com/callback`)
+   - Note the **Client ID** and **Client Secret**
+
+2. Set the following environment variables (in addition to `BACKLOG_DOMAIN`):
+
+| Variable | Description |
+| -------- | ----------- |
+| `BACKLOG_OAUTH_CLIENT_ID` | OAuth Client ID from your Backlog application |
+| `BACKLOG_OAUTH_CLIENT_SECRET` | OAuth Client Secret from your Backlog application |
+| `MCP_SERVER_BASE_URL` | Public URL of your MCP server (e.g., `https://mcp.example.com`) |
+
+> **Note:** `BACKLOG_API_KEY` is **not required** when OAuth is enabled — each user authenticates with their own Backlog account.
+
+#### Example
+
+```bash
+BACKLOG_DOMAIN=your-space.backlog.com \
+BACKLOG_OAUTH_CLIENT_ID=your-client-id \
+BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret \
+MCP_SERVER_BASE_URL=https://mcp.example.com \
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+```
+
+The server automatically exposes the following OAuth endpoints when OAuth is enabled:
+
+| Endpoint | Description |
+| -------- | ----------- |
+| `GET /.well-known/oauth-authorization-server` | OAuth Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)) |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuth Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) |
+| `POST /register` | Dynamic Client Registration ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)) |
+| `GET /authorize` | Authorization endpoint (redirects to Backlog OAuth) |
+| `GET /callback` | Backlog OAuth callback |
+| `POST /token` | Token endpoint (authorization code & refresh token) |
+
+MCP clients that support the MCP authorization specification will use these endpoints automatically.
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.

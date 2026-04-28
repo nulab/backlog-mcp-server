@@ -7,10 +7,15 @@ import dotenv from 'dotenv';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { getBacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import { TokenStore } from './auth/tokenStore.js';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
-import { createBacklogClientRegistry } from './utils/backlogClientRegistry.js';
+import {
+  createBacklogClientRegistry,
+  createOAuthBacklogClientRegistry,
+} from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
 import packageJson from '../package.json' with { type: 'json' };
 
@@ -38,6 +43,8 @@ process.on('unhandledRejection', (reason) => {
 });
 
 dotenv.config();
+
+const oauthConfig = getBacklogOAuthConfig();
 
 const argv = yargs(hideBin(process.argv))
   .option('transport', {
@@ -118,8 +125,12 @@ Available toolsets:
   })
   .parseSync();
 
-const clientRegistry = createBacklogClientRegistry();
+const clientRegistry = oauthConfig
+  ? createOAuthBacklogClientRegistry(oauthConfig.backlogDomain)
+  : createBacklogClientRegistry();
 const backlog = clientRegistry.createScopedClient();
+
+const tokenStore = oauthConfig ? new TokenStore() : undefined;
 
 const useFields = argv.optimizeResponse;
 
@@ -162,6 +173,12 @@ function normalizeHttpPath(p: string): string {
 }
 
 async function main() {
+  if (oauthConfig && argv.transport === 'stdio') {
+    logger.warn(
+      'OAuth is configured but transport is stdio. OAuth is only available with HTTP transport.'
+    );
+  }
+
   if (argv.transport === 'http') {
     const httpPath = normalizeHttpPath(argv.httpPath);
     const allowedHostsRaw = argv.httpAllowedHosts;
@@ -181,6 +198,8 @@ async function main() {
       enableJsonResponse: argv.httpJsonResponse,
       allowedHosts,
       createServer,
+      oauthConfig,
+      tokenStore,
     });
 
     process.once('SIGINT', () => {
@@ -200,8 +219,11 @@ async function main() {
         host: argv.httpHost,
         port: argv.httpPort,
         path: httpPath,
+        oauth: !!oauthConfig,
       },
-      'Backlog MCP Server listening (Streamable HTTP)'
+      oauthConfig
+        ? 'Backlog MCP Server listening (Streamable HTTP + OAuth)'
+        : 'Backlog MCP Server listening (Streamable HTTP)'
     );
     return;
   }
