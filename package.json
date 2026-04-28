@@ -1,6 +1,6 @@
 {
   "name": "backlog-mcp-server",
-  "version": "0.9.1",
+  "version": "0.11.0",
   "type": "module",
   "bin": {
     "backlog-mcp-server": "./build/index.js"
@@ -27,12 +27,14 @@
     "build"
   ],
   "dependencies": {
+    "@hono/node-server": "^1.19.14",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "backlog-js": "^0.16.0",
     "cosmiconfig": "^9.0.0",
     "dotenv": "^16.5.0",
     "env-var": "^7.5.0",
     "graphql": "^16.11.0",
+    "hono": "^4.12.14",
     "pino": "^9.9.0",
     "pino-pretty": "^13.1.1",
     "sharp": "^0.34.5",

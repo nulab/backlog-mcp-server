@@ -43,7 +43,7 @@ export const enableToolsetTool = (
     name: 'enable_toolset',
     description: t(
       'TOOL_ENABLE_TOOLSET_DESCRIPTION',
-      'Enable one of the sets of tools the GitHub MCP server provides, use get_toolset_tools and list_available_toolsets first to see what this will enable'
+      'Enable one of the Backlog MCP server toolsets. Use get_toolset_tools and list_available_toolsets first to inspect what this will enable.'
     ),
     schema: z.object(enableToolsetSchema(t)),
     handler: async ({ toolset }) => {

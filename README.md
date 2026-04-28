@@ -139,6 +139,30 @@ npm run dev
 }
 ```
 
+### HTTP transport (Streamable HTTP)
+
+By default the server uses **stdio**. To run the [MCP Streamable HTTP](https://modelcontextprotocol.io/) transport instead (JSON-RPC over HTTP, same tools as stdio), start with `--transport http` or set `MCP_TRANSPORT=http`.
+
+```bash
+npm run build
+MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
+```
+
+- **Endpoint:** `POST`, `GET`, and `DELETE` on `http://<host>:<port><path>` (default path `/mcp`).
+- **Session:** After `initialize`, clients must send the `mcp-session-id` header on later requests (as returned by the server).
+- **Security:** Default bind is `127.0.0.1`. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
+
+Environment variables (CLI flags override when both are set):
+
+| Variable | Description |
+| -------- | ----------- |
+| `MCP_TRANSPORT` | `stdio` (default) or `http` |
+| `MCP_HTTP_HOST` | Bind address (default `127.0.0.1`) |
+| `MCP_HTTP_PORT` | Port (default `3333`) |
+| `MCP_HTTP_PATH` | URL path (default `/mcp`) |
+| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported |
+| `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.
@@ -579,6 +603,10 @@ npm test
 
 The server supports several command line options:
 
+- `--transport stdio|http`: MCP transport (default: stdio). Use `http` for Streamable HTTP.
+- `--http-host`, `--http-port`, `--http-path`: HTTP bind address, port, and path (defaults: `127.0.0.1`, `3333`, `/mcp`).
+- `--http-json-response`: Prefer JSON responses over SSE when the transport supports it.
+- `--http-allowed-hosts`: Comma-separated allowed `Host` headers when binding to all interfaces.
 - `--export-translations`: Export all translation keys and values
 - `--optimize-response`: Enable GraphQL-style field selection
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
@@ -592,6 +620,95 @@ Example:
 ```bash
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
 ```
+
+HTTP example:
+
+```bash
+node build/index.js --transport http --http-port 3333 --http-path /mcp
+```
+
+## Multi-Organization Support
+
+This server can be configured to access multiple Backlog organizations from a single MCP server instance.
+
+### Configuration
+
+Configure one env pair per organization and set a default organization:
+
+```bash
+BACKLOG_DEFAULT_ORG=COMPANY_A
+BACKLOG_ORG_COMPANY_A_DOMAIN=company-a.backlog.com
+BACKLOG_ORG_COMPANY_A_API_KEY=your-company-a-api-key
+BACKLOG_ORG_COMPANY_B_DOMAIN=company-b.backlog.com
+BACKLOG_ORG_COMPANY_B_API_KEY=your-company-b-api-key
+```
+
+This works whether the variables come from a local `.env`, your shell environment, or an MCP client config `env` block.
+
+Example MCP config:
+
+```json
+{
+  "env": {
+    "BACKLOG_DEFAULT_ORG": "COMPANY_A",
+    "BACKLOG_ORG_COMPANY_A_DOMAIN": "company-a.backlog.com",
+    "BACKLOG_ORG_COMPANY_A_API_KEY": "your-company-a-api-key",
+    "BACKLOG_ORG_COMPANY_B_DOMAIN": "company-b.backlog.com",
+    "BACKLOG_ORG_COMPANY_B_API_KEY": "your-company-b-api-key"
+  }
+}
+```
+
+If no multi-organization env vars are set, the server falls back to the existing single-organization configuration:
+
+```bash
+BACKLOG_DOMAIN=your-domain.backlog.com
+BACKLOG_API_KEY=your-api-key
+```
+
+### Tool Usage
+
+All normal tools accept an optional `organization` input field. When provided, the tool call is routed to that Backlog organization.
+
+Examples:
+
+```json
+{
+  "organization": "COMPANY_B",
+  "projectKey": "PROJECT"
+}
+```
+
+If `organization` is omitted:
+
+- the organization named by `BACKLOG_DEFAULT_ORG` is used
+- if multi-organization env vars are present and `BACKLOG_DEFAULT_ORG` is missing, the server fails at startup
+
+### Organization Discovery
+
+The server provides a `list_organizations` tool that returns the configured organization names, their domains, and which one is the default.
+
+Example response:
+
+```json
+[
+  {
+    "name": "COMPANY_A",
+    "domain": "company-a.backlog.com",
+    "isDefault": true
+  },
+  {
+    "name": "COMPANY_B",
+    "domain": "company-b.backlog.com",
+    "isDefault": false
+  }
+]
+```
+
+### Notes
+
+- For multi-org mode, every organization must define both `BACKLOG_ORG_<NAME>_DOMAIN` and `BACKLOG_ORG_<NAME>_API_KEY`.
+- The `<NAME>` part is the organization name exposed through the `organization` tool input and `list_organizations`.
 
 ## License
 
