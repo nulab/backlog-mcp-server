@@ -1,5 +1,6 @@
 import { transferIssueAttachmentTool } from './transferIssueAttachment.js';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { Buffer } from 'node:buffer';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 import { PassThrough } from 'stream';

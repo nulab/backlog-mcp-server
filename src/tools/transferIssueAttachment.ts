@@ -6,8 +6,10 @@ import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 import { streamToBuffer } from '../utils/streamToBuffer.js';
 import { tryDecodeFilename } from '../utils/buildFileContent.js';
 import { getMimeType } from '../utils/getMimeType.js';
+import { Buffer } from 'node:buffer';
 import * as https from 'node:https';
 import * as http from 'node:http';
+import { URL } from 'node:url';
 
 const transferIssueAttachmentSchema = buildToolSchema((t) => ({
   issueId: z
