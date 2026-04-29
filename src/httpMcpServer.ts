@@ -5,9 +5,13 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { serve } from '@hono/node-server';
 
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { Hono } from 'hono';
+import { runWithAccessToken } from './auth/backlogAuthContext.js';
+import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import type { TokenStore } from './auth/tokenStore.js';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
@@ -19,6 +23,8 @@ type RunHttpMcpServerOptions = {
   enableJsonResponse: boolean;
   allowedHosts?: string[];
   createServer: () => BacklogMCPServer;
+  oauthConfig?: BacklogOAuthConfig;
+  tokenStore?: TokenStore;
 };
 
 type HttpMcpServerHandle = {
@@ -78,7 +84,8 @@ const startNewSession = async (
   body: unknown,
   enableJsonResponse: boolean,
   transports: Record<string, WebStandardStreamableHTTPServerTransport>,
-  createServer: () => BacklogMCPServer
+  createServer: () => BacklogMCPServer,
+  authInfo?: AuthInfo
 ): Promise<Response> => {
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
@@ -94,7 +101,7 @@ const startNewSession = async (
   };
 
   await createServer().connect(transport);
-  return transport.handleRequest(req, { parsedBody: body });
+  return transport.handleRequest(req, { parsedBody: body, authInfo });
 };
 
 export const runHttpMcpServer = async (
@@ -108,6 +115,8 @@ export const runHttpMcpServer = async (
     enableJsonResponse,
     allowedHosts,
     createServer,
+    oauthConfig,
+    tokenStore,
   } = options;
 
   if ((host === '0.0.0.0' || host === '::') && !allowedHosts?.length) {
@@ -117,31 +126,57 @@ export const runHttpMcpServer = async (
     );
   }
 
-  const app = new Hono();
+  const app = new Hono<{ Variables: { authInfo?: AuthInfo } }>();
   const transports: Record<string, WebStandardStreamableHTTPServerTransport> =
     {};
   const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
+  const oauthEnabled = !!(oauthConfig && tokenStore);
+
+  if (allowedHostnames) {
+    app.use('*', async (c, next) => {
+      const hostError = checkHostHeader(
+        c.req.raw.headers.get('host'),
+        allowedHostnames
+      );
+      if (hostError) return c.json(hostError, 403);
+      await next();
+    });
+  }
 
   app.get('/health', (c) =>
     c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
   );
 
+  if (oauthEnabled) {
+    const { createOAuthRoutes } = await import('./auth/oauthRoutes.js');
+    const { createBearerAuthMiddleware } = await import(
+      './auth/bearerAuthMiddleware.js'
+    );
+
+    app.route('/', createOAuthRoutes(oauthConfig, tokenStore, mcpPath));
+    app.use(
+      mcpPath,
+      createBearerAuthMiddleware(tokenStore, oauthConfig, mcpPath)
+    );
+  }
+
   app.all(mcpPath, async (c) => {
     const req = c.req.raw;
 
-    if (allowedHostnames) {
-      const hostError = checkHostHeader(
-        req.headers.get('host'),
-        allowedHostnames
-      );
-      if (hostError) return c.json(hostError, 403);
-    }
+    const authInfo = oauthEnabled
+      ? (c.get('authInfo') as AuthInfo | undefined)
+      : undefined;
+    const accessToken = authInfo?.token;
 
     const sessionId = req.headers.get('mcp-session-id');
 
     try {
       if (sessionId && transports[sessionId]) {
-        return transports[sessionId].handleRequest(req);
+        const handleExisting = () =>
+          transports[sessionId].handleRequest(req, { authInfo });
+        return accessToken
+          ? runWithAccessToken(accessToken, handleExisting)
+          : handleExisting();
       }
 
       if (sessionId) {
@@ -178,13 +213,18 @@ export const runHttpMcpServer = async (
         return c.json(Array.isArray(body) ? [err] : err, 400);
       }
 
-      return startNewSession(
-        req,
-        body,
-        enableJsonResponse,
-        transports,
-        createServer
-      );
+      const handleNew = () =>
+        startNewSession(
+          req,
+          body,
+          enableJsonResponse,
+          transports,
+          createServer,
+          authInfo
+        );
+      return accessToken
+        ? runWithAccessToken(accessToken, handleNew)
+        : handleNew();
     } catch (error) {
       logger.error({ err: error }, 'Error handling MCP request');
       return c.json(jsonRpcError(-32603, 'Internal server error'), 500);

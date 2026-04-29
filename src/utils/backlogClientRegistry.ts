@@ -1,4 +1,5 @@
 import { Backlog } from 'backlog-js';
+import { getCurrentAccessToken } from '../auth/backlogAuthContext.js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
 
 export type BacklogOrganizationInfo = {
@@ -198,6 +199,32 @@ function resolveKnownClient(
   }
 
   return client;
+}
+
+export function createOAuthBacklogClientRegistry(
+  domain: string
+): BacklogClientRegistry {
+  const defaultName = 'default';
+  const info: BacklogOrganizationInfo = {
+    name: defaultName,
+    domain,
+    isDefault: true,
+  };
+
+  const resolveOAuthClient = (): Backlog => {
+    const token = getCurrentAccessToken();
+    if (!token) {
+      throw new Error('No OAuth access token in current request context');
+    }
+    return new Backlog({ host: domain, accessToken: token });
+  };
+
+  return {
+    resolveClient: () => resolveOAuthClient(),
+    createScopedClient: () => createBacklogClientProxy(resolveOAuthClient),
+    listOrganizations: () => [info],
+    getDefaultOrganization: () => defaultName,
+  };
 }
 
 function createBacklogClientProxy(resolveClient: () => Backlog): Backlog {

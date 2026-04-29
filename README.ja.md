@@ -139,6 +139,56 @@ npm run dev
 }
 ```
 
+### OAuth 2.0 認証（リモートMCP）
+
+MCPサーバーをネットワーク経由で公開する場合、OAuth 2.0認証を有効にすることで、共有APIキーではなく各ユーザーが自分のBacklogアカウントで認証できます。
+
+サーバーは [MCP Third-Party Authorization Flow](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) を実装しており、MCPクライアント向けのOAuth認可サーバーとBacklog向けのOAuthクライアントの両方として動作します。
+
+#### 前提条件
+
+1. Backlogスペースにてアプリケーションを登録します：
+   - Backlogスペース → 個人設定 → アプリケーションの登録
+   - **リダイレクトURI** を `<MCP_SERVER_BASE_URL>/callback`（例：`https://mcp.example.com/callback`）に設定
+   - **Client ID** と **Client Secret** をメモ
+
+2. 以下の環境変数を設定します（`BACKLOG_DOMAIN` に加えて）：
+
+| 変数 | 説明 |
+| ---- | ---- |
+| `BACKLOG_OAUTH_CLIENT_ID` | Backlogアプリケーションの OAuth Client ID |
+| `BACKLOG_OAUTH_CLIENT_SECRET` | Backlogアプリケーションの OAuth Client Secret |
+| `MCP_SERVER_BASE_URL` | MCPサーバーの公開URL（例：`https://mcp.example.com`） |
+
+> **注意:** OAuth有効時は `BACKLOG_API_KEY` は**不要**です。各ユーザーが自分のBacklogアカウントで認証します。
+
+#### 使用例
+
+```bash
+BACKLOG_DOMAIN=your-space.backlog.com \
+BACKLOG_OAUTH_CLIENT_ID=your-client-id \
+BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret \
+MCP_SERVER_BASE_URL=https://mcp.example.com \
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+```
+
+OAuth有効時、サーバーは以下のOAuthエンドポイントを自動的に公開します：
+
+| エンドポイント | 説明 |
+| ------------- | ---- |
+| `GET /.well-known/oauth-authorization-server` | OAuth認可サーバーメタデータ（[RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)） |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuthリソースメタデータ（[RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)） |
+| `POST /register` | 動的クライアント登録（[RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)） |
+| `GET /authorize` | 認可エンドポイント（Backlog OAuthへリダイレクト） |
+| `GET /callback` | Backlog OAuthコールバック |
+| `POST /token` | トークンエンドポイント（認可コード＆リフレッシュトークン） |
+
+MCP認可仕様に対応するMCPクライアントは、これらのエンドポイントを自動的に使用します。
+
+> **制約事項:**
+> - OAuthモードは現在、単一のBacklog組織のみをサポートしています。複数組織設定との併用はできません。
+> - クライアント登録やトークンはメモリ内に保持されるため、サーバー再起動時に失われます。
+
 ## ツール設定
 
 `--enable-toolsets` コマンドラインフラグまたは `ENABLE_TOOLSETS` 環境変数を使用して、特定の **ツールセット** を選択的に有効または無効にすることができます。これにより、AIエージェントが利用できるツールをより細かく制御し、コンテキストサイズを削減するのに役立ちます。

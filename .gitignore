@@ -51,3 +51,6 @@ coverage/
 tmp/
 temp/
 
+# Credentials
+.credentials
+
