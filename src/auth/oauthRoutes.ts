@@ -13,7 +13,9 @@ import type { TokenStore, OAuthClientInfo } from './tokenStore.js';
 import { logger } from '../utils/logger.js';
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const LOCALHOST_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+const SUPPORTED_AUTH_METHODS = ['client_secret_post', 'none'];
 
 function verifyPkce(codeVerifier: string, codeChallenge: string): boolean {
   const hash = createHash('sha256').update(codeVerifier).digest('base64url');
@@ -113,9 +115,24 @@ export function createOAuthRoutes(
       }
     }
 
+    const authMethod =
+      typeof body.token_endpoint_auth_method === 'string'
+        ? body.token_endpoint_auth_method
+        : 'client_secret_post';
+
+    if (!SUPPORTED_AUTH_METHODS.includes(authMethod)) {
+      return c.json(
+        oauthError(
+          'invalid_client_metadata',
+          `Unsupported token_endpoint_auth_method: ${authMethod}. Supported: ${SUPPORTED_AUTH_METHODS.join(', ')}`
+        ),
+        400
+      );
+    }
+
     const clientId = randomUUID();
     const clientSecret =
-      body.token_endpoint_auth_method === 'none'
+      authMethod === 'none'
         ? undefined
         : randomBytes(32).toString('hex');
 
@@ -127,10 +144,7 @@ export function createOAuthRoutes(
       client_secret_expires_at: 0,
       redirect_uris: redirectUris as string[],
       client_name: typeof body.client_name === 'string' ? body.client_name : undefined,
-      token_endpoint_auth_method:
-        typeof body.token_endpoint_auth_method === 'string'
-          ? body.token_endpoint_auth_method
-          : 'client_secret_post',
+      token_endpoint_auth_method: authMethod,
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
     };
@@ -258,9 +272,28 @@ export function createOAuthRoutes(
     const url = new URL(c.req.url);
     const backlogCode = url.searchParams.get('code');
     const backlogState = url.searchParams.get('state');
+    const backlogError = url.searchParams.get('error');
 
-    if (!backlogCode || !backlogState) {
-      return c.text('Missing code or state parameter from Backlog', 400);
+    if (!backlogState) {
+      return c.text('Missing state parameter from Backlog', 400);
+    }
+
+    if (backlogError || !backlogCode) {
+      const pending = store.consumePendingAuth(backlogState);
+      if (!pending) {
+        return c.text(
+          'Unknown or expired authorization state. Please start the authorization flow again.',
+          400
+        );
+      }
+      const errorUrl = new URL(pending.redirectUri);
+      errorUrl.searchParams.set('error', backlogError ?? 'access_denied');
+      errorUrl.searchParams.set(
+        'error_description',
+        url.searchParams.get('error_description') ?? 'Authorization was denied by the user'
+      );
+      if (pending.state) errorUrl.searchParams.set('state', pending.state);
+      return c.redirect(errorUrl.href, 302);
     }
 
     const pending = store.consumePendingAuth(backlogState);
@@ -328,6 +361,7 @@ export function createOAuthRoutes(
       const code = body.code;
       const codeVerifier = body.code_verifier;
       const redirectUri = body.redirect_uri;
+      const resource = body.resource;
 
       if (!code) {
         return c.json(oauthError('invalid_request', 'Missing code'), 400);
@@ -355,6 +389,13 @@ export function createOAuthRoutes(
         );
       }
 
+      if (resource && resource !== entry.resource) {
+        return c.json(
+          oauthError('invalid_grant', 'resource mismatch'),
+          400
+        );
+      }
+
       if (!codeVerifier || !verifyPkce(codeVerifier, entry.codeChallenge)) {
         return c.json(
           oauthError('invalid_grant', 'Invalid code_verifier'),
@@ -373,6 +414,7 @@ export function createOAuthRoutes(
       store.storeMcpRefreshToken(mcpRefreshToken, {
         backlogRefreshToken: entry.backlogTokens.refresh_token,
         clientId,
+        expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
       });
 
       return c.json({
@@ -424,6 +466,7 @@ export function createOAuthRoutes(
         store.storeMcpRefreshToken(mcpRefreshToken, {
           backlogRefreshToken: tokens.refresh_token,
           clientId,
+          expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
         });
 
         return c.json({
@@ -434,9 +477,10 @@ export function createOAuthRoutes(
         });
       } catch (err) {
         logger.error({ err }, 'Failed to refresh Backlog token');
+        store.storeMcpRefreshToken(refreshToken, refreshEntry);
         return c.json(
-          oauthError('invalid_grant', 'Failed to refresh token'),
-          400
+          oauthError('server_error', 'Failed to refresh upstream token'),
+          503
         );
       }
     }

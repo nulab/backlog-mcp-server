@@ -111,18 +111,46 @@ describe('TokenStore', () => {
       expect(store.getClient('unknown')).toBeUndefined();
     });
 
-    it('rejects registration when max clients reached', () => {
-      for (let i = 0; i < 1000; i++) {
+    it('evicts expired client when max clients reached', () => {
+      const nowSec = Math.floor(Date.now() / 1000);
+      store.registerClient({
+        client_id: 'old',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['http://localhost'],
+      });
+      for (let i = 1; i < 1000; i++) {
         store.registerClient({
           client_id: `c${i}`,
-          client_id_issued_at: 0,
+          client_id_issued_at: nowSec,
           client_secret_expires_at: 0,
           redirect_uris: ['http://localhost'],
         });
       }
       const result = store.registerClient({
         client_id: 'overflow',
-        client_id_issued_at: 0,
+        client_id_issued_at: nowSec,
+        client_secret_expires_at: 0,
+        redirect_uris: ['http://localhost'],
+      });
+      expect(result).toBe(true);
+      expect(store.getClient('old')).toBeUndefined();
+      expect(store.getClient('overflow')).toBeDefined();
+    });
+
+    it('rejects registration when max clients reached and none expired', () => {
+      const nowSec = Math.floor(Date.now() / 1000);
+      for (let i = 0; i < 1000; i++) {
+        store.registerClient({
+          client_id: `c${i}`,
+          client_id_issued_at: nowSec,
+          client_secret_expires_at: 0,
+          redirect_uris: ['http://localhost'],
+        });
+      }
+      const result = store.registerClient({
+        client_id: 'overflow',
+        client_id_issued_at: nowSec,
         client_secret_expires_at: 0,
         redirect_uris: ['http://localhost'],
       });
@@ -173,23 +201,33 @@ describe('TokenStore', () => {
 
   describe('mcpRefreshTokens', () => {
     it('stores and consumes an MCP refresh token', () => {
-      store.storeMcpRefreshToken('mcp-rt1', {
+      const entry = {
         backlogRefreshToken: 'bl-rt',
         clientId: 'c1',
-      });
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      };
+      store.storeMcpRefreshToken('mcp-rt1', entry);
       const result = store.consumeMcpRefreshToken('mcp-rt1');
-      expect(result).toEqual({
-        backlogRefreshToken: 'bl-rt',
-        clientId: 'c1',
-      });
+      expect(result).toEqual(entry);
     });
 
     it('consumes only once', () => {
       store.storeMcpRefreshToken('mcp-rt1', {
         backlogRefreshToken: 'bl-rt',
         clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
       store.consumeMcpRefreshToken('mcp-rt1');
+      expect(store.consumeMcpRefreshToken('mcp-rt1')).toBeUndefined();
+    });
+
+    it('returns undefined for expired refresh token', () => {
+      store.storeMcpRefreshToken('mcp-rt1', {
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+      vi.advanceTimersByTime(31 * 24 * 60 * 60 * 1000);
       expect(store.consumeMcpRefreshToken('mcp-rt1')).toBeUndefined();
     });
   });
@@ -225,14 +263,29 @@ describe('TokenStore', () => {
         clientId: 'c1',
         expiresAt: Date.now() + 3600_000,
       });
+      store.storeMcpRefreshToken('mcp-rt1', {
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
 
-      vi.advanceTimersByTime(2 * 60 * 60 * 1000);
+      const nowSec = Math.floor(Date.now() / 1000);
+      store.registerClient({
+        client_id: 'old-client',
+        client_id_issued_at: nowSec,
+        client_secret_expires_at: 0,
+        redirect_uris: ['http://localhost'],
+      });
+
+      vi.advanceTimersByTime(91 * 24 * 60 * 60 * 1000);
       store.cleanup();
 
       expect(store.consumePendingAuth('s1')).toBeUndefined();
       expect(store.consumeAuthCode('code-1')).toBeUndefined();
       expect(store.getCachedVerification('token-1')).toBeUndefined();
       expect(store.getMcpToken('mcp-t1')).toBeUndefined();
+      expect(store.consumeMcpRefreshToken('mcp-rt1')).toBeUndefined();
+      expect(store.getClient('old-client')).toBeUndefined();
     });
   });
 });

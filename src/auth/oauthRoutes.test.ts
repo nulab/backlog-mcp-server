@@ -120,6 +120,36 @@ describe('createOAuthRoutes', () => {
       });
       expect(res.status).toBe(400);
     });
+
+    it('rejects unsupported token_endpoint_auth_method', async () => {
+      const res = await app.request('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redirect_uris: ['https://client.example.com/callback'],
+          token_endpoint_auth_method: 'client_secret_basic',
+        }),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_client_metadata');
+      expect(body.error_description).toContain('client_secret_basic');
+    });
+
+    it('accepts token_endpoint_auth_method=none without client_secret', async () => {
+      const res = await app.request('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redirect_uris: ['https://client.example.com/callback'],
+          token_endpoint_auth_method: 'none',
+        }),
+      });
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.client_secret).toBeUndefined();
+      expect(body.token_endpoint_auth_method).toBe('none');
+    });
   });
 
   describe('GET /authorize', () => {
@@ -176,6 +206,40 @@ describe('createOAuthRoutes', () => {
       expect(res.status).toBe(302);
       const location = res.headers.get('location')!;
       expect(location).toContain('error=invalid_target');
+    });
+  });
+
+  describe('GET /callback', () => {
+    it('forwards Backlog authorization error to MCP client redirect_uri', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storePendingAuth('bl-state-1', {
+        mcpClientId: 'c1',
+        codeChallenge: 'ch',
+        redirectUri: 'https://client.example.com/cb',
+        scopes: [],
+        state: 'mcp-state-1',
+        createdAt: Date.now(),
+      });
+
+      const res = await app.request(
+        '/callback?error=access_denied&error_description=User+denied&state=bl-state-1',
+        { redirect: 'manual' }
+      );
+      expect(res.status).toBe(302);
+      const location = res.headers.get('location')!;
+      expect(location).toContain('error=access_denied');
+      expect(location).toContain('state=mcp-state-1');
+    });
+
+    it('returns 400 for missing state parameter', async () => {
+      const res = await app.request('/callback?code=some-code');
+      expect(res.status).toBe(400);
     });
   });
 
@@ -237,6 +301,83 @@ describe('createOAuthRoutes', () => {
       expect(json.expires_in).toBe(3600);
     });
 
+    it('rejects mismatched resource in token exchange', async () => {
+      const { verifier, challenge } = makePkce();
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeAuthCode('mcp-code-res', {
+        mcpClientId: 'c1',
+        backlogTokens: {
+          access_token: 'bl-at',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'bl-rt',
+        },
+        codeChallenge: challenge,
+        redirectUri: 'https://client.example.com/cb',
+        resource: 'https://mcp.example.com/mcp',
+        expiresAt: Date.now() + 600_000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: 'c1',
+        client_secret: 's1',
+        code: 'mcp-code-res',
+        code_verifier: verifier,
+        resource: 'https://wrong.example.com/mcp',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toBe('invalid_grant');
+      expect(json.error_description).toContain('resource');
+    });
+
+    it('rejects expired refresh token', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-exp', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() - 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-exp',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toBe('invalid_grant');
+    });
+
     it('rejects invalid code_verifier', async () => {
       store.registerClient({
         client_id: 'c1',
@@ -289,6 +430,7 @@ describe('createOAuthRoutes', () => {
       store.storeMcpRefreshToken('mcp-refresh-1', {
         backlogRefreshToken: 'bl-refresh',
         clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
 
       const body = new URLSearchParams({
@@ -346,6 +488,7 @@ describe('createOAuthRoutes', () => {
       store.storeMcpRefreshToken('mcp-refresh-2', {
         backlogRefreshToken: 'bl-refresh',
         clientId: 'other-client',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
 
       const body = new URLSearchParams({
@@ -360,6 +503,46 @@ describe('createOAuthRoutes', () => {
         body: body.toString(),
       });
       expect(res.status).toBe(400);
+    });
+
+    it('restores refresh token when upstream refresh fails', async () => {
+      const { refreshBacklogToken } = await import('./backlogOAuthClient.js');
+      (refreshBacklogToken as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('Backlog 503')
+      );
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-retry', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-retry',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(503);
+
+      // Refresh token should be restored for retry
+      const restored = store.consumeMcpRefreshToken('mcp-refresh-retry');
+      expect(restored).toBeDefined();
+      expect(restored!.backlogRefreshToken).toBe('bl-refresh');
     });
 
     it('rejects unsupported grant_type', async () => {
