@@ -71,7 +71,11 @@ describe('exchangeBacklogCode', () => {
     );
 
     await expect(
-      exchangeBacklogCode(config, 'bad-code', 'https://mcp.example.com/callback')
+      exchangeBacklogCode(
+        config,
+        'bad-code',
+        'https://mcp.example.com/callback'
+      )
     ).rejects.toThrow('Backlog token exchange failed (400)');
   });
 });
@@ -118,7 +122,10 @@ describe('verifyBacklogToken', () => {
       new Response(JSON.stringify(user), { status: 200 })
     );
 
-    const result = await verifyBacklogToken('example.backlog.com', 'valid-token');
+    const result = await verifyBacklogToken(
+      'example.backlog.com',
+      'valid-token'
+    );
     expect(result).toEqual(user);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://example.backlog.com/api/v2/users/myself',

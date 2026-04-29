@@ -148,16 +148,11 @@ export class TokenStore {
     return entry;
   }
 
-  storeMcpRefreshToken(
-    mcpRefreshToken: string,
-    entry: McpRefreshEntry
-  ): void {
+  storeMcpRefreshToken(mcpRefreshToken: string, entry: McpRefreshEntry): void {
     this.mcpRefreshTokens.set(mcpRefreshToken, entry);
   }
 
-  consumeMcpRefreshToken(
-    mcpRefreshToken: string
-  ): McpRefreshEntry | undefined {
+  consumeMcpRefreshToken(mcpRefreshToken: string): McpRefreshEntry | undefined {
     const entry = this.mcpRefreshTokens.get(mcpRefreshToken);
     if (!entry) return undefined;
     this.mcpRefreshTokens.delete(mcpRefreshToken);

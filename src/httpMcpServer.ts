@@ -143,7 +143,10 @@ export const runHttpMcpServer = async (
     );
 
     app.route('/', createOAuthRoutes(oauthConfig, tokenStore, mcpPath));
-    app.use(mcpPath, createBearerAuthMiddleware(tokenStore, oauthConfig, mcpPath));
+    app.use(
+      mcpPath,
+      createBearerAuthMiddleware(tokenStore, oauthConfig, mcpPath)
+    );
   }
 
   app.all(mcpPath, async (c) => {

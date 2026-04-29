@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 import { describe, it, expect } from 'vitest';
-import { runWithAccessToken, getCurrentAccessToken } from './backlogAuthContext.js';
+import {
+  runWithAccessToken,
+  getCurrentAccessToken,
+} from './backlogAuthContext.js';
 
 describe('backlogAuthContext', () => {
   it('provides the access token within the callback', async () => {

@@ -53,7 +53,9 @@ describe('createOAuthRoutes', () => {
         'https://mcp.example.com/authorize'
       );
       expect(body.token_endpoint).toBe('https://mcp.example.com/token');
-      expect(body.registration_endpoint).toBe('https://mcp.example.com/register');
+      expect(body.registration_endpoint).toBe(
+        'https://mcp.example.com/register'
+      );
       expect(body.code_challenge_methods_supported).toEqual(['S256']);
     });
   });

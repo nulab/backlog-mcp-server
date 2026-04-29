@@ -26,7 +26,13 @@ export function createBearerAuthMiddleware(
         'WWW-Authenticate',
         `Bearer resource_metadata="${resourceMetadataUrl}"`
       );
-      return c.json({ error: 'invalid_token', error_description: 'Missing Authorization header' }, 401);
+      return c.json(
+        {
+          error: 'invalid_token',
+          error_description: 'Missing Authorization header',
+        },
+        401
+      );
     }
 
     const [type, mcpToken] = authHeader.split(' ');
@@ -35,7 +41,10 @@ export function createBearerAuthMiddleware(
         'WWW-Authenticate',
         `Bearer error="invalid_token", error_description="Invalid Authorization header format", resource_metadata="${resourceMetadataUrl}"`
       );
-      return c.json({ error: 'invalid_token', error_description: 'Expected Bearer token' }, 401);
+      return c.json(
+        { error: 'invalid_token', error_description: 'Expected Bearer token' },
+        401
+      );
     }
 
     const tokenEntry = store.getMcpToken(mcpToken);
@@ -44,7 +53,13 @@ export function createBearerAuthMiddleware(
         'WWW-Authenticate',
         `Bearer error="invalid_token", error_description="Unknown or expired token", resource_metadata="${resourceMetadataUrl}"`
       );
-      return c.json({ error: 'invalid_token', error_description: 'Unknown or expired token' }, 401);
+      return c.json(
+        {
+          error: 'invalid_token',
+          error_description: 'Unknown or expired token',
+        },
+        401
+      );
     }
 
     const cached = store.getCachedVerification(mcpToken);
@@ -74,7 +89,13 @@ export function createBearerAuthMiddleware(
         'WWW-Authenticate',
         `Bearer error="invalid_token", error_description="Token verification failed", resource_metadata="${resourceMetadataUrl}"`
       );
-      return c.json({ error: 'invalid_token', error_description: 'Token verification failed' }, 401);
+      return c.json(
+        {
+          error: 'invalid_token',
+          error_description: 'Token verification failed',
+        },
+        401
+      );
     }
   };
 }

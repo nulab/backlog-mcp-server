@@ -84,16 +84,17 @@ export async function verifyBacklogToken(
   domain: string,
   accessToken: string
 ): Promise<{ id: number; userId: string; name: string }> {
-  const response = await fetch(
-    `https://${domain}/api/v2/users/myself`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
-  );
+  const response = await fetch(`https://${domain}/api/v2/users/myself`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
   if (!response.ok) {
     throw new Error(`Backlog token verification failed (${response.status})`);
   }
 
-  return (await response.json()) as { id: number; userId: string; name: string };
+  return (await response.json()) as {
+    id: number;
+    userId: string;
+    name: string;
+  };
 }

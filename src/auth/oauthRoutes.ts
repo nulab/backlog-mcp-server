@@ -132,9 +132,7 @@ export function createOAuthRoutes(
 
     const clientId = randomUUID();
     const clientSecret =
-      authMethod === 'none'
-        ? undefined
-        : randomBytes(32).toString('hex');
+      authMethod === 'none' ? undefined : randomBytes(32).toString('hex');
 
     const now = Math.floor(Date.now() / 1000);
     const client: OAuthClientInfo = {
@@ -143,7 +141,8 @@ export function createOAuthRoutes(
       client_id_issued_at: now,
       client_secret_expires_at: 0,
       redirect_uris: redirectUris as string[],
-      client_name: typeof body.client_name === 'string' ? body.client_name : undefined,
+      client_name:
+        typeof body.client_name === 'string' ? body.client_name : undefined,
       token_endpoint_auth_method: authMethod,
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
@@ -151,7 +150,10 @@ export function createOAuthRoutes(
 
     if (!store.registerClient(client)) {
       return c.json(
-        oauthError('server_error', 'Maximum number of registered clients reached'),
+        oauthError(
+          'server_error',
+          'Maximum number of registered clients reached'
+        ),
         503
       );
     }
@@ -238,10 +240,7 @@ export function createOAuthRoutes(
     if (resource && resource !== resourceUri) {
       const url = new URL(effectiveRedirectUri);
       url.searchParams.set('error', 'invalid_target');
-      url.searchParams.set(
-        'error_description',
-        'Invalid resource parameter'
-      );
+      url.searchParams.set('error_description', 'Invalid resource parameter');
       if (state) url.searchParams.set('state', state);
       return c.redirect(url.href, 302);
     }
@@ -290,7 +289,8 @@ export function createOAuthRoutes(
       errorUrl.searchParams.set('error', backlogError ?? 'access_denied');
       errorUrl.searchParams.set(
         'error_description',
-        url.searchParams.get('error_description') ?? 'Authorization was denied by the user'
+        url.searchParams.get('error_description') ??
+          'Authorization was denied by the user'
       );
       if (pending.state) errorUrl.searchParams.set('state', pending.state);
       return c.redirect(errorUrl.href, 302);
@@ -306,7 +306,11 @@ export function createOAuthRoutes(
 
     let backlogTokens;
     try {
-      backlogTokens = await exchangeBacklogCode(config, backlogCode, callbackUrl);
+      backlogTokens = await exchangeBacklogCode(
+        config,
+        backlogCode,
+        callbackUrl
+      );
     } catch (err) {
       logger.error({ err }, 'Failed to exchange Backlog authorization code');
       const url = new URL(pending.redirectUri);
@@ -377,7 +381,10 @@ export function createOAuthRoutes(
 
       if (entry.mcpClientId !== clientId) {
         return c.json(
-          oauthError('invalid_grant', 'Authorization code was issued to a different client'),
+          oauthError(
+            'invalid_grant',
+            'Authorization code was issued to a different client'
+          ),
           400
         );
       }
@@ -390,10 +397,7 @@ export function createOAuthRoutes(
       }
 
       if (resource && resource !== entry.resource) {
-        return c.json(
-          oauthError('invalid_grant', 'resource mismatch'),
-          400
-        );
+        return c.json(oauthError('invalid_grant', 'resource mismatch'), 400);
       }
 
       if (!codeVerifier || !verifyPkce(codeVerifier, entry.codeChallenge)) {
@@ -444,7 +448,10 @@ export function createOAuthRoutes(
 
       if (refreshEntry.clientId !== clientId) {
         return c.json(
-          oauthError('invalid_grant', 'Refresh token was issued to a different client'),
+          oauthError(
+            'invalid_grant',
+            'Refresh token was issued to a different client'
+          ),
           400
         );
       }
@@ -486,7 +493,10 @@ export function createOAuthRoutes(
     }
 
     return c.json(
-      oauthError('unsupported_grant_type', `Unsupported grant_type: ${grantType}`),
+      oauthError(
+        'unsupported_grant_type',
+        `Unsupported grant_type: ${grantType}`
+      ),
       400
     );
   });
