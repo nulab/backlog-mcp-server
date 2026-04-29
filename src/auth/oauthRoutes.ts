@@ -389,9 +389,12 @@ export function createOAuthRoutes(
         );
       }
 
-      if (redirectUri && redirectUri !== entry.redirectUri) {
+      if (!redirectUri || redirectUri !== entry.redirectUri) {
         return c.json(
-          oauthError('invalid_grant', 'redirect_uri mismatch'),
+          oauthError(
+            'invalid_grant',
+            !redirectUri ? 'Missing redirect_uri' : 'redirect_uri mismatch'
+          ),
           400
         );
       }

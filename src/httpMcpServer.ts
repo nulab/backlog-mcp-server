@@ -132,6 +132,17 @@ export const runHttpMcpServer = async (
   const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
+  if (allowedHostnames) {
+    app.use('*', async (c, next) => {
+      const hostError = checkHostHeader(
+        c.req.raw.headers.get('host'),
+        allowedHostnames
+      );
+      if (hostError) return c.json(hostError, 403);
+      await next();
+    });
+  }
+
   app.get('/health', (c) =>
     c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
   );
@@ -151,14 +162,6 @@ export const runHttpMcpServer = async (
 
   app.all(mcpPath, async (c) => {
     const req = c.req.raw;
-
-    if (allowedHostnames) {
-      const hostError = checkHostHeader(
-        req.headers.get('host'),
-        allowedHostnames
-      );
-      if (hostError) return c.json(hostError, 403);
-    }
 
     const authInfo = oauthEnabled
       ? (c.get('authInfo') as AuthInfo | undefined)

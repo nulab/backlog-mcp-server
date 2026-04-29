@@ -334,6 +334,7 @@ describe('createOAuthRoutes', () => {
         client_secret: 's1',
         code: 'mcp-code-res',
         code_verifier: verifier,
+        redirect_uri: 'https://client.example.com/cb',
         resource: 'https://wrong.example.com/mcp',
       });
 
@@ -378,6 +379,49 @@ describe('createOAuthRoutes', () => {
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json.error).toBe('invalid_grant');
+    });
+
+    it('rejects missing redirect_uri in token exchange', async () => {
+      const { verifier, challenge } = makePkce();
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeAuthCode('mcp-code-no-redir', {
+        mcpClientId: 'c1',
+        backlogTokens: {
+          access_token: 'bl-at',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'bl-rt',
+        },
+        codeChallenge: challenge,
+        redirectUri: 'https://client.example.com/cb',
+        expiresAt: Date.now() + 600_000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: 'c1',
+        client_secret: 's1',
+        code: 'mcp-code-no-redir',
+        code_verifier: verifier,
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toBe('invalid_grant');
+      expect(json.error_description).toContain('redirect_uri');
     });
 
     it('rejects invalid code_verifier', async () => {
