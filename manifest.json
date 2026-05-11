@@ -1,0 +1,47 @@
+{
+  "manifest_version": "0.2",
+  "name": "backlog-mcp-server",
+  "version": "0.11.0",
+  "description": "backlog mcp server",
+  "author": {
+    "name": "nulab"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "BACKLOG_API_KEY": "${backlog_api_key}",
+        "BACKLOG_DOMAIN": "${backlog_domain}"
+      }
+    }
+  },
+  "user_config": {
+    "backlog_api_key": {
+      "type": "string",
+      "title": "Backlog API Key",
+      "description": "API key for authenticating with Backlog",
+      "required": true,
+      "sensitive": true
+    },
+    "backlog_domain": {
+      "type": "string",
+      "title": "Backlog Domain",
+      "description": "Your Backlog domain (e.g. your-space.backlog.com)",
+      "required": true,
+      "sensitive": false
+    }
+  },
+  "keywords": [
+    "backlog"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nulab/backlog-mcp-server.git"
+  }
+}
