@@ -8,15 +8,15 @@
   },
   "server": {
     "type": "node",
-    "entry_point": "server/index.js",
+    "entry_point": "build/index.js",
     "mcp_config": {
       "command": "node",
       "args": [
-        "${__dirname}/server/index.js"
+        "${__dirname}/build/index.js"
       ],
       "env": {
-        "BACKLOG_API_KEY": "${backlog_api_key}",
-        "BACKLOG_DOMAIN": "${backlog_domain}"
+        "BACKLOG_API_KEY": "${user_config.backlog_api_key}",
+        "BACKLOG_DOMAIN": "${user_config.backlog_domain}"
       }
     }
   },
