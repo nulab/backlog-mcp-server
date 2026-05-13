@@ -118,6 +118,12 @@ export const CategorySchema = z.object({
   displayOrder: z.number(),
 });
 
+export const SpaceAttachmentSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  size: z.number(),
+});
+
 export const IssueFileInfoSchema = z.object({
   id: z.number(),
   name: z.string(),

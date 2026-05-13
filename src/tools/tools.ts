@@ -9,6 +9,8 @@ import { addPullRequestCommentTool } from './addPullRequestComment.js';
 import { addWikiTool } from './addWiki.js';
 import { updateWikiTool } from './updateWiki.js';
 import { countIssuesTool } from './countIssues.js';
+import { deleteIssueAttachmentTool } from './deleteIssueAttachment.js';
+import { deleteIssueCommentTool } from './deleteIssueComment.js';
 import { deleteIssueTool } from './deleteIssue.js';
 import { deleteProjectTool } from './deleteProject.js';
 import { getCategoriesTool } from './getCategories.js';
@@ -32,6 +34,7 @@ import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { getResolutionsTool } from './getResolutions.js';
 import { getSpaceTool } from './getSpace.js';
 import { getSpaceActivitiesTool } from './getSpaceActivities.js';
+import { postSpaceAttachmentTool } from './postSpaceAttachment.js';
 import { getUserStarsCountTool } from './getUserStarsCount.js';
 import { getUsersTool } from './getUsers.js';
 import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
@@ -77,6 +80,7 @@ export const allTools = (
           getUserStarsCountTool(backlog, helper),
           getMyselfTool(backlog, helper),
           getUserRecentUpdatesTool(backlog, helper),
+          postSpaceAttachmentTool(backlog, helper),
         ],
       },
       {
@@ -105,6 +109,8 @@ export const allTools = (
           deleteIssueTool(backlog, helper),
           getIssueCommentsTool(backlog, helper),
           addIssueCommentTool(backlog, helper),
+          deleteIssueCommentTool(backlog, helper),
+          deleteIssueAttachmentTool(backlog, helper),
           getPrioritiesTool(backlog, helper),
           getCategoriesTool(backlog, helper),
           getCustomFieldsTool(backlog, helper),

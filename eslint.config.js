@@ -22,6 +22,9 @@ export default [
         URL: 'readonly',
         Request: 'readonly',
         Response: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
       },
     },
     plugins: {

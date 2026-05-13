@@ -154,13 +154,13 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 
 Environment variables (CLI flags override when both are set):
 
-| Variable | Description |
-| -------- | ----------- |
-| `MCP_TRANSPORT` | `stdio` (default) or `http` |
-| `MCP_HTTP_HOST` | Bind address (default `127.0.0.1`) |
-| `MCP_HTTP_PORT` | Port (default `3333`) |
-| `MCP_HTTP_PATH` | URL path (default `/mcp`) |
-| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported |
+| Variable                 | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `MCP_TRANSPORT`          | `stdio` (default) or `http`                                                                |
+| `MCP_HTTP_HOST`          | Bind address (default `127.0.0.1`)                                                         |
+| `MCP_HTTP_PORT`          | Port (default `3333`)                                                                      |
+| `MCP_HTTP_PATH`          | URL path (default `/mcp`)                                                                  |
+| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported                                    |
 | `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
 
 ## Tool Configuration
@@ -230,6 +230,7 @@ Tools for managing Backlog space settings and general information.
 - `get_space`: Returns information about the Backlog space.
 - `get_users`: Returns list of users in the Backlog space.
 - `get_myself`: Returns information about the authenticated user.
+- `post_space_attachment`: Uploads a file to Backlog space. Supports local file path or base64-encoded content.
 
 ### Toolset: `project`
 
@@ -253,6 +254,8 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `delete_issue`: Deletes an issue.
 - `get_issue_comments`: Returns list of comments for an issue.
 - `add_issue_comment`: Adds a comment to an issue.
+- `delete_issue_comment`: Deletes a comment from an issue.
+- `delete_issue_attachment`: Deletes an attachment from an issue.
 - `get_priorities`: Returns list of priorities.
 - `get_categories`: Returns list of categories for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
