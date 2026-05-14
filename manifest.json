@@ -49,6 +49,7 @@
     "type": "git",
     "url": "git+https://github.com/nulab/backlog-mcp-server.git"
   },
+  "icon": "icon.png",
   "homepage": "https://github.com/nulab/backlog-mcp-server",
   "support": "https://github.com/nulab/backlog-mcp-server/issues"
 }
