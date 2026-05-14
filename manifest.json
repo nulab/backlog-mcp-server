@@ -1,10 +1,12 @@
 {
-  "manifest_version": "0.2",
+  "manifest_version": "0.3",
   "name": "backlog-mcp-server",
+  "display_name": "Backlog MCP Server",
   "version": "0.11.0",
-  "description": "backlog mcp server",
+  "description": "MCP server for Nulab Backlog project management service",
   "author": {
-    "name": "nulab"
+    "name": "nulab",
+    "url": "https://nulab.com"
   },
   "server": {
     "type": "node",
@@ -20,6 +22,7 @@
       }
     }
   },
+  "tools_generated": true,
   "user_config": {
     "backlog_api_key": {
       "type": "string",
@@ -37,11 +40,15 @@
     }
   },
   "keywords": [
-    "backlog"
+    "backlog",
+    "project-management",
+    "nulab"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nulab/backlog-mcp-server.git"
-  }
+  },
+  "homepage": "https://github.com/nulab/backlog-mcp-server",
+  "support": "https://github.com/nulab/backlog-mcp-server/issues"
 }
