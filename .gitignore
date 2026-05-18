@@ -51,6 +51,5 @@ coverage/
 tmp/
 temp/
 
-# Credentials
-.credentials
-
+# MCPB bundle
+*.mcpb
