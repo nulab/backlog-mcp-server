@@ -60,6 +60,7 @@ import { deleteVersionTool } from './deleteVersion.js';
 import { addDocumentTool } from './addDocument.js';
 import { getIssueAttachmentsTool } from './getIssueAttachments.js';
 import { getIssueAttachmentTool } from './getIssueAttachment.js';
+import { transferIssueAttachmentTool } from './transferIssueAttachment.js';
 import { getWikiAttachmentsTool } from './getWikiAttachments.js';
 import { getWikiAttachmentTool } from './getWikiAttachment.js';
 import { getPullRequestAttachmentsTool } from './getPullRequestAttachments.js';
@@ -128,7 +129,10 @@ export const allTools = (
           deleteVersionTool(backlog, helper),
           getIssueAttachmentsTool(backlog, helper),
         ],
-        dynamicTools: [getIssueAttachmentTool(backlog, helper)],
+        dynamicTools: [
+          getIssueAttachmentTool(backlog, helper),
+          transferIssueAttachmentTool(backlog, helper),
+        ],
       },
       {
         name: 'wiki',
