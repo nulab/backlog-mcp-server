@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.1](https://github.com/nulab/backlog-mcp-server/compare/v0.11.0...v0.11.1) (2026-05-25)
+
+### Features
+
+* add icon to mcpb manifest ([481e8f3](https://github.com/nulab/backlog-mcp-server/commit/481e8f328e82d14b2b132c73e9cadc579ac18dda))
+* add mcpb manifest for Desktop Extensions support ([ffa4371](https://github.com/nulab/backlog-mcp-server/commit/ffa4371340f7cb5e772891ca5a6b2b9f1f74ec85))
+* update entry point and environment variables in manifest.json ([2dcc301](https://github.com/nulab/backlog-mcp-server/commit/2dcc301569518159da31b6bc35d23a8950d64044))
+* update mcpb manifest to v0.3 ([acd4eda](https://github.com/nulab/backlog-mcp-server/commit/acd4eda824f14dd679d0413a31c7ca173512d366))
+
+### Bug Fixes
+
+* allow string values in customFields for text and date fields ([e921edb](https://github.com/nulab/backlog-mcp-server/commit/e921edbb3d04189712ec28118b989fae0c5099c8))
+* wrap customField value description with translation helper t() ([1fce25b](https://github.com/nulab/backlog-mcp-server/commit/1fce25b360c73f2d7ab93f37f072a1320be48860))
+
 ## [0.11.0](https://github.com/nulab/backlog-mcp-server/compare/v0.10.0...v0.11.0) (2026-04-22)
 
 ### Features
