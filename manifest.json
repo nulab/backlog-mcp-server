@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "backlog-mcp-server",
   "display_name": "Backlog MCP Server",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "MCP server for Nulab Backlog project management service",
   "author": {
     "name": "nulab",
