@@ -113,10 +113,18 @@ const updateIssueSchema = buildToolSchema((t) => ({
             )
           ),
         value: z
-          .union([z.number(), z.array(z.number())])
+          .union([
+            z.string(),
+            z.number(),
+            z.array(z.string()),
+            z.array(z.number()),
+          ])
           .optional()
           .describe(
-            'The ID(s) of the custom field item. For single-select fields, provide a number. For multi-select fields, provide an array of numbers representing the selected item IDs.'
+            t(
+              'TOOL_UPDATE_ISSUE_CUSTOM_FIELD_VALUE',
+              'Value of the custom field. For text/date fields, provide a string. For numeric fields, provide a number. For list fields, provide an array of strings or numbers.'
+            )
           ),
         otherValue: z
           .string()
