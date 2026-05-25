@@ -253,6 +253,8 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `delete_issue`: Deletes an issue.
 - `get_issue_comments`: Returns list of comments for an issue.
 - `add_issue_comment`: Adds a comment to an issue.
+- `get_issue_attachments`: Returns list of attachments for an issue.
+- `get_issue_attachment`: Downloads a specific issue attachment. Image attachments are returned as image content.
 - `get_priorities`: Returns list of priorities.
 - `get_categories`: Returns list of categories for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
@@ -277,6 +279,8 @@ Tools for managing wiki pages.
 - `get_wikis_count`: Returns count of wiki pages in a project.
 - `get_wiki`: Returns information about a specific wiki page.
 - `add_wiki`: Creates a new wiki page.
+- `get_wiki_attachments`: Returns list of attachments for a wiki page.
+- `get_wiki_attachment`: Downloads a specific wiki attachment. Image attachments are returned as image content.
 
 ### Toolset: `git`
 
@@ -292,6 +296,8 @@ Tools for managing Git repositories and pull requests.
 - `get_pull_request_comments`: Returns list of comments for a pull request.
 - `add_pull_request_comment`: Adds a comment to a pull request.
 - `update_pull_request_comment`: Updates a comment on a pull request.
+- `get_pull_request_attachments`: Returns list of attachments for a pull request.
+- `get_pull_request_attachment`: Downloads a specific pull request attachment. Image attachments are returned as image content.
 
 ### Toolset: `notifications`
 
