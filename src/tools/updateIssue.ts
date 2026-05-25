@@ -121,7 +121,10 @@ const updateIssueSchema = buildToolSchema((t) => ({
           ])
           .optional()
           .describe(
-            'Value of the custom field. For text/date fields, provide a string. For numeric fields, provide a number. For list fields, provide an array of strings or numbers.'
+            t(
+              'TOOL_UPDATE_ISSUE_CUSTOM_FIELD_VALUE',
+              'Value of the custom field. For text/date fields, provide a string. For numeric fields, provide a number. For list fields, provide an array of strings or numbers.'
+            )
           ),
         otherValue: z
           .string()
