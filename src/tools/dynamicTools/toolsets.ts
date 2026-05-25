@@ -121,12 +121,22 @@ export const getToolsetTools = (
         };
       }
 
-      const tools = found.tools.map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        toolset: found.name,
-        canEnable: true,
-      }));
+      const tools = [
+        ...found.tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          toolset: found.name,
+          canEnable: true,
+          dynamic: false,
+        })),
+        ...(found.dynamicTools ?? []).map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          toolset: found.name,
+          canEnable: true,
+          dynamic: true,
+        })),
+      ];
 
       return {
         content: [
