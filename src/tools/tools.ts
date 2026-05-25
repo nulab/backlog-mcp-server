@@ -58,6 +58,9 @@ import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
 import { deleteVersionTool } from './deleteVersion.js';
 import { addDocumentTool } from './addDocument.js';
+import { getIssueAttachmentsTool } from './getIssueAttachments.js';
+import { getWikiAttachmentsTool } from './getWikiAttachments.js';
+import { getPullRequestAttachmentsTool } from './getPullRequestAttachments.js';
 
 export const allTools = (
   backlog: Backlog,
@@ -120,6 +123,7 @@ export const allTools = (
           addVersionMilestoneTool(backlog, helper),
           updateVersionMilestoneTool(backlog, helper),
           deleteVersionTool(backlog, helper),
+          getIssueAttachmentsTool(backlog, helper),
         ],
       },
       {
@@ -132,6 +136,7 @@ export const allTools = (
           getWikiTool(backlog, helper),
           addWikiTool(backlog, helper),
           updateWikiTool(backlog, helper),
+          getWikiAttachmentsTool(backlog, helper),
         ],
       },
       {
@@ -149,6 +154,7 @@ export const allTools = (
           getPullRequestCommentsTool(backlog, helper),
           addPullRequestCommentTool(backlog, helper),
           updatePullRequestCommentTool(backlog, helper),
+          getPullRequestAttachmentsTool(backlog, helper),
         ],
       },
       {
