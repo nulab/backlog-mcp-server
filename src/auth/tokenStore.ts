@@ -83,7 +83,10 @@ export function createTokenStore() {
   };
 
   return {
-    storePendingAuth(backlogState: string, pending: PendingAuthorization): void {
+    storePendingAuth(
+      backlogState: string,
+      pending: PendingAuthorization
+    ): void {
       pendingAuthorizations.set(backlogState, pending);
     },
 
@@ -151,11 +154,16 @@ export function createTokenStore() {
       return entry;
     },
 
-    storeMcpRefreshToken(mcpRefreshToken: string, entry: McpRefreshEntry): void {
+    storeMcpRefreshToken(
+      mcpRefreshToken: string,
+      entry: McpRefreshEntry
+    ): void {
       mcpRefreshTokens.set(mcpRefreshToken, entry);
     },
 
-    consumeMcpRefreshToken(mcpRefreshToken: string): McpRefreshEntry | undefined {
+    consumeMcpRefreshToken(
+      mcpRefreshToken: string
+    ): McpRefreshEntry | undefined {
       const entry = mcpRefreshTokens.get(mcpRefreshToken);
       if (!entry) return undefined;
       mcpRefreshTokens.delete(mcpRefreshToken);
