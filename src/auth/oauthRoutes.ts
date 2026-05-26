@@ -163,13 +163,10 @@ export function createOAuthRoutes(
   });
 
   // Authorization Endpoint
-  app.on(['GET', 'POST'], '/authorize', async (c) => {
-    const params =
-      c.req.method === 'POST'
-        ? ((await c.req.parseBody()) as Record<string, string>)
-        : (Object.fromEntries(
-            new URL(c.req.url).searchParams.entries()
-          ) as Record<string, string>);
+  app.get('/authorize', async (c) => {
+    const params = Object.fromEntries(
+      new URL(c.req.url).searchParams.entries()
+    ) as Record<string, string>;
 
     const clientId = params.client_id;
     const redirectUri = params.redirect_uri;
