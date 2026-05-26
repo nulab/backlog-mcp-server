@@ -8,7 +8,7 @@ import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { getBacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
-import { TokenStore } from './auth/tokenStore.js';
+import { createTokenStore } from './auth/tokenStore.js';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
@@ -130,7 +130,7 @@ const clientRegistry = oauthConfig
   : createBacklogClientRegistry();
 const backlog = clientRegistry.createScopedClient();
 
-const tokenStore = oauthConfig ? new TokenStore() : undefined;
+const tokenStore = oauthConfig ? createTokenStore() : undefined;
 let cleanupTimer: ReturnType<typeof setInterval> | undefined;
 if (tokenStore) {
   cleanupTimer = setInterval(() => tokenStore.cleanup(), 5 * 60 * 1000);

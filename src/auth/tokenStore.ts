@@ -62,126 +62,130 @@ const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
 const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const MAX_CLIENTS = 1000;
 
-export class TokenStore {
-  private pendingAuthorizations = new Map<string, PendingAuthorization>();
-  private authorizationCodes = new Map<string, AuthCodeEntry>();
-  private clients = new Map<string, OAuthClientInfo>();
-  private verificationCache = new Map<string, CachedVerification>();
-  private mcpAccessTokens = new Map<string, McpTokenEntry>();
-  private mcpRefreshTokens = new Map<string, McpRefreshEntry>();
+export type TokenStore = ReturnType<typeof createTokenStore>;
 
-  storePendingAuth(backlogState: string, pending: PendingAuthorization): void {
-    this.pendingAuthorizations.set(backlogState, pending);
-  }
+export function createTokenStore() {
+  const pendingAuthorizations = new Map<string, PendingAuthorization>();
+  const authorizationCodes = new Map<string, AuthCodeEntry>();
+  const clients = new Map<string, OAuthClientInfo>();
+  const verificationCache = new Map<string, CachedVerification>();
+  const mcpAccessTokens = new Map<string, McpTokenEntry>();
+  const mcpRefreshTokens = new Map<string, McpRefreshEntry>();
 
-  consumePendingAuth(backlogState: string): PendingAuthorization | undefined {
-    const entry = this.pendingAuthorizations.get(backlogState);
-    if (!entry) return undefined;
-    this.pendingAuthorizations.delete(backlogState);
-    if (Date.now() - entry.createdAt > PENDING_AUTH_TTL_MS) return undefined;
-    return entry;
-  }
-
-  storeAuthCode(code: string, entry: AuthCodeEntry): void {
-    this.authorizationCodes.set(code, entry);
-  }
-
-  consumeAuthCode(code: string): AuthCodeEntry | undefined {
-    const entry = this.authorizationCodes.get(code);
-    if (!entry) return undefined;
-    this.authorizationCodes.delete(code);
-    if (Date.now() > entry.expiresAt) return undefined;
-    return entry;
-  }
-
-  getClient(clientId: string): OAuthClientInfo | undefined {
-    return this.clients.get(clientId);
-  }
-
-  registerClient(client: OAuthClientInfo): boolean {
-    if (this.clients.size >= MAX_CLIENTS) {
-      this.evictOldestClient();
-      if (this.clients.size >= MAX_CLIENTS) return false;
-    }
-    this.clients.set(client.client_id, client);
-    return true;
-  }
-
-  private evictOldestClient(): void {
+  const evictOldestClient = (): void => {
     const now = Math.floor(Date.now() / 1000);
-    for (const [id, client] of this.clients) {
+    for (const [id, client] of clients) {
       if (now - client.client_id_issued_at > CLIENT_TTL_MS / 1000) {
-        this.clients.delete(id);
+        clients.delete(id);
         return;
       }
     }
-  }
+  };
 
-  getCachedVerification(token: string): AuthInfo | undefined {
-    const cached = this.verificationCache.get(token);
-    if (!cached) return undefined;
-    if (Date.now() > cached.expiresAt) {
-      this.verificationCache.delete(token);
-      return undefined;
-    }
-    return cached.authInfo;
-  }
+  return {
+    storePendingAuth(backlogState: string, pending: PendingAuthorization): void {
+      pendingAuthorizations.set(backlogState, pending);
+    },
 
-  cacheVerification(token: string, authInfo: AuthInfo, ttlMs: number): void {
-    this.verificationCache.set(token, {
-      authInfo,
-      expiresAt: Date.now() + ttlMs,
-    });
-  }
+    consumePendingAuth(backlogState: string): PendingAuthorization | undefined {
+      const entry = pendingAuthorizations.get(backlogState);
+      if (!entry) return undefined;
+      pendingAuthorizations.delete(backlogState);
+      if (Date.now() - entry.createdAt > PENDING_AUTH_TTL_MS) return undefined;
+      return entry;
+    },
 
-  storeMcpToken(mcpToken: string, entry: McpTokenEntry): void {
-    this.mcpAccessTokens.set(mcpToken, entry);
-  }
+    storeAuthCode(code: string, entry: AuthCodeEntry): void {
+      authorizationCodes.set(code, entry);
+    },
 
-  getMcpToken(mcpToken: string): McpTokenEntry | undefined {
-    const entry = this.mcpAccessTokens.get(mcpToken);
-    if (!entry) return undefined;
-    if (Date.now() > entry.expiresAt) {
-      this.mcpAccessTokens.delete(mcpToken);
-      return undefined;
-    }
-    return entry;
-  }
+    consumeAuthCode(code: string): AuthCodeEntry | undefined {
+      const entry = authorizationCodes.get(code);
+      if (!entry) return undefined;
+      authorizationCodes.delete(code);
+      if (Date.now() > entry.expiresAt) return undefined;
+      return entry;
+    },
 
-  storeMcpRefreshToken(mcpRefreshToken: string, entry: McpRefreshEntry): void {
-    this.mcpRefreshTokens.set(mcpRefreshToken, entry);
-  }
+    getClient(clientId: string): OAuthClientInfo | undefined {
+      return clients.get(clientId);
+    },
 
-  consumeMcpRefreshToken(mcpRefreshToken: string): McpRefreshEntry | undefined {
-    const entry = this.mcpRefreshTokens.get(mcpRefreshToken);
-    if (!entry) return undefined;
-    this.mcpRefreshTokens.delete(mcpRefreshToken);
-    if (Date.now() > entry.expiresAt) return undefined;
-    return entry;
-  }
+    registerClient(client: OAuthClientInfo): boolean {
+      if (clients.size >= MAX_CLIENTS) {
+        evictOldestClient();
+        if (clients.size >= MAX_CLIENTS) return false;
+      }
+      clients.set(client.client_id, client);
+      return true;
+    },
 
-  cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.pendingAuthorizations) {
-      if (now - entry.createdAt > PENDING_AUTH_TTL_MS)
-        this.pendingAuthorizations.delete(key);
-    }
-    for (const [key, entry] of this.authorizationCodes) {
-      if (now > entry.expiresAt) this.authorizationCodes.delete(key);
-    }
-    for (const [key, cached] of this.verificationCache) {
-      if (now > cached.expiresAt) this.verificationCache.delete(key);
-    }
-    for (const [key, entry] of this.mcpAccessTokens) {
-      if (now > entry.expiresAt) this.mcpAccessTokens.delete(key);
-    }
-    for (const [key, entry] of this.mcpRefreshTokens) {
-      if (now > entry.expiresAt) this.mcpRefreshTokens.delete(key);
-    }
-    const nowSec = Math.floor(now / 1000);
-    for (const [key, client] of this.clients) {
-      if (nowSec - client.client_id_issued_at > CLIENT_TTL_MS / 1000)
-        this.clients.delete(key);
-    }
-  }
+    getCachedVerification(token: string): AuthInfo | undefined {
+      const cached = verificationCache.get(token);
+      if (!cached) return undefined;
+      if (Date.now() > cached.expiresAt) {
+        verificationCache.delete(token);
+        return undefined;
+      }
+      return cached.authInfo;
+    },
+
+    cacheVerification(token: string, authInfo: AuthInfo, ttlMs: number): void {
+      verificationCache.set(token, {
+        authInfo,
+        expiresAt: Date.now() + ttlMs,
+      });
+    },
+
+    storeMcpToken(mcpToken: string, entry: McpTokenEntry): void {
+      mcpAccessTokens.set(mcpToken, entry);
+    },
+
+    getMcpToken(mcpToken: string): McpTokenEntry | undefined {
+      const entry = mcpAccessTokens.get(mcpToken);
+      if (!entry) return undefined;
+      if (Date.now() > entry.expiresAt) {
+        mcpAccessTokens.delete(mcpToken);
+        return undefined;
+      }
+      return entry;
+    },
+
+    storeMcpRefreshToken(mcpRefreshToken: string, entry: McpRefreshEntry): void {
+      mcpRefreshTokens.set(mcpRefreshToken, entry);
+    },
+
+    consumeMcpRefreshToken(mcpRefreshToken: string): McpRefreshEntry | undefined {
+      const entry = mcpRefreshTokens.get(mcpRefreshToken);
+      if (!entry) return undefined;
+      mcpRefreshTokens.delete(mcpRefreshToken);
+      if (Date.now() > entry.expiresAt) return undefined;
+      return entry;
+    },
+
+    cleanup(): void {
+      const now = Date.now();
+      for (const [key, entry] of pendingAuthorizations) {
+        if (now - entry.createdAt > PENDING_AUTH_TTL_MS)
+          pendingAuthorizations.delete(key);
+      }
+      for (const [key, entry] of authorizationCodes) {
+        if (now > entry.expiresAt) authorizationCodes.delete(key);
+      }
+      for (const [key, cached] of verificationCache) {
+        if (now > cached.expiresAt) verificationCache.delete(key);
+      }
+      for (const [key, entry] of mcpAccessTokens) {
+        if (now > entry.expiresAt) mcpAccessTokens.delete(key);
+      }
+      for (const [key, entry] of mcpRefreshTokens) {
+        if (now > entry.expiresAt) mcpRefreshTokens.delete(key);
+      }
+      const nowSec = Math.floor(now / 1000);
+      for (const [key, client] of clients) {
+        if (nowSec - client.client_id_issued_at > CLIENT_TTL_MS / 1000)
+          clients.delete(key);
+      }
+    },
+  };
 }

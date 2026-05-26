@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createOAuthRoutes } from './oauthRoutes.js';
-import { TokenStore } from './tokenStore.js';
+import { createTokenStore, type TokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
 vi.mock('./backlogOAuthClient.js', () => ({
@@ -39,7 +39,7 @@ describe('createOAuthRoutes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    store = new TokenStore();
+    store = createTokenStore();
     app = createOAuthRoutes(config, store, '/mcp');
   });
 

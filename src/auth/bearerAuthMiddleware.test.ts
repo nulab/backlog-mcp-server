@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { createBearerAuthMiddleware } from './bearerAuthMiddleware.js';
-import { TokenStore } from './tokenStore.js';
+import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
 vi.mock('./backlogOAuthClient.js', () => ({
@@ -21,12 +21,12 @@ const config: BacklogOAuthConfig = {
 };
 
 describe('createBearerAuthMiddleware', () => {
-  let store: TokenStore;
+  let store: ReturnType<typeof createTokenStore>;
   let app: Hono;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    store = new TokenStore();
+    store = createTokenStore();
     app = new Hono();
     app.use('/mcp', createBearerAuthMiddleware(store, config, '/mcp'));
     app.post('/mcp', (c) => c.json({ ok: true }));

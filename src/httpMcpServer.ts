@@ -222,6 +222,7 @@ export const runHttpMcpServer = async (
           createServer,
           authInfo
         );
+
       return accessToken
         ? runWithAccessToken(accessToken, handleNew)
         : handleNew();

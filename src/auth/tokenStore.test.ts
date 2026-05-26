@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TokenStore } from './tokenStore.js';
+import { createTokenStore, type TokenStore } from './tokenStore.js';
 
-describe('TokenStore', () => {
+describe('createTokenStore', () => {
   let store: TokenStore;
 
   beforeEach(() => {
-    store = new TokenStore();
+    store = createTokenStore();
     vi.useFakeTimers();
   });
 
