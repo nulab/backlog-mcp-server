@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.0](https://github.com/nulab/backlog-mcp-server/compare/v0.11.1...v0.12.0) (2026-06-06)
+
+### Features
+
+* add OAuth 2.0 authentication for remote MCP access ([36c9989](https://github.com/nulab/backlog-mcp-server/commit/36c99893dee9b3eb2c7053742fb5e44989eddf86))
+* format storePendingAuth and storeMcpRefreshToken functions for improved readability ([08e6904](https://github.com/nulab/backlog-mcp-server/commit/08e69045432ddc6f9c94747897030d0ad8c489bc))
+* refactor TokenStore to use factory function and update related tests ([f625370](https://github.com/nulab/backlog-mcp-server/commit/f625370ac5ca433e1a2f8b92f7905c33f7ca7ee4))
+
+### Bug Fixes
+
+* add missing Node.js globals to ESLint config ([7d9873a](https://github.com/nulab/backlog-mcp-server/commit/7d9873a57dde9681f0342b26e111d13f06c4cfa0))
+* apply Host header check globally and require redirect_uri in token exchange ([97c5b2b](https://github.com/nulab/backlog-mcp-server/commit/97c5b2b6d00b18d5f64b5db2d23092c1b3441050))
+* harden OAuth security — client TTL, callback error relay, refresh rollback ([a780160](https://github.com/nulab/backlog-mcp-server/commit/a7801605c6f98c41eae8617733e967ab5a293405))
+* issue opaque MCP tokens instead of passing through Backlog tokens ([3c4ce43](https://github.com/nulab/backlog-mcp-server/commit/3c4ce431b276fa0f7b0cd4cc03fefb6ef4043836))
+* restrict /authorize endpoint to GET only ([76dee52](https://github.com/nulab/backlog-mcp-server/commit/76dee5297d03b824a9b6d58bf955a8af842f4f54))
+
 ## [0.11.1](https://github.com/nulab/backlog-mcp-server/compare/v0.11.0...v0.11.1) (2026-05-25)
 
 ### Features
