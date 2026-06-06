@@ -3,7 +3,6 @@
 // Licensed under the MIT License.
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import dotenv from 'dotenv';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -42,7 +41,11 @@ process.on('unhandledRejection', (reason) => {
   process.exit(1);
 });
 
-dotenv.config();
+try {
+  process.loadEnvFile();
+} catch {
+  // .env file is optional
+}
 
 const oauthConfig = getBacklogOAuthConfig();
 

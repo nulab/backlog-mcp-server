@@ -5,6 +5,9 @@
   "bin": {
     "backlog-mcp-server": "./build/index.js"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -31,7 +34,6 @@
     "@modelcontextprotocol/sdk": "^1.26.0",
     "backlog-js": "^0.16.0",
     "cosmiconfig": "^9.0.0",
-    "dotenv": "^16.5.0",
     "env-var": "^7.5.0",
     "graphql": "^16.11.0",
     "hono": "^4.12.23",
