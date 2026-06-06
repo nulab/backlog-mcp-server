@@ -20,8 +20,13 @@ export default [
         process: 'readonly',
         console: 'readonly',
         URL: 'readonly',
+        URLSearchParams: 'readonly',
         Request: 'readonly',
         Response: 'readonly',
+        fetch: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        setTimeout: 'readonly',
       },
     },
     plugins: {
