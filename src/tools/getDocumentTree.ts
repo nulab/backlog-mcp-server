@@ -32,7 +32,7 @@ export const getDocumentTreeTool = (
     outputSchema: DocumentTreeFullSchemaZ,
     importantFields: ['projectId', 'activeTree', 'trashTree'],
     handler: async ({ projectIdOrKey }) => {
-      return backlog.getDocumentTree(projectIdOrKey);
+      return backlog.getDocumentTree(projectIdOrKey) as unknown as Record<string, unknown>;
     },
   };
 };

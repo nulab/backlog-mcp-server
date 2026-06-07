@@ -48,9 +48,9 @@ function mapZodTypeToGraphQLType(zodType: z.ZodTypeAny): string {
   if (zodType instanceof z.ZodNumber) return 'Int!';
   if (zodType instanceof z.ZodBoolean) return 'Boolean!';
   if (zodType instanceof z.ZodNullable)
-    return mapZodTypeToGraphQLType(zodType.unwrap()).replace(/!$/, '');
+    return mapZodTypeToGraphQLType(zodType.unwrap() as ZodTypeAny).replace(/!$/, '');
   if (zodType instanceof z.ZodOptional)
-    return mapZodTypeToGraphQLType(zodType.unwrap()).replace(/!$/, '');
+    return mapZodTypeToGraphQLType(zodType.unwrap() as ZodTypeAny).replace(/!$/, '');
 
   // Spec: a nested part is JSON
   if (zodType instanceof z.ZodObject) return 'JSON';
