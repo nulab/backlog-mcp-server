@@ -17,26 +17,29 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v6
 
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 🔍 Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: 🎨 Format check (Prettier)
-        run: npm run format
+        run: pnpm run format
 
       - name: ✅ Type check
-        run: npm run typecheck:all
+        run: pnpm run typecheck:all
 
       - name: 🧪 Run tests
-        run: npm test
+        run: pnpm test
 
       - name: 🛠 Build
-        run: npm run build
+        run: pnpm run build
