@@ -71,7 +71,7 @@ function extendSchema<I extends z.ZodRawShape>(
     extension.fields = z.string().describe(desc);
   }
 
-  return schema.extend(extension) as unknown as z.ZodObject<
+  return schema.extend(extension) as z.ZodObject<
     I & {
       organization: z.ZodOptional<z.ZodString>;
       fields?: z.ZodString;

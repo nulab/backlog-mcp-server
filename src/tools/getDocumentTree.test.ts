@@ -47,7 +47,7 @@ describe('getDocumentTreeTool', () => {
   );
 
   it('returns document tree as formatted JSON text', async () => {
-    const result = await tool.handler({ projectIdOrKey: 'TEST_PROJECT' }) as any;
+    const result = await tool.handler({ projectIdOrKey: 'TEST_PROJECT' });
     if (Array.isArray(result)) {
       throw new Error('Unexpected array result');
     }
