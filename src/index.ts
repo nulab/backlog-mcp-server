@@ -24,11 +24,11 @@ const { version } = packageJson;
 // client disconnects mid-stream. Node.js emits EPIPE as both a Unix signal and
 // as an error event on stdout/stderr streams — both must be handled.
 process.on('SIGPIPE', () => {});
-process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-  if (err.code !== 'EPIPE') throw err;
+process.stdout.on('error', (err) => {
+  if (!('code' in err) || err.code !== 'EPIPE') throw err;
 });
-process.stderr.on('error', (err: NodeJS.ErrnoException) => {
-  if (err.code !== 'EPIPE') throw err;
+process.stderr.on('error', (err) => {
+  if (!('code' in err) || err.code !== 'EPIPE') throw err;
 });
 
 process.on('uncaughtException', (error) => {
