@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22 AS builder
+FROM node:24 AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -13,7 +13,7 @@ COPY . .
 RUN pnpm run build
 
 # Runtime stage
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
