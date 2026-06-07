@@ -25,10 +25,10 @@ const { version } = packageJson;
 // as an error event on stdout/stderr streams — both must be handled.
 process.on('SIGPIPE', () => {});
 process.stdout.on('error', (err) => {
-  if (err.code !== 'EPIPE') throw err;
+  if (!('code' in err) || err.code !== 'EPIPE') throw err;
 });
 process.stderr.on('error', (err) => {
-  if (err.code !== 'EPIPE') throw err;
+  if (!('code' in err) || err.code !== 'EPIPE') throw err;
 });
 
 process.on('uncaughtException', (error) => {
