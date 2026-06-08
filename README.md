@@ -101,8 +101,8 @@ Replace `your-domain.backlog.com` with your Backlog domain and `your-api-key` wi
    ```bash
    git clone https://github.com/nulab/backlog-mcp-server.git
    cd backlog-mcp-server
-   npm install
-   npm run build
+   pnpm install
+   pnpm run build
    ```
 
 2. Create `.env` from template and set required variables:
@@ -119,7 +119,7 @@ Set the following values in `.env`:
 3. Run locally:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 4. Set your json to use as MCP
@@ -144,7 +144,7 @@ npm run dev
 By default the server uses **stdio**. To run the [MCP Streamable HTTP](https://modelcontextprotocol.io/) transport instead (JSON-RPC over HTTP, same tools as stdio), start with `--transport http` or set `MCP_TRANSPORT=http`.
 
 ```bash
-npm run build
+pnpm run build
 MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 ```
 
@@ -154,13 +154,13 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 
 Environment variables (CLI flags override when both are set):
 
-| Variable | Description |
-| -------- | ----------- |
-| `MCP_TRANSPORT` | `stdio` (default) or `http` |
-| `MCP_HTTP_HOST` | Bind address (default `127.0.0.1`) |
-| `MCP_HTTP_PORT` | Port (default `3333`) |
-| `MCP_HTTP_PATH` | URL path (default `/mcp`) |
-| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported |
+| Variable                 | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `MCP_TRANSPORT`          | `stdio` (default) or `http`                                                                |
+| `MCP_HTTP_HOST`          | Bind address (default `127.0.0.1`)                                                         |
+| `MCP_HTTP_PORT`          | Port (default `3333`)                                                                      |
+| `MCP_HTTP_PATH`          | URL path (default `/mcp`)                                                                  |
+| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported                                    |
 | `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
 
 ### OAuth 2.0 Authentication (Remote MCP)
@@ -178,11 +178,11 @@ The server implements the [MCP Third-Party Authorization Flow](https://modelcont
 
 2. Set the following environment variables (in addition to `BACKLOG_DOMAIN`):
 
-| Variable | Description |
-| -------- | ----------- |
-| `BACKLOG_OAUTH_CLIENT_ID` | OAuth Client ID from your Backlog application |
-| `BACKLOG_OAUTH_CLIENT_SECRET` | OAuth Client Secret from your Backlog application |
-| `MCP_SERVER_BASE_URL` | Public URL of your MCP server (e.g., `https://mcp.example.com`) |
+| Variable                      | Description                                                     |
+| ----------------------------- | --------------------------------------------------------------- |
+| `BACKLOG_OAUTH_CLIENT_ID`     | OAuth Client ID from your Backlog application                   |
+| `BACKLOG_OAUTH_CLIENT_SECRET` | OAuth Client Secret from your Backlog application               |
+| `MCP_SERVER_BASE_URL`         | Public URL of your MCP server (e.g., `https://mcp.example.com`) |
 
 > **Note:** `BACKLOG_API_KEY` is **not required** when OAuth is enabled — each user authenticates with their own Backlog account.
 
@@ -198,18 +198,19 @@ node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
 
 The server automatically exposes the following OAuth endpoints when OAuth is enabled:
 
-| Endpoint | Description |
-| -------- | ----------- |
-| `GET /.well-known/oauth-authorization-server` | OAuth Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)) |
-| `GET /.well-known/oauth-protected-resource/mcp` | OAuth Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) |
-| `POST /register` | Dynamic Client Registration ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)) |
-| `GET /authorize` | Authorization endpoint (redirects to Backlog OAuth) |
-| `GET /callback` | Backlog OAuth callback |
-| `POST /token` | Token endpoint (authorization code & refresh token) |
+| Endpoint                                        | Description                                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `GET /.well-known/oauth-authorization-server`   | OAuth Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)) |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuth Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))   |
+| `POST /register`                                | Dynamic Client Registration ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))         |
+| `GET /authorize`                                | Authorization endpoint (redirects to Backlog OAuth)                                             |
+| `GET /callback`                                 | Backlog OAuth callback                                                                          |
+| `POST /token`                                   | Token endpoint (authorization code & refresh token)                                             |
 
 MCP clients that support the MCP authorization specification will use these endpoints automatically.
 
 > **Limitations:**
+>
 > - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
 > - Client registrations and tokens are stored in memory and will be lost on server restart.
 
@@ -633,7 +634,7 @@ This section demonstrates advanced configuration using multiple environment vari
 ### Running Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Adding New Tools
