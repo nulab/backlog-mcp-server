@@ -124,7 +124,12 @@ export function getOAuthConfigResolver(
     }
     return {
       resolve: (host: string) => {
-        const hostname = extractHostname(`http://${host}`);
+        let hostname: string;
+        try {
+          hostname = extractHostname(`http://${host}`);
+        } catch {
+          return undefined;
+        }
         return multiSiteConfigs.get(hostname);
       },
       resolveByBacklogDomain: (backlogDomain: string) =>
