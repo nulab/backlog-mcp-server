@@ -23,6 +23,7 @@ describe('createTokenStore', () => {
         codeChallenge: 'challenge',
         redirectUri: 'http://localhost/callback',
         scopes: [],
+        siteHost: 'mcp.example.com',
         createdAt: Date.now(),
       };
       store.storePendingAuth('state-1', pending);
@@ -40,6 +41,7 @@ describe('createTokenStore', () => {
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         scopes: [],
+        siteHost: 'mcp.example.com',
         createdAt: Date.now(),
       });
       store.consumePendingAuth('state-1');
@@ -52,6 +54,7 @@ describe('createTokenStore', () => {
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         scopes: [],
+        siteHost: 'mcp.example.com',
         createdAt: Date.now(),
       });
       vi.advanceTimersByTime(11 * 60 * 1000);
@@ -69,6 +72,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogDomain: 'example.backlog.com',
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
@@ -86,6 +90,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogDomain: 'example.backlog.com',
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
@@ -177,6 +182,7 @@ describe('createTokenStore', () => {
     it('stores and retrieves an MCP token', () => {
       const entry = {
         backlogAccessToken: 'bl-at',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 3600_000,
       };
@@ -187,6 +193,7 @@ describe('createTokenStore', () => {
     it('returns undefined for expired MCP token', () => {
       store.storeMcpToken('mcp-t1', {
         backlogAccessToken: 'bl-at',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 3600_000,
       });
@@ -203,6 +210,7 @@ describe('createTokenStore', () => {
     it('stores and consumes an MCP refresh token', () => {
       const entry = {
         backlogRefreshToken: 'bl-rt',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       };
@@ -214,6 +222,7 @@ describe('createTokenStore', () => {
     it('consumes only once', () => {
       store.storeMcpRefreshToken('mcp-rt1', {
         backlogRefreshToken: 'bl-rt',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
@@ -224,6 +233,7 @@ describe('createTokenStore', () => {
     it('returns undefined for expired refresh token', () => {
       store.storeMcpRefreshToken('mcp-rt1', {
         backlogRefreshToken: 'bl-rt',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
@@ -239,6 +249,7 @@ describe('createTokenStore', () => {
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         scopes: [],
+        siteHost: 'mcp.example.com',
         createdAt: Date.now(),
       });
       store.storeAuthCode('code-1', {
@@ -249,6 +260,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogDomain: 'example.backlog.com',
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
@@ -260,11 +272,13 @@ describe('createTokenStore', () => {
       );
       store.storeMcpToken('mcp-t1', {
         backlogAccessToken: 'bl-at',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 3600_000,
       });
       store.storeMcpRefreshToken('mcp-rt1', {
         backlogRefreshToken: 'bl-rt',
+        backlogDomain: 'example.backlog.com',
         clientId: 'c1',
         expiresAt: Date.now() + 3600_000,
       });
