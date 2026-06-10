@@ -154,9 +154,8 @@ export const runHttpMcpServer = async (
 
   if (oauthEnabled) {
     const { createOAuthRoutes } = await import('./auth/oauthRoutes.js');
-    const { createBearerAuthMiddleware } = await import(
-      './auth/bearerAuthMiddleware.js'
-    );
+    const { createBearerAuthMiddleware } =
+      await import('./auth/bearerAuthMiddleware.js');
 
     app.route('/', createOAuthRoutes(oauthResolver, tokenStore, mcpPath));
     app.use(

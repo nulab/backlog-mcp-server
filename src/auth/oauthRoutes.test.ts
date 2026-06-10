@@ -68,10 +68,9 @@ describe('createOAuthRoutes', () => {
 
   describe('GET /.well-known/oauth-authorization-server', () => {
     it('returns authorization server metadata', async () => {
-      const res = await app.request(
-        '/.well-known/oauth-authorization-server',
-        { headers: { host: HOST } }
-      );
+      const res = await app.request('/.well-known/oauth-authorization-server', {
+        headers: { host: HOST },
+      });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.issuer).toBe('https://mcp.example.com');
@@ -86,10 +85,9 @@ describe('createOAuthRoutes', () => {
     });
 
     it('returns 400 for unknown host', async () => {
-      const res = await app.request(
-        '/.well-known/oauth-authorization-server',
-        { headers: { host: 'unknown.example.com' } }
-      );
+      const res = await app.request('/.well-known/oauth-authorization-server', {
+        headers: { host: 'unknown.example.com' },
+      });
       expect(res.status).toBe(400);
     });
   });
