@@ -19,8 +19,11 @@ export function createBearerAuthMiddleware(
 
   function buildResourceMetadataUrl(host: string | undefined): string {
     const config = host ? resolver.resolve(host) : undefined;
-    const base = config?.serverBaseUrl ?? '';
-    return `${base}/.well-known/oauth-protected-resource${prmPath}`;
+    if (config) {
+      return `${config.serverBaseUrl}/.well-known/oauth-protected-resource${prmPath}`;
+    }
+    const scheme = host?.startsWith('localhost') ? 'http' : 'https';
+    return `${scheme}://${host ?? 'unknown'}/.well-known/oauth-protected-resource${prmPath}`;
   }
 
   return async (c, next) => {

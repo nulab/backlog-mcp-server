@@ -800,6 +800,11 @@ describe('createOAuthRoutes', () => {
       const json = await res.json();
       expect(json.error).toBe('invalid_grant');
       expect(json.error_description).toContain('different site');
+
+      // Auth code should be preserved (not consumed) for retry on correct site
+      const restored = store.consumeAuthCode('mcp-code-cross');
+      expect(restored).toBeDefined();
+      expect(restored!.backlogDomain).toBe('example.backlog.com');
     });
 
     it('rejects cross-site refresh token replay', async () => {

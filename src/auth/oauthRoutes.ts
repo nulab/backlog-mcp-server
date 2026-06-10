@@ -448,6 +448,7 @@ export function createOAuthRoutes(
       }
 
       if (hostConfig && entry.backlogDomain !== hostConfig.backlogDomain) {
+        store.storeAuthCode(code, entry);
         return c.json(
           oauthError(
             'invalid_grant',

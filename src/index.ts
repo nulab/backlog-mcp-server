@@ -198,7 +198,7 @@ async function main() {
             .filter(Boolean)
         : undefined;
     const resolverHosts =
-      !explicitHosts && oauthResolver
+      !explicitHosts && oauthResolver?.isMultiSite
         ? oauthResolver.getConfiguredHostnames()
         : undefined;
     const allowedHosts =
