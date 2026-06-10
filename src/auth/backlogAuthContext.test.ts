@@ -4,7 +4,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   runWithAccessToken,
+  runWithOAuthContext,
   getCurrentAccessToken,
+  getCurrentBacklogDomain,
 } from './backlogAuthContext.js';
 
 describe('backlogAuthContext', () => {
@@ -31,5 +33,35 @@ describe('backlogAuthContext', () => {
     });
     expect(innerToken).toBe('inner');
     expect(outerToken).toBe('outer');
+  });
+
+  describe('runWithOAuthContext', () => {
+    it('provides both access token and backlog domain', async () => {
+      let token: string | undefined;
+      let domain: string | undefined;
+      await runWithOAuthContext('my-token', 'example.backlog.com', async () => {
+        token = getCurrentAccessToken();
+        domain = getCurrentBacklogDomain();
+      });
+      expect(token).toBe('my-token');
+      expect(domain).toBe('example.backlog.com');
+    });
+
+    it('returns undefined for domain outside context', () => {
+      expect(getCurrentBacklogDomain()).toBeUndefined();
+    });
+
+    it('isolates contexts between nested calls', async () => {
+      let outerDomain: string | undefined;
+      let innerDomain: string | undefined;
+      await runWithOAuthContext('t1', 'outer.backlog.com', async () => {
+        await runWithOAuthContext('t2', 'inner.backlog.com', async () => {
+          innerDomain = getCurrentBacklogDomain();
+        });
+        outerDomain = getCurrentBacklogDomain();
+      });
+      expect(innerDomain).toBe('inner.backlog.com');
+      expect(outerDomain).toBe('outer.backlog.com');
+    });
   });
 });

@@ -9,8 +9,11 @@ import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { Hono } from 'hono';
-import { runWithAccessToken } from './auth/backlogAuthContext.js';
-import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import {
+  runWithAccessToken,
+  runWithOAuthContext,
+} from './auth/backlogAuthContext.js';
+import type { OAuthConfigResolver } from './auth/backlogOAuthConfig.js';
 import type { TokenStore } from './auth/tokenStore.js';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
@@ -23,7 +26,7 @@ type RunHttpMcpServerOptions = {
   enableJsonResponse: boolean;
   allowedHosts?: string[];
   createServer: () => BacklogMCPServer;
-  oauthConfig?: BacklogOAuthConfig;
+  oauthResolver?: OAuthConfigResolver;
   tokenStore?: TokenStore;
 };
 
@@ -115,7 +118,7 @@ export const runHttpMcpServer = async (
     enableJsonResponse,
     allowedHosts,
     createServer,
-    oauthConfig,
+    oauthResolver,
     tokenStore,
   } = options;
 
@@ -126,11 +129,17 @@ export const runHttpMcpServer = async (
     );
   }
 
-  const app = new Hono<{ Variables: { authInfo?: AuthInfo } }>();
+  const app = new Hono<{
+    Variables: { authInfo?: AuthInfo; backlogDomain?: string };
+  }>();
   const transports: Record<string, WebStandardStreamableHTTPServerTransport> =
     {};
   const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
-  const oauthEnabled = !!(oauthConfig && tokenStore);
+  const oauthEnabled = !!(oauthResolver && tokenStore);
+
+  app.get('/health', (c) =>
+    c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
+  );
 
   if (allowedHostnames) {
     app.use('*', async (c, next) => {
@@ -143,19 +152,16 @@ export const runHttpMcpServer = async (
     });
   }
 
-  app.get('/health', (c) =>
-    c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
-  );
-
   if (oauthEnabled) {
     const { createOAuthRoutes } = await import('./auth/oauthRoutes.js');
-    const { createBearerAuthMiddleware } =
-      await import('./auth/bearerAuthMiddleware.js');
+    const { createBearerAuthMiddleware } = await import(
+      './auth/bearerAuthMiddleware.js'
+    );
 
-    app.route('/', createOAuthRoutes(oauthConfig, tokenStore, mcpPath));
+    app.route('/', createOAuthRoutes(oauthResolver, tokenStore, mcpPath));
     app.use(
       mcpPath,
-      createBearerAuthMiddleware(tokenStore, oauthConfig, mcpPath)
+      createBearerAuthMiddleware(tokenStore, oauthResolver, mcpPath)
     );
   }
 
@@ -166,6 +172,9 @@ export const runHttpMcpServer = async (
       ? (c.get('authInfo') as AuthInfo | undefined)
       : undefined;
     const accessToken = authInfo?.token;
+    const backlogDomain = oauthEnabled
+      ? (c.get('backlogDomain') as string | undefined)
+      : undefined;
 
     const sessionId = req.headers.get('mcp-session-id');
 
@@ -173,6 +182,13 @@ export const runHttpMcpServer = async (
       if (sessionId && transports[sessionId]) {
         const handleExisting = () =>
           transports[sessionId].handleRequest(req, { authInfo });
+        if (accessToken && backlogDomain) {
+          return runWithOAuthContext(
+            accessToken,
+            backlogDomain,
+            handleExisting
+          );
+        }
         return accessToken
           ? runWithAccessToken(accessToken, handleExisting)
           : handleExisting();
@@ -222,6 +238,9 @@ export const runHttpMcpServer = async (
           authInfo
         );
 
+      if (accessToken && backlogDomain) {
+        return runWithOAuthContext(accessToken, backlogDomain, handleNew);
+      }
       return accessToken
         ? runWithAccessToken(accessToken, handleNew)
         : handleNew();

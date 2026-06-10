@@ -3,7 +3,7 @@
 
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { Hono } from 'hono';
-import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
+import type { OAuthConfigResolver } from './backlogOAuthConfig.js';
 import {
   buildBacklogAuthorizationUrl,
   exchangeBacklogCode,
@@ -45,17 +45,24 @@ function isValidRedirectUri(uri: string): boolean {
 }
 
 export function createOAuthRoutes(
-  config: BacklogOAuthConfig,
+  resolver: OAuthConfigResolver,
   store: TokenStore,
   mcpPath: string
 ): Hono {
   const app = new Hono();
-  const { serverBaseUrl } = config;
-  const callbackUrl = `${serverBaseUrl}/callback`;
-  const resourceUri = `${serverBaseUrl}${mcpPath}`;
+
+  function resolveFromHost(host: string | undefined) {
+    if (!host) return undefined;
+    return resolver.resolve(host);
+  }
 
   // RFC 8414 — OAuth Authorization Server Metadata
   app.get('/.well-known/oauth-authorization-server', (c) => {
+    const config = resolveFromHost(c.req.header('host'));
+    if (!config)
+      return c.json(oauthError('invalid_request', 'Unknown host'), 400);
+
+    const { serverBaseUrl } = config;
     c.header('Cache-Control', 'public, max-age=3600');
     return c.json({
       issuer: serverBaseUrl,
@@ -72,6 +79,12 @@ export function createOAuthRoutes(
   // RFC 9728 — OAuth Protected Resource Metadata
   const prm = mcpPath === '/' ? '' : mcpPath;
   app.get(`/.well-known/oauth-protected-resource${prm}`, (c) => {
+    const config = resolveFromHost(c.req.header('host'));
+    if (!config)
+      return c.json(oauthError('invalid_request', 'Unknown host'), 400);
+
+    const { serverBaseUrl } = config;
+    const resourceUri = `${serverBaseUrl}${mcpPath}`;
     c.header('Cache-Control', 'public, max-age=3600');
     return c.json({
       resource: resourceUri,
@@ -164,6 +177,15 @@ export function createOAuthRoutes(
 
   // Authorization Endpoint
   app.get('/authorize', async (c) => {
+    const host = c.req.header('host') ?? '';
+    const config = resolveFromHost(host);
+    if (!config)
+      return c.json(oauthError('invalid_request', 'Unknown host'), 400);
+
+    const { serverBaseUrl } = config;
+    const callbackUrl = `${serverBaseUrl}/callback`;
+    const resourceUri = `${serverBaseUrl}${mcpPath}`;
+
     const params = Object.fromEntries(
       new URL(c.req.url).searchParams.entries()
     ) as Record<string, string>;
@@ -251,6 +273,7 @@ export function createOAuthRoutes(
       resource: resource ?? resourceUri,
       scopes: scope ? scope.split(' ') : [],
       state,
+      siteHost: host,
       createdAt: Date.now(),
     });
 
@@ -301,6 +324,14 @@ export function createOAuthRoutes(
       );
     }
 
+    // Resolve config from saved siteHost, not from current Host header
+    const config = resolveFromHost(pending.siteHost);
+    if (!config) {
+      return c.text('Configuration not found for the originating site', 500);
+    }
+
+    const callbackUrl = `${config.serverBaseUrl}/callback`;
+
     let backlogTokens;
     try {
       backlogTokens = await exchangeBacklogCode(
@@ -310,20 +341,22 @@ export function createOAuthRoutes(
       );
     } catch (err) {
       logger.error({ err }, 'Failed to exchange Backlog authorization code');
-      const url = new URL(pending.redirectUri);
-      url.searchParams.set('error', 'server_error');
-      url.searchParams.set(
+      const errorRedirectUrl = new URL(pending.redirectUri);
+      errorRedirectUrl.searchParams.set('error', 'server_error');
+      errorRedirectUrl.searchParams.set(
         'error_description',
         'Failed to exchange authorization code with Backlog'
       );
-      if (pending.state) url.searchParams.set('state', pending.state);
-      return c.redirect(url.href, 302);
+      if (pending.state)
+        errorRedirectUrl.searchParams.set('state', pending.state);
+      return c.redirect(errorRedirectUrl.href, 302);
     }
 
     const mcpCode = randomUUID();
     store.storeAuthCode(mcpCode, {
       mcpClientId: pending.mcpClientId,
       backlogTokens,
+      backlogDomain: config.backlogDomain,
       codeChallenge: pending.codeChallenge,
       redirectUri: pending.redirectUri,
       resource: pending.resource,
@@ -340,6 +373,13 @@ export function createOAuthRoutes(
   // Token Endpoint
   app.post('/token', async (c) => {
     c.header('Cache-Control', 'no-store');
+
+    const host = c.req.header('host') ?? '';
+    const hostConfig = resolveFromHost(host);
+
+    if (resolver.isMultiSite && !hostConfig) {
+      return c.json(oauthError('invalid_request', 'Unknown host'), 400);
+    }
 
     const body = (await c.req.parseBody()) as Record<string, string>;
     const grantType = body.grant_type;
@@ -407,16 +447,28 @@ export function createOAuthRoutes(
         );
       }
 
+      if (hostConfig && entry.backlogDomain !== hostConfig.backlogDomain) {
+        return c.json(
+          oauthError(
+            'invalid_grant',
+            'Authorization code was issued for a different site'
+          ),
+          400
+        );
+      }
+
       const mcpAccessToken = randomBytes(32).toString('hex');
       const mcpRefreshToken = randomBytes(32).toString('hex');
 
       store.storeMcpToken(mcpAccessToken, {
         backlogAccessToken: entry.backlogTokens.access_token,
+        backlogDomain: entry.backlogDomain,
         clientId,
         expiresAt: Date.now() + entry.backlogTokens.expires_in * 1000,
       });
       store.storeMcpRefreshToken(mcpRefreshToken, {
         backlogRefreshToken: entry.backlogTokens.refresh_token,
+        backlogDomain: entry.backlogDomain,
         clientId,
         expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
       });
@@ -456,9 +508,37 @@ export function createOAuthRoutes(
         );
       }
 
+      if (
+        hostConfig &&
+        refreshEntry.backlogDomain !== hostConfig.backlogDomain
+      ) {
+        store.storeMcpRefreshToken(refreshToken, refreshEntry);
+        return c.json(
+          oauthError(
+            'invalid_grant',
+            'Refresh token was issued for a different site'
+          ),
+          400
+        );
+      }
+
+      const refreshConfig =
+        hostConfig ??
+        resolver.resolveByBacklogDomain(refreshEntry.backlogDomain);
+      if (!refreshConfig) {
+        store.storeMcpRefreshToken(refreshToken, refreshEntry);
+        return c.json(
+          oauthError(
+            'server_error',
+            'Configuration not found for token domain'
+          ),
+          500
+        );
+      }
+
       try {
         const tokens = await refreshBacklogToken(
-          config,
+          refreshConfig,
           refreshEntry.backlogRefreshToken
         );
 
@@ -467,11 +547,13 @@ export function createOAuthRoutes(
 
         store.storeMcpToken(mcpAccessToken, {
           backlogAccessToken: tokens.access_token,
+          backlogDomain: refreshEntry.backlogDomain,
           clientId,
           expiresAt: Date.now() + tokens.expires_in * 1000,
         });
         store.storeMcpRefreshToken(mcpRefreshToken, {
           backlogRefreshToken: tokens.refresh_token,
+          backlogDomain: refreshEntry.backlogDomain,
           clientId,
           expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
         });
