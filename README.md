@@ -139,80 +139,94 @@ pnpm run dev
 }
 ```
 
-### HTTP transport (Streamable HTTP)
+### Remote MCP on Cloudflare Workers (Streamable HTTP + OAuth)
 
-By default the server uses **stdio**. To run the [MCP Streamable HTTP](https://modelcontextprotocol.io/) transport instead (JSON-RPC over HTTP, same tools as stdio), start with `--transport http` or set `MCP_TRANSPORT=http`.
+For local use, the server runs over **stdio** (see the install options above). To run it as a **remote MCP server** — reachable over HTTP with per-user OAuth authentication and stateful sessions — deploy it to **Cloudflare Workers**.
 
-```bash
-pnpm run build
-MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
-```
+The remote deployment uses a single [Durable Object](https://developers.cloudflare.com/durable-objects/) (`BacklogMcpDurableObject`) that owns all state:
 
-- **Endpoint:** `POST`, `GET`, and `DELETE` on `http://<host>:<port><path>` (default path `/mcp`).
-- **Session:** After `initialize`, clients must send the `mcp-session-id` header on later requests (as returned by the server).
-- **Security:** Default bind is `127.0.0.1`. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
+- **MCP sessions** (Streamable HTTP transports) are held in memory. They are re-established automatically if the Durable Object restarts.
+- **OAuth state** (registered clients, access/refresh tokens) is **persisted to Durable Object storage**, so it survives hibernation and restarts — users do not need to re-authenticate when the worker recycles.
 
-Environment variables (CLI flags override when both are set):
-
-| Variable                 | Description                                                                                |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| `MCP_TRANSPORT`          | `stdio` (default) or `http`                                                                |
-| `MCP_HTTP_HOST`          | Bind address (default `127.0.0.1`)                                                         |
-| `MCP_HTTP_PORT`          | Port (default `3333`)                                                                      |
-| `MCP_HTTP_PATH`          | URL path (default `/mcp`)                                                                  |
-| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported                                    |
-| `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
-
-### OAuth 2.0 Authentication (Remote MCP)
-
-When exposing the MCP server over a network, you can enable OAuth 2.0 authentication so that each user authenticates with their own Backlog account instead of sharing a single API key.
-
-The server implements the [MCP Third-Party Authorization Flow](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) by acting as both an OAuth authorization server (for MCP clients) and an OAuth client (for Backlog).
+It implements the [MCP Third-Party Authorization Flow](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization), acting as both an OAuth authorization server (for MCP clients) and an OAuth client (for Backlog), so each user authenticates with their own Backlog account instead of sharing a single API key.
 
 #### Prerequisites
 
-1. Register an OAuth application in your Backlog space:
+1. A Cloudflare account, and [Wrangler](https://developers.cloudflare.com/workers/wrangler/) (installed as a dev dependency — run via `pnpm dlx wrangler` or the `pnpm` scripts below).
+2. Register an OAuth application in your Backlog space:
    - Go to your Backlog space → Personal Settings → Register Application
-   - Set the **Redirect URI** to `<MCP_SERVER_BASE_URL>/callback` (e.g., `https://mcp.example.com/callback`)
+   - Set the **Redirect URI** to `<MCP_SERVER_BASE_URL>/callback` (e.g. `https://backlog-mcp-server.<account>.workers.dev/callback`)
    - Note the **Client ID** and **Client Secret**
 
-2. Set the following environment variables (in addition to `BACKLOG_DOMAIN`):
+#### Configuration
 
-| Variable                      | Description                                                     |
-| ----------------------------- | --------------------------------------------------------------- |
-| `BACKLOG_OAUTH_CLIENT_ID`     | OAuth Client ID from your Backlog application                   |
-| `BACKLOG_OAUTH_CLIENT_SECRET` | OAuth Client Secret from your Backlog application               |
-| `MCP_SERVER_BASE_URL`         | Public URL of your MCP server (e.g., `https://mcp.example.com`) |
+Non-secret configuration lives in [`wrangler.jsonc`](./wrangler.jsonc) under `vars`. Set at least:
+
+| Variable                      | Description                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `MCP_SERVER_BASE_URL`         | Public origin of the deployed Worker (e.g. `https://backlog-mcp-server.<account>.workers.dev`) — required to enable OAuth |
+| `BACKLOG_DOMAIN`              | Your Backlog space domain (e.g. `your-space.backlog.com`)                                    |
+| `BACKLOG_OAUTH_CLIENT_ID`     | OAuth Client ID from your Backlog application (may instead be set as a secret)               |
+| `MCP_HTTP_PATH`               | MCP endpoint path (default `/mcp`)                                                           |
+| `MCP_HTTP_ALLOWED_HOSTS`      | _(optional)_ comma-separated allowed `Host` values (DNS rebinding protection)                |
+| `ENABLE_TOOLSETS`             | _(optional)_ toolsets to enable (default `all`)                                              |
+| `ENABLE_DYNAMIC_TOOLSETS`     | _(optional)_ `true` to enable dynamic toolset discovery                                      |
+| `OPTIMIZE_RESPONSE`           | _(optional)_ `true` to enable field-selection response optimization                          |
+| `MAX_TOKENS`                  | _(optional)_ max tokens per response (default `50000`)                                       |
+| `PREFIX`                      | _(optional)_ prefix prepended to all tool names                                              |
+
+Store the **client secret** as an encrypted secret (never commit it):
+
+```bash
+pnpm dlx wrangler secret put BACKLOG_OAUTH_CLIENT_SECRET
+# Optionally keep the client id secret too:
+pnpm dlx wrangler secret put BACKLOG_OAUTH_CLIENT_ID
+```
 
 > **Note:** `BACKLOG_API_KEY` is **not required** when OAuth is enabled — each user authenticates with their own Backlog account.
 
-#### Example
+#### Deploy
 
 ```bash
-BACKLOG_DOMAIN=your-space.backlog.com \
-BACKLOG_OAUTH_CLIENT_ID=your-client-id \
-BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret \
-MCP_SERVER_BASE_URL=https://mcp.example.com \
-node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+pnpm install
+pnpm run deploy        # wrangler deploy
 ```
 
-The server automatically exposes the following OAuth endpoints when OAuth is enabled:
+For local development (uses a `.dev.vars` file for secrets, which is git-ignored):
+
+```bash
+pnpm run dev:worker    # wrangler dev
+```
+
+```dotenv
+# .dev.vars (local only — do not commit)
+MCP_SERVER_BASE_URL=http://localhost:8787
+BACKLOG_DOMAIN=your-space.backlog.com
+BACKLOG_OAUTH_CLIENT_ID=your-client-id
+BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret
+```
+
+#### OAuth endpoints
+
+When OAuth is enabled the Worker exposes:
 
 | Endpoint                                        | Description                                                                                     |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `GET /health`                                   | Health check                                                                                    |
 | `GET /.well-known/oauth-authorization-server`   | OAuth Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)) |
 | `GET /.well-known/oauth-protected-resource/mcp` | OAuth Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))   |
 | `POST /register`                                | Dynamic Client Registration ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))         |
 | `GET /authorize`                                | Authorization endpoint (redirects to Backlog OAuth)                                             |
 | `GET /callback`                                 | Backlog OAuth callback                                                                          |
 | `POST /token`                                   | Token endpoint (authorization code & refresh token)                                             |
+| `ALL /mcp`                                       | MCP Streamable HTTP endpoint (Bearer token required)                                            |
 
-MCP clients that support the MCP authorization specification will use these endpoints automatically.
+MCP clients that support the MCP authorization specification will discover and use these endpoints automatically. After `initialize`, clients send the `mcp-session-id` header returned by the server on subsequent requests.
 
 > **Limitations:**
 >
-> - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
-> - Client registrations and tokens are stored in memory and will be lost on server restart.
+> - OAuth mode supports a single Backlog organization. It is not compatible with the multi-organization configuration.
+> - All requests are routed to a single global Durable Object instance; throughput is bounded by that instance.
 
 ## Tool Configuration
 
@@ -646,12 +660,8 @@ pnpm test
 
 ### Command Line Options
 
-The server supports several command line options:
+The stdio CLI supports several command line options:
 
-- `--transport stdio|http`: MCP transport (default: stdio). Use `http` for Streamable HTTP.
-- `--http-host`, `--http-port`, `--http-path`: HTTP bind address, port, and path (defaults: `127.0.0.1`, `3333`, `/mcp`).
-- `--http-json-response`: Prefer JSON responses over SSE when the transport supports it.
-- `--http-allowed-hosts`: Comma-separated allowed `Host` headers when binding to all interfaces.
 - `--export-translations`: Export all translation keys and values
 - `--optimize-response`: Enable GraphQL-style field selection
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
@@ -666,11 +676,7 @@ Example:
 node build/index.js --optimize-response --max-tokens=100000 --prefix="backlog_" --enable-toolsets space,issue
 ```
 
-HTTP example:
-
-```bash
-node build/index.js --transport http --http-port 3333 --http-path /mcp
-```
+> The remote HTTP transport is provided by the Cloudflare Workers deployment (see [Remote MCP on Cloudflare Workers](#remote-mcp-on-cloudflare-workers-streamable-http--oauth)), which is configured through Worker `vars`/secrets rather than CLI flags.
 
 ## Multi-Organization Support
 

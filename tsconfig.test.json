@@ -4,5 +4,10 @@
     "module": "ESNext",
     "moduleResolution": "bundler"
   },
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/worker.ts",
+    "src/workers/durableObject.ts",
+    "src/workers/env.ts"
+  ]
 }

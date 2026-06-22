@@ -1,0 +1,12 @@
+{
+  // Type-checks the Cloudflare Workers entry and Durable Object, which rely on
+  // Workers runtime globals (`@cloudflare/workers-types`). Kept separate from
+  // the Node program (tsconfig.json) to avoid clashing global declarations.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "node"]
+  },
+  "include": ["src/worker.ts", "src/workers/**/*.ts"],
+  "exclude": ["node_modules", "src/**/*.test.ts"]
+}

@@ -1,0 +1,49 @@
+{
+  // Cloudflare Workers configuration for the remote (HTTP + OAuth) MCP server.
+  // Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "backlog-mcp-server",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-06-21",
+  // nodejs_compat is required for node:crypto (randomUUID/randomBytes/createHash)
+  // and node:async_hooks (AsyncLocalStorage used to scope the access token).
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MCP_DO",
+        "class_name": "BacklogMcpDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      // SQLite-backed Durable Object (recommended for new classes); the
+      // key/value storage API used by the token store works the same.
+      "new_sqlite_classes": ["BacklogMcpDurableObject"]
+    }
+  ],
+  // Non-secret configuration. Override per environment as needed.
+  // MCP_SERVER_BASE_URL must match the deployed Worker's public origin and is
+  // required to enable the OAuth authorization-server routes.
+  "vars": {
+    "MCP_SERVER_BASE_URL": "https://backlog-mcp-server.example.workers.dev",
+    "BACKLOG_DOMAIN": "your-space.backlog.com",
+    "MCP_HTTP_PATH": "/mcp",
+    "ENABLE_TOOLSETS": "all",
+    "LOG_LEVEL": "info"
+    // "BACKLOG_OAUTH_CLIENT_ID": set here or as a secret
+    // "MCP_HTTP_ALLOWED_HOSTS": "backlog-mcp-server.example.workers.dev"
+    // "ENABLE_DYNAMIC_TOOLSETS": "false"
+    // "OPTIMIZE_RESPONSE": "false"
+    // "MAX_TOKENS": "50000"
+    // "PREFIX": ""
+  }
+  // Secrets (set via `wrangler secret put <NAME>`), never commit:
+  //   BACKLOG_OAUTH_CLIENT_SECRET  (required for OAuth)
+  //   BACKLOG_OAUTH_CLIENT_ID      (may be a secret instead of a var)
+}

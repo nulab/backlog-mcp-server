@@ -18,6 +18,10 @@ dist/
 .env.test.local
 .env.production.local
 
+# Wrangler / Cloudflare Workers
+.dev.vars
+.wrangler/
+
 # Editor directories and files
 .idea/
 .vscode/*

@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 import { randomUUID } from 'node:crypto';
-import type { Server } from 'node:http';
-import { serve } from '@hono/node-server';
 
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
@@ -15,21 +13,30 @@ import type { TokenStore } from './auth/tokenStore.js';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
-type RunHttpMcpServerOptions = {
-  host: string;
-  port: number;
+export type SessionTransports = Record<
+  string,
+  WebStandardStreamableHTTPServerTransport
+>;
+
+export type CreateMcpHonoAppOptions = {
   path: string;
   version: string;
   enableJsonResponse: boolean;
+  /**
+   * Host header values accepted as a DNS-rebinding guard. When omitted, the
+   * Host header is not checked (appropriate when fronted by a platform that
+   * controls the hostname, e.g. Cloudflare Workers).
+   */
   allowedHosts?: string[];
   createServer: () => BacklogMCPServer;
+  /**
+   * Session-id keyed transport registry. Owned by the caller so its lifetime
+   * (and therefore session statefulness) is controlled externally — a Durable
+   * Object instance for Workers, or a process-lifetime object for Node.
+   */
+  transports: SessionTransports;
   oauthConfig?: BacklogOAuthConfig;
   tokenStore?: TokenStore;
-};
-
-type HttpMcpServerHandle = {
-  httpServer: Server;
-  shutdown: () => Promise<void>;
 };
 
 type JsonRpcErrorBody = {
@@ -44,17 +51,6 @@ const jsonRpcError = (code: number, message: string): JsonRpcErrorBody => {
 
 const bodyContainsInitialize = (body: unknown): boolean => {
   return (Array.isArray(body) ? body : [body]).some(isInitializeRequest);
-};
-
-const buildAllowedHostnames = (
-  host: string,
-  allowedHosts?: string[]
-): string[] | undefined => {
-  if (allowedHosts?.length) return allowedHosts;
-  const localhostHosts = ['127.0.0.1', 'localhost', '::1'];
-  return localhostHosts.includes(host)
-    ? ['localhost', '127.0.0.1', '[::1]']
-    : undefined;
 };
 
 const parseHostname = (hostHeader: string): string | null => {
@@ -83,7 +79,7 @@ const startNewSession = async (
   req: Request,
   body: unknown,
   enableJsonResponse: boolean,
-  transports: Record<string, WebStandardStreamableHTTPServerTransport>,
+  transports: SessionTransports,
   createServer: () => BacklogMCPServer,
   authInfo?: AuthInfo
 ): Promise<Response> => {
@@ -104,32 +100,30 @@ const startNewSession = async (
   return transport.handleRequest(req, { parsedBody: body, authInfo });
 };
 
-export const runHttpMcpServer = async (
-  options: RunHttpMcpServerOptions
-): Promise<HttpMcpServerHandle> => {
+/**
+ * Builds the Web-standard Hono application that serves the MCP endpoint and,
+ * when OAuth is configured, the OAuth authorization-server routes.
+ *
+ * The returned app is runtime-agnostic (`app.fetch(Request) => Response`) so it
+ * can be served directly from a Cloudflare Workers / Durable Object `fetch`
+ * handler, or any other Web-standard fetch runtime.
+ */
+export const createMcpHonoApp = async (
+  options: CreateMcpHonoAppOptions
+): Promise<Hono<{ Variables: { authInfo?: AuthInfo } }>> => {
   const {
-    host,
-    port,
     path: mcpPath,
     version,
     enableJsonResponse,
     allowedHosts,
     createServer,
+    transports,
     oauthConfig,
     tokenStore,
   } = options;
 
-  if ((host === '0.0.0.0' || host === '::') && !allowedHosts?.length) {
-    logger.warn(
-      'Binding to all interfaces without --http-allowed-hosts. ' +
-        'Set allowed Host values to prevent DNS rebinding attacks.'
-    );
-  }
-
   const app = new Hono<{ Variables: { authInfo?: AuthInfo } }>();
-  const transports: Record<string, WebStandardStreamableHTTPServerTransport> =
-    {};
-  const allowedHostnames = buildAllowedHostnames(host, allowedHosts);
+  const allowedHostnames = allowedHosts?.length ? allowedHosts : undefined;
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
   if (allowedHostnames) {
@@ -149,8 +143,9 @@ export const runHttpMcpServer = async (
 
   if (oauthEnabled) {
     const { createOAuthRoutes } = await import('./auth/oauthRoutes.js');
-    const { createBearerAuthMiddleware } =
-      await import('./auth/bearerAuthMiddleware.js');
+    const { createBearerAuthMiddleware } = await import(
+      './auth/bearerAuthMiddleware.js'
+    );
 
     app.route('/', createOAuthRoutes(oauthConfig, tokenStore, mcpPath));
     app.use(
@@ -231,25 +226,5 @@ export const runHttpMcpServer = async (
     }
   });
 
-  const httpServer = await new Promise<Server>((resolve, reject) => {
-    const srv = serve({ fetch: app.fetch, port, hostname: host }, () =>
-      resolve(srv as Server)
-    );
-    srv.on('error', reject);
-  });
-
-  const shutdown = async () => {
-    for (const sid of Object.keys(transports)) {
-      try {
-        await transports[sid].close();
-      } catch {
-        /* ignore */
-      }
-      delete transports[sid];
-    }
-    httpServer.closeAllConnections();
-    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
-  };
-
-  return { httpServer, shutdown };
+  return app;
 };

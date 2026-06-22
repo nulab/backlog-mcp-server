@@ -22,7 +22,7 @@ export type OAuthClientInfo = {
   response_types?: string[];
 };
 
-type PendingAuthorization = {
+export type PendingAuthorization = {
   mcpClientId: string;
   codeChallenge: string;
   redirectUri: string;
@@ -32,7 +32,7 @@ type PendingAuthorization = {
   createdAt: number;
 };
 
-type AuthCodeEntry = {
+export type AuthCodeEntry = {
   mcpClientId: string;
   backlogTokens: BacklogTokenData;
   codeChallenge: string;
@@ -52,19 +52,42 @@ export type McpTokenEntry = {
   expiresAt: number;
 };
 
-type McpRefreshEntry = {
+export type McpRefreshEntry = {
   backlogRefreshToken: string;
   clientId: string;
   expiresAt: number;
 };
 
-const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
-const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
-const MAX_CLIENTS = 1000;
+export const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
+export const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+export const MAX_CLIENTS = 1000;
 
-export type TokenStore = ReturnType<typeof createTokenStore>;
+/**
+ * Storage abstraction for all OAuth state used by the MCP server.
+ *
+ * Implemented by both the in-memory store (`createTokenStore`, used by the
+ * stdio CLI and unit tests) and the Durable Object backed store
+ * (`createDurableTokenStore`, used by the Cloudflare Workers deployment).
+ * The interface is synchronous so OAuth route handlers stay unchanged across
+ * both implementations.
+ */
+export type TokenStore = {
+  storePendingAuth(backlogState: string, pending: PendingAuthorization): void;
+  consumePendingAuth(backlogState: string): PendingAuthorization | undefined;
+  storeAuthCode(code: string, entry: AuthCodeEntry): void;
+  consumeAuthCode(code: string): AuthCodeEntry | undefined;
+  getClient(clientId: string): OAuthClientInfo | undefined;
+  registerClient(client: OAuthClientInfo): boolean;
+  getCachedVerification(token: string): AuthInfo | undefined;
+  cacheVerification(token: string, authInfo: AuthInfo, ttlMs: number): void;
+  storeMcpToken(mcpToken: string, entry: McpTokenEntry): void;
+  getMcpToken(mcpToken: string): McpTokenEntry | undefined;
+  storeMcpRefreshToken(mcpRefreshToken: string, entry: McpRefreshEntry): void;
+  consumeMcpRefreshToken(mcpRefreshToken: string): McpRefreshEntry | undefined;
+  cleanup(): void;
+};
 
-export function createTokenStore() {
+export function createTokenStore(): TokenStore {
   const pendingAuthorizations = new Map<string, PendingAuthorization>();
   const authorizationCodes = new Map<string, AuthCodeEntry>();
   const clients = new Map<string, OAuthClientInfo>();
