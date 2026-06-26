@@ -101,8 +101,8 @@ docker pull ghcr.io/nulab/backlog-mcp-server:latest
    ```bash
    git clone https://github.com/nulab/backlog-mcp-server.git
    cd backlog-mcp-server
-   npm install
-   npm run build
+   pnpm install
+   pnpm run build
    ```
 
 2. テンプレートから `.env` を作成し、必須の環境変数を設定します：
@@ -119,7 +119,7 @@ cp .env.example .env
 3. ローカルで起動します：
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 4. MCPとして使用するJSONを設定します：
@@ -529,7 +529,7 @@ MAX_TOKENS=10000
 ### テストの実行
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### 新しいツールの追加
