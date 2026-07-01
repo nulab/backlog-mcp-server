@@ -20,7 +20,10 @@ const addIssueSchema = buildToolSchema((t) => ({
     .string()
     .optional()
     .describe(
-      t('TOOL_ADD_ISSUE_DESCRIPTION_FIELD', 'Detailed description of the issue. This is the primary field for explaining the issue context, requirements, and acceptance criteria. Prefer this over adding a comment.')
+      t(
+        'TOOL_ADD_ISSUE_DESCRIPTION_FIELD',
+        'Detailed description of the issue. This is the primary field for explaining the issue context, requirements, and acceptance criteria. Prefer this over adding a comment.'
+      )
     ),
   startDate: z
     .string()
