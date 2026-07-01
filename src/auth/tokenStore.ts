@@ -29,12 +29,14 @@ type PendingAuthorization = {
   resource?: string;
   scopes: string[];
   state?: string;
+  siteHost: string;
   createdAt: number;
 };
 
 type AuthCodeEntry = {
   mcpClientId: string;
   backlogTokens: BacklogTokenData;
+  backlogDomain: string;
   codeChallenge: string;
   redirectUri: string;
   resource?: string;
@@ -48,12 +50,14 @@ type CachedVerification = {
 
 export type McpTokenEntry = {
   backlogAccessToken: string;
+  backlogDomain: string;
   clientId: string;
   expiresAt: number;
 };
 
 type McpRefreshEntry = {
   backlogRefreshToken: string;
+  backlogDomain: string;
   clientId: string;
   expiresAt: number;
 };
