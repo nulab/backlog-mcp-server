@@ -41,7 +41,7 @@ const updateIssueSchema = buildToolSchema((t) => ({
     .string()
     .optional()
     .describe(
-      t('TOOL_UPDATE_ISSUE_DESCRIPTION', 'Detailed description of the issue')
+      t('TOOL_UPDATE_ISSUE_DESCRIPTION', 'Detailed description of the issue. Use this to set or update the main issue content rather than adding a comment.')
     ),
   startDate: z
     .string()
