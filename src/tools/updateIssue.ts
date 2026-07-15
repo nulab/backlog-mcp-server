@@ -146,6 +146,32 @@ const updateIssueSchema = buildToolSchema((t) => ({
     ),
 }));
 
+// Backlog API clears an array field (e.g. category/version/milestone) only when
+// the parameter is sent as `field[]=` (empty value). backlog-js serializes
+// params via qs with `arrayFormat: 'brackets'`, and an empty array `[]` produces
+// no query string at all, so the API silently ignores it. Converting `[]` to
+// `['']` makes qs emit `field[]=`, which the API interprets as "clear".
+const CLEARABLE_ARRAY_FIELDS = [
+  'categoryId',
+  'versionId',
+  'milestoneId',
+  'notifiedUserId',
+  'attachmentId',
+] as const;
+
+const clearEmptyArrayFields = <T extends Record<string, unknown>>(
+  params: T
+): T => {
+  const next: Record<string, unknown> = { ...params };
+  for (const field of CLEARABLE_ARRAY_FIELDS) {
+    const value = next[field];
+    if (Array.isArray(value) && value.length === 0) {
+      next[field] = [''];
+    }
+  }
+  return next as T;
+};
+
 export const updateIssueTool = (
   backlog: Backlog,
   { t }: TranslationHelper
@@ -169,7 +195,7 @@ export const updateIssueTool = (
       const customFieldPayload = customFieldsToPayload(customFields);
 
       const finalPayload = {
-        ...params,
+        ...clearEmptyArrayFields(params),
         ...customFieldPayload,
       };
       return backlog.patchIssue(result.value, finalPayload);

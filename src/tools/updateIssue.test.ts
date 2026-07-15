@@ -157,6 +157,34 @@ describe('updateIssueTool', () => {
     );
   });
 
+  it('converts empty array fields to [""] so the Backlog API clears them', async () => {
+    await tool.handler({
+      issueKey: 'TEST-1',
+      categoryId: [],
+      milestoneId: [],
+      versionId: [],
+    });
+
+    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+      categoryId: [''],
+      milestoneId: [''],
+      versionId: [''],
+    });
+  });
+
+  it('leaves non-empty array fields untouched', async () => {
+    await tool.handler({
+      issueKey: 'TEST-1',
+      categoryId: [10, 20],
+      milestoneId: [],
+    });
+
+    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+      categoryId: [10, 20],
+      milestoneId: [''],
+    });
+  });
+
   it('transforms customFields that provide only otherValue during update', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
