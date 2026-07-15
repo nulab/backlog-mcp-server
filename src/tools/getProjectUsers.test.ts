@@ -28,7 +28,10 @@ describe('getProjectUsersTool', () => {
   };
 
   const mockTranslationHelper = createTranslationHelper();
-  const tool = getProjectUsersTool(mockBacklog as Backlog, mockTranslationHelper);
+  const tool = getProjectUsersTool(
+    mockBacklog as Backlog,
+    mockTranslationHelper
+  );
 
   it('returns project users list', async () => {
     const result = await tool.handler({ projectId: 100 });
