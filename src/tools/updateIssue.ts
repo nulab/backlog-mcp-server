@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Backlog } from 'backlog-js';
+import { Backlog, Option } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { TranslationHelper } from '../createTranslationHelper.js';
 import { IssueSchema } from '../types/zod/backlogOutputDefinition.js';
@@ -146,22 +146,33 @@ const updateIssueSchema = buildToolSchema((t) => ({
     ),
 }));
 
-// Backlog API clears an array field (e.g. category/version/milestone) only when
+// Backlog API clears a stored array field (category/version/milestone) only when
 // the parameter is sent as `field[]=` (empty value). backlog-js serializes
 // params via qs with `arrayFormat: 'brackets'`, and an empty array `[]` produces
 // no query string at all, so the API silently ignores it. Converting `[]` to
 // `['']` makes qs emit `field[]=`, which the API interprets as "clear".
+//
+// Only these three are persistent, clearable array fields. notifiedUserId (a
+// one-off notification target) and attachmentId (attachments to add) are action
+// parameters, not stored state, so they are intentionally excluded.
 const CLEARABLE_ARRAY_FIELDS = [
   'categoryId',
   'versionId',
   'milestoneId',
-  'notifiedUserId',
-  'attachmentId',
 ] as const;
+
+type ClearableArrayField = (typeof CLEARABLE_ARRAY_FIELDS)[number];
+
+// The conversion replaces a numeric-id array with `['']`, so the return type
+// widens the clearable fields to also allow `['']`. Keeping the cast localized
+// here makes the intended type-unsafety visible instead of hiding it behind `T`.
+type WithClearedArrayFields<T> = Omit<T, ClearableArrayField> & {
+  [K in ClearableArrayField]?: T[K & keyof T] | [''];
+};
 
 const clearEmptyArrayFields = <T extends Record<string, unknown>>(
   params: T
-): T => {
+): WithClearedArrayFields<T> => {
   const next: Record<string, unknown> = { ...params };
   for (const field of CLEARABLE_ARRAY_FIELDS) {
     const value = next[field];
@@ -169,7 +180,7 @@ const clearEmptyArrayFields = <T extends Record<string, unknown>>(
       next[field] = [''];
     }
   }
-  return next as T;
+  return next as WithClearedArrayFields<T>;
 };
 
 export const updateIssueTool = (
@@ -198,7 +209,13 @@ export const updateIssueTool = (
         ...clearEmptyArrayFields(params),
         ...customFieldPayload,
       };
-      return backlog.patchIssue(result.value, finalPayload);
+      // The `['']` clear-sentinel is not representable in backlog-js's
+      // `number[]` param types, so cast at this single boundary. qs serializes
+      // it to `field[]=`, which the Backlog API accepts as "clear this field".
+      return backlog.patchIssue(
+        result.value,
+        finalPayload as Option.Issue.PatchIssueParams
+      );
     },
   };
 };

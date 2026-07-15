@@ -185,6 +185,19 @@ describe('updateIssueTool', () => {
     });
   });
 
+  it('does not convert non-clearable array fields (notifiedUserId, attachmentId)', async () => {
+    await tool.handler({
+      issueKey: 'TEST-1',
+      notifiedUserId: [],
+      attachmentId: [],
+    });
+
+    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+      notifiedUserId: [],
+      attachmentId: [],
+    });
+  });
+
   it('transforms customFields that provide only otherValue during update', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
