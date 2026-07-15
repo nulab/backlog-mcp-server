@@ -25,6 +25,7 @@ import { getNotificationsCountTool } from './getNotificationsCount.js';
 import { getPrioritiesTool } from './getPriorities.js';
 import { getProjectTool } from './getProject.js';
 import { getProjectListTool } from './getProjectList.js';
+import { getProjectUsersTool } from './getProjectUsers.js';
 import { getPullRequestTool } from './getPullRequest.js';
 import { getPullRequestCommentsTool } from './getPullRequestComments.js';
 import { getPullRequestsTool } from './getPullRequests.js';
@@ -88,6 +89,7 @@ export const allTools = (
           getProjectListTool(backlog, helper),
           addProjectTool(backlog, helper),
           getProjectTool(backlog, helper),
+          getProjectUsersTool(backlog, helper),
           updateProjectTool(backlog, helper),
           deleteProjectTool(backlog, helper),
         ],
