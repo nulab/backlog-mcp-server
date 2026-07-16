@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0](https://github.com/nulab/backlog-mcp-server/compare/v0.12.0...v0.13.0) (2026-07-16)
+
+### Features
+
+* add get_project_users tool ([fbc5ef2](https://github.com/nulab/backlog-mcp-server/commit/fbc5ef23f5cffde2276527b3e7ed423ca9675e0a)), closes [#146](https://github.com/nulab/backlog-mcp-server/issues/146)
+* replace dotenv with Node.js built-in process.loadEnvFile() ([992f155](https://github.com/nulab/backlog-mcp-server/commit/992f15544bf90057d6a605fd4ed41ee9d4fb3645)), closes [#66](https://github.com/nulab/backlog-mcp-server/issues/66)
+
+### Bug Fixes
+
+* **ci:** disable pnpm git-checks during release-it publish ([b0afdcf](https://github.com/nulab/backlog-mcp-server/commit/b0afdcf92f8da373ec571f9cec003d3ab91153fb))
+* **ci:** remove version from pnpm/action-setup to use packageManager field ([4e05002](https://github.com/nulab/backlog-mcp-server/commit/4e050028db04e57a817eb97945458e25bd0aa103))
+* use 'code' in err narrowing instead of NodeJS.ErrnoException type ([1fac931](https://github.com/nulab/backlog-mcp-server/commit/1fac9312bbde10cfa07d20233448c3d3e80fbc72))
+
+### Reverts
+
+* Revert "chore: upgrade zod to v4 with compatibility fixes" ([40c965a](https://github.com/nulab/backlog-mcp-server/commit/40c965aa2edc1a3838541fea522f1e7ac3c1dd06))
+
 ## [0.12.0](https://github.com/nulab/backlog-mcp-server/compare/v0.11.1...v0.12.0) (2026-06-06)
 
 ### Features
