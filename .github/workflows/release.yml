@@ -65,3 +65,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # release-it bumps package.json/CHANGELOG.md before invoking `pnpm publish`,
+          # leaving the working tree intentionally dirty at publish time. Disable pnpm's
+          # git-checks for this step only so publish doesn't abort with ERR_PNPM_GIT_UNCLEAN.
+          NPM_CONFIG_GIT_CHECKS: false
