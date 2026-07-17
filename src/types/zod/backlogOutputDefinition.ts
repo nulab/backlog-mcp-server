@@ -176,6 +176,16 @@ export const CustomFieldSchema = z.object({
   applicableIssueTypes: z.array(z.number()),
 });
 
+// A custom field *value* attached to an issue (as returned by the Backlog API),
+// as opposed to a custom field *definition* (CustomFieldSchema above). The
+// concrete `value` shape depends on the field type, so it is left unconstrained.
+export const CustomFieldValueSchema = z.object({
+  id: z.number(),
+  fieldTypeId: z.number(),
+  name: z.string(),
+  value: z.unknown(),
+});
+
 export const SharedFileSchema = z.object({
   id: z.number(),
   projectId: z.number(),
@@ -213,7 +223,7 @@ export const IssueSchema = z.object({
   created: z.string(),
   updatedUser: UserSchema,
   updated: z.string(),
-  customFields: z.array(CustomFieldSchema),
+  customFields: z.array(CustomFieldValueSchema),
   attachments: z.array(IssueFileInfoSchema),
   sharedFiles: z.array(SharedFileSchema),
   stars: z.array(StarSchema),
