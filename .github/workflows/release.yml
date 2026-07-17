@@ -1,15 +1,24 @@
 name: Release
+run-name: "Release: ${{ inputs.newversion }}"
 
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release version (e.g. 2.3.0). Leave empty for auto.'
-        required: false
+      newversion:
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        description: New version
+        default: patch
+        required: true
+
 permissions:
   contents: write
   packages: write
   id-token: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -41,6 +50,14 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Bump version
+        id: bump
+        run: |
+          pnpm version "${{ inputs.newversion }}" --no-git-tag-version
+          new_version=$(node -p "require('./package.json').version")
+          echo "new_version=${new_version}" >> "$GITHUB_OUTPUT"
+          echo "new_tag=v${new_version}" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU for cross-platform builds
         uses: docker/setup-qemu-action@v4
 
@@ -54,18 +71,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run release-it
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "Manual version input: ${{ github.event.inputs.version }}"
-            npx release-it ${{ github.event.inputs.version }} -y --ci
-          else
-            echo "Auto version release"
-            npx release-it -y --ci
-          fi
+      - name: Build and push Docker image
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # release-it bumps package.json/CHANGELOG.md before invoking `pnpm publish`,
-          # leaving the working tree intentionally dirty at publish time. Disable pnpm's
-          # git-checks for this step only so publish doesn't abort with ERR_PNPM_GIT_UNCLEAN.
-          NPM_CONFIG_GIT_CHECKS: false
+          VERSION: ${{ steps.bump.outputs.new_version }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --provenance=false --sbom=false \
+            --build-arg VERSION="${VERSION}" \
+            -t "ghcr.io/nulab/backlog-mcp-server:v${VERSION}" \
+            -t "ghcr.io/nulab/backlog-mcp-server:latest" \
+            --push .
+
+      - name: Publish to npm
+        run: pnpm publish --no-git-checks --provenance --access public
+
+      - name: Push version update
+        env:
+          NEW_TAG: ${{ steps.bump.outputs.new_tag }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git add package.json
+          git commit -m "chore(bump): ${NEW_TAG}"
+          git push origin "HEAD:${DEFAULT_BRANCH}"
+
+      - name: Push version tag
+        env:
+          NEW_TAG: ${{ steps.bump.outputs.new_tag }}
+        run: |
+          git tag "${NEW_TAG}"
+          git push origin "${NEW_TAG}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ steps.bump.outputs.new_tag }}
+        run: gh release create "${NEW_TAG}" --generate-notes
