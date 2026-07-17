@@ -181,9 +181,12 @@ export const CustomFieldSchema = z.object({
 // concrete `value` shape depends on the field type, so it is left unconstrained.
 export const CustomFieldValueSchema = z.object({
   id: z.number(),
-  fieldTypeId: z.number(),
+  fieldTypeId: CustomFieldTypeSchema,
   name: z.string(),
   value: z.unknown(),
+  // Present on "checkbox" / "radio" fields that allow free-text input for an
+  // "other" option; holds whatever the user typed there (null when unused).
+  otherValue: z.string().nullable().optional(),
 });
 
 export const SharedFileSchema = z.object({
