@@ -211,8 +211,41 @@ MCP clients that support the MCP authorization specification will use these endp
 
 > **Limitations:**
 >
-> - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
+> - OAuth mode is not compatible with the API-key-based multi-organization configuration (`BACKLOG_ORG_<NAME>_*`).
 > - Client registrations and tokens are stored in memory and will be lost on server restart.
+
+#### Multi-Site OAuth
+
+When you need to serve multiple Backlog organizations from a single MCP server instance (e.g., your company's Backlog and a customer's Backlog), configure **multi-site OAuth** using `BACKLOG_OAUTH_SITE_<NAME>_*` environment variables.
+
+This is useful when projects span multiple Backlog spaces — for example, your internal Backlog for development tracking and a customer's Backlog for issue management.
+
+| Variable                                  | Description                                     |
+| ----------------------------------------- | ----------------------------------------------- |
+| `BACKLOG_OAUTH_SITE_<NAME>_BASE_URL`      | Public URL for this site's MCP endpoint          |
+| `BACKLOG_OAUTH_SITE_<NAME>_DOMAIN`        | Backlog domain for this site (e.g., `x.backlog.com`) |
+| `BACKLOG_OAUTH_SITE_<NAME>_CLIENT_ID`     | OAuth Client ID for this site                    |
+| `BACKLOG_OAUTH_SITE_<NAME>_CLIENT_SECRET` | OAuth Client Secret for this site                |
+
+Each site requires all four variables. The `<NAME>` portion is an arbitrary label (e.g., `MYCOMPANY`, `CUSTOMER`).
+
+**Example:**
+
+```bash
+BACKLOG_OAUTH_SITE_MYCOMPANY_BASE_URL=https://mycompany-mcp.example.com \
+BACKLOG_OAUTH_SITE_MYCOMPANY_DOMAIN=mycompany.backlog.com \
+BACKLOG_OAUTH_SITE_MYCOMPANY_CLIENT_ID=your-mycompany-client-id \
+BACKLOG_OAUTH_SITE_MYCOMPANY_CLIENT_SECRET=your-mycompany-client-secret \
+BACKLOG_OAUTH_SITE_CUSTOMER_BASE_URL=https://customer-mcp.example.com \
+BACKLOG_OAUTH_SITE_CUSTOMER_DOMAIN=customer.backlog.com \
+BACKLOG_OAUTH_SITE_CUSTOMER_CLIENT_ID=your-customer-client-id \
+BACKLOG_OAUTH_SITE_CUSTOMER_CLIENT_SECRET=your-customer-client-secret \
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+```
+
+The server uses the `Host` header of each incoming request to resolve which site's OAuth configuration to use. Allowed hostnames are automatically derived from the configured `BASE_URL` values.
+
+> **Note:** When multi-site variables are present, single-site `BACKLOG_OAUTH_*` variables are ignored. Cross-site token replay is prevented — tokens issued for one site cannot be used on another.
 
 ## Tool Configuration
 

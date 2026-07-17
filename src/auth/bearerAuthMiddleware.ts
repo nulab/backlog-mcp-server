@@ -3,7 +3,7 @@
 
 import type { MiddlewareHandler } from 'hono';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
-import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
+import type { OAuthConfigResolver } from './backlogOAuthConfig.js';
 import { verifyBacklogToken } from './backlogOAuthClient.js';
 import type { TokenStore } from './tokenStore.js';
 import { logger } from '../utils/logger.js';
@@ -12,13 +12,23 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function createBearerAuthMiddleware(
   store: TokenStore,
-  config: BacklogOAuthConfig,
+  resolver: OAuthConfigResolver,
   mcpPath: string
 ): MiddlewareHandler {
   const prmPath = mcpPath === '/' ? '' : mcpPath;
-  const resourceMetadataUrl = `${config.serverBaseUrl}/.well-known/oauth-protected-resource${prmPath}`;
+
+  function buildResourceMetadataUrl(host: string | undefined): string {
+    const config = host ? resolver.resolve(host) : undefined;
+    if (config) {
+      return `${config.serverBaseUrl}/.well-known/oauth-protected-resource${prmPath}`;
+    }
+    const scheme = host?.startsWith('localhost') ? 'http' : 'https';
+    return `${scheme}://${host ?? 'unknown'}/.well-known/oauth-protected-resource${prmPath}`;
+  }
 
   return async (c, next) => {
+    const host = c.req.header('host');
+    const resourceMetadataUrl = buildResourceMetadataUrl(host);
     const authHeader = c.req.header('authorization');
 
     if (!authHeader) {
@@ -62,6 +72,36 @@ export function createBearerAuthMiddleware(
       );
     }
 
+    const hostConfig = host ? resolver.resolve(host) : undefined;
+    if (resolver.isMultiSite && !hostConfig) {
+      c.header(
+        'WWW-Authenticate',
+        `Bearer error="invalid_token", error_description="Unknown host", resource_metadata="${resourceMetadataUrl}"`
+      );
+      return c.json(
+        {
+          error: 'invalid_token',
+          error_description: 'Unknown host',
+        },
+        401
+      );
+    }
+    if (hostConfig && tokenEntry.backlogDomain !== hostConfig.backlogDomain) {
+      c.header(
+        'WWW-Authenticate',
+        `Bearer error="invalid_token", error_description="Token was issued for a different site", resource_metadata="${resourceMetadataUrl}"`
+      );
+      return c.json(
+        {
+          error: 'invalid_token',
+          error_description: 'Token was issued for a different site',
+        },
+        401
+      );
+    }
+
+    c.set('backlogDomain', tokenEntry.backlogDomain);
+
     const cached = store.getCachedVerification(mcpToken);
     if (cached) {
       c.set('authInfo', cached);
@@ -71,7 +111,7 @@ export function createBearerAuthMiddleware(
 
     try {
       const user = await verifyBacklogToken(
-        config.backlogDomain,
+        tokenEntry.backlogDomain,
         tokenEntry.backlogAccessToken
       );
       const authInfo: AuthInfo = {
