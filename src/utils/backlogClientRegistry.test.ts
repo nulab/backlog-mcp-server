@@ -8,16 +8,27 @@ vi.mock('backlog-js', () => ({
   Backlog: class Backlog {
     host: string;
     apiKey: string;
+    userAgent?: string;
 
-    constructor({ host, apiKey }: { host: string; apiKey: string }) {
+    constructor({
+      host,
+      apiKey,
+      userAgent,
+    }: {
+      host: string;
+      apiKey: string;
+      userAgent?: string;
+    }) {
       this.host = host;
       this.apiKey = apiKey;
+      this.userAgent = userAgent;
     }
 
     async getSpace() {
       return {
         host: this.host,
         apiKey: this.apiKey,
+        userAgent: this.userAgent,
       };
     }
   },
@@ -47,6 +58,31 @@ describe('createBacklogClientRegistry', () => {
     if (content.type === 'text') {
       expect(content.text).toContain('single.backlog.com');
       expect(content.text).toContain('single-key');
+    }
+  });
+
+  it('sends a backlog-mcp-server User-Agent on the Backlog client', async () => {
+    const registry = createBacklogClientRegistry({
+      env: {
+        BACKLOG_DOMAIN: 'single.backlog.com',
+        BACKLOG_API_KEY: 'single-key',
+      },
+    });
+
+    const tool = getSpaceTool(
+      registry.createScopedClient(),
+      createTranslationHelper()
+    );
+    const handler = composeToolHandler(tool, {
+      useFields: false,
+      maxTokens: 5000,
+    });
+
+    const result = await handler({}, {} as never);
+    const content = result.content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toMatch(/backlog-mcp-server\/\d+\.\d+\.\d+/);
     }
   });
 

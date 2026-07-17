@@ -1,6 +1,11 @@
 import { Backlog } from 'backlog-js';
 import { getCurrentAccessToken } from '../auth/backlogAuthContext.js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
+import packageJson from '../../package.json' with { type: 'json' };
+
+// Sent as the User-Agent header on Backlog API requests so that traffic
+// originating from this MCP Server can be identified in access logs / observability tooling.
+const USER_AGENT = `backlog-mcp-server/${packageJson.version}`;
 
 export type BacklogOrganizationInfo = {
   name: string;
@@ -43,7 +48,7 @@ export function createBacklogClientRegistry(
   }
 
   const defaultName = 'default';
-  const client = new Backlog({ host: domain, apiKey });
+  const client = new Backlog({ host: domain, apiKey, userAgent: USER_AGENT });
 
   const info: BacklogOrganizationInfo = {
     name: defaultName,
@@ -152,6 +157,7 @@ function createMultiOrganizationRegistryFromEnv(
         new Backlog({
           host: config.domain as string,
           apiKey: config.apiKey as string,
+          userAgent: USER_AGENT,
         })
       );
 
@@ -216,7 +222,11 @@ export function createOAuthBacklogClientRegistry(
     if (!token) {
       throw new Error('No OAuth access token in current request context');
     }
-    return new Backlog({ host: domain, accessToken: token });
+    return new Backlog({
+      host: domain,
+      accessToken: token,
+      userAgent: USER_AGENT,
+    });
   };
 
   return {

@@ -1,14 +1,17 @@
 import { vi, describe, it, expect, type Mock } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import * as Entity from 'backlog-js/dist/types/entity'; // To access Entity.Project.CustomField
 import { getCustomFieldsTool } from './getCustomFields';
 import { createTranslationHelper } from '../createTranslationHelper';
+
+// Derive the custom field definition type from the public Backlog API instead of
+// importing backlog-js internals (deep imports are not exported since 0.17.0).
+type CustomField = Awaited<ReturnType<Backlog['getCustomFields']>>[number];
 
 describe('getCustomFieldsTool', () => {
   // Define mockBacklog with the specific method we need
   const mockBacklog: Partial<Backlog> = {
     // Specify the correct return type for the mock
-    getCustomFields: vi.fn<() => Promise<Entity.Project.CustomField[]>>(),
+    getCustomFields: vi.fn<() => Promise<CustomField[]>>(),
   };
 
   // Use the actual createTranslationHelper for consistency
@@ -22,7 +25,7 @@ describe('getCustomFieldsTool', () => {
   const toolHandler = tool.handler; // Get the handler from the instantiated tool
 
   it('should return custom fields for a valid project ID', async () => {
-    const mockCustomFieldsData: Entity.Project.CustomField[] = [
+    const mockCustomFieldsData: CustomField[] = [
       {
         id: 1,
         projectId: 1,
@@ -30,8 +33,11 @@ describe('getCustomFieldsTool', () => {
         name: 'CF1',
         description: '',
         required: false,
+        useIssueType: false,
         applicableIssueTypes: [],
-      } as Entity.Project.CustomField,
+        displayOrder: 0,
+        version: 1,
+      } as CustomField,
       {
         id: 2,
         projectId: 1,
@@ -39,15 +45,16 @@ describe('getCustomFieldsTool', () => {
         name: 'CF2',
         description: 'Desc',
         required: true,
+        useIssueType: false,
         applicableIssueTypes: [1],
-      } as Entity.Project.CustomField,
+        displayOrder: 1,
+        version: 1,
+      } as CustomField,
     ];
 
     // Setup the mockResolvedValue for getCustomFields
     (
-      mockBacklog.getCustomFields as Mock<
-        () => Promise<Entity.Project.CustomField[]>
-      >
+      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
     ).mockResolvedValue(mockCustomFieldsData);
 
     const input = { projectKey: 'TEST_PROJECT' };
@@ -59,9 +66,7 @@ describe('getCustomFieldsTool', () => {
 
   it('should call backlog.getCustomFields with correct params when using project ID', async () => {
     (
-      mockBacklog.getCustomFields as Mock<
-        () => Promise<Entity.Project.CustomField[]>
-      >
+      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
     ).mockResolvedValue([]); // Return empty for this check
     await toolHandler({ projectId: 123 });
     expect(mockBacklog.getCustomFields).toHaveBeenCalledWith(123);
@@ -70,9 +75,7 @@ describe('getCustomFieldsTool', () => {
   it('should throw an error if getCustomFields fails', async () => {
     const apiError = new Error('API error');
     (
-      mockBacklog.getCustomFields as Mock<
-        () => Promise<Entity.Project.CustomField[]>
-      >
+      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
     ).mockRejectedValue(apiError);
 
     const input = { projectKey: 'TEST_PROJECT_FAIL' };
@@ -91,9 +94,7 @@ describe('getCustomFieldsTool', () => {
       ],
     };
     (
-      mockBacklog.getCustomFields as Mock<
-        () => Promise<Entity.Project.CustomField[]>
-      >
+      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
     ).mockRejectedValue(structuredError);
 
     const input = { projectKey: 'TEST_PROJECT_STRUCTURED_ERROR' };
