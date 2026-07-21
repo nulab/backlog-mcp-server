@@ -15,8 +15,8 @@ importers:
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
       backlog-js:
-        specifier: ^0.18.0
-        version: 0.18.0
+        specifier: ^0.18.1
+        version: 0.18.1
       cosmiconfig:
         specifier: ^9.0.1
         version: 9.0.1(typescript@6.0.3)
@@ -834,8 +834,8 @@ packages:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
 
-  backlog-js@0.18.0:
-    resolution: {integrity: sha512-jP6I8D/Qn25pVYeYRTF+AXwKCb2pOepf5rcKbbVA73fwRT0OaO1d2szj+MZAfQQN8y3c5EslNvGClXi6k4/GQg==}
+  backlog-js@0.18.1:
+    resolution: {integrity: sha512-bTW2+dpJ3GpUW5UBIVV3zHbmOCP+Hrok2o/0sB6UFY6kgWtzzjFg3XiXjxRiI86gKOj87t+PhePcb76eBzcclA==}
 
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
@@ -2374,7 +2374,7 @@ snapshots:
 
   atomic-sleep@1.0.0: {}
 
-  backlog-js@0.18.0:
+  backlog-js@0.18.1:
     dependencies:
       qs: 6.15.2
 
