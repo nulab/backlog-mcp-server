@@ -39,7 +39,7 @@
     "build"
   ],
   "dependencies": {
-    "@hono/node-server": "^2.0.4",
+    "@hono/node-server": "^2.0.10",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "backlog-js": "^0.18.1",
     "cosmiconfig": "^9.0.1",
