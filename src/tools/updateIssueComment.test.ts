@@ -1,5 +1,5 @@
 import { updateIssueCommentTool } from './updateIssueComment.js';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { createTranslationHelper } from '../createTranslationHelper.js';
 
@@ -32,6 +32,10 @@ describe('updateIssueCommentTool', () => {
     mockBacklog as Backlog,
     mockTranslationHelper
   );
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('returns updated comment', async () => {
     const result = await tool.handler({

@@ -40,7 +40,7 @@ export const updateIssueCommentTool = (
   (typeof IssueCommentSchema)['shape']
 > => {
   return {
-    name: 'update_comment',
+    name: 'update_issue_comment',
     description: t(
       'TOOL_UPDATE_ISSUE_COMMENT_DESCRIPTION',
       'Updates a comment on an issue'
