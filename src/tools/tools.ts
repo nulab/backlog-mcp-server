@@ -48,6 +48,7 @@ import { getWikisCountTool } from './getWikisCount.js';
 import { markNotificationAsReadTool } from './markNotificationAsRead.js';
 import { resetUnreadNotificationCountTool } from './resetUnreadNotificationCount.js';
 import { updateIssueTool } from './updateIssue.js';
+import { updateIssueCommentTool } from './updateIssueComment.js';
 import { updateProjectTool } from './updateProject.js';
 import { updatePullRequestTool } from './updatePullRequest.js';
 import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
@@ -107,6 +108,7 @@ export const allTools = (
           deleteIssueTool(backlog, helper),
           getIssueCommentsTool(backlog, helper),
           addIssueCommentTool(backlog, helper),
+          updateIssueCommentTool(backlog, helper),
           getPrioritiesTool(backlog, helper),
           getCategoriesTool(backlog, helper),
           getCustomFieldsTool(backlog, helper),

@@ -305,6 +305,7 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `delete_issue`: Deletes an issue.
 - `get_issue_comments`: Returns list of comments for an issue.
 - `add_issue_comment`: Adds a comment to an issue.
+- `update_issue_comment`: Updates a comment on an issue.
 - `get_priorities`: Returns list of priorities.
 - `get_categories`: Returns list of categories for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
