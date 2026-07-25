@@ -5,7 +5,9 @@
 ### Languages and Runtime
 
 - **TypeScript**: Static typing for improved safety and development efficiency
-- **Node.js**: Server-side JavaScript runtime (v22 or higher recommended)
+- **Node.js**: Server-side JavaScript runtime. `package.json` requires `>=22`;
+  the repository pins the development/CI version in `.tool-versions` (Node 24.x),
+  and the Docker images are built on `node:24`
 
 ### Key Libraries
 
@@ -13,15 +15,17 @@
 - **backlog-js**: Client library to simplify communication with Backlog API
 - **zod**: Provides schema validation and type safety
 - **cosmiconfig**: Configuration file loading and management
-- **dotenv**: Environment variable management
 - **graphql**: Used for field selection parsing and processing
+- **hono** / **@hono/node-server**: HTTP server for the Streamable HTTP transport and OAuth routes
+- **yargs** / **env-var**: CLI flag and environment variable parsing
+- **pino** / **pino-pretty**: Structured logging
 
 ### Development Tools
 
 - **Vitest**: Fast and modern testing framework powered by Vite
 - **ESLint**: Code quality and style validation
 - **Prettier**: Code formatting
-- **release-it**: Release management automation
+- **release-it**: Release management automation (via the release workflow)
 
 ### Containerization
 
@@ -32,8 +36,8 @@
 
 ### Prerequisites
 
-- Node.js v22 or higher (recommended)
-- pnpm
+- Node.js (see `.tool-versions`; `engines` requires v22 or higher)
+- pnpm (the `preinstall` script enforces pnpm via `only-allow`)
 - Git
 
 ### Installation Steps
@@ -52,12 +56,27 @@ pnpm run build
 
 ### Environment Variables
 
-Create a `.env` file during development with the following variables:
+Create a `.env` file during development (loaded via `process.loadEnvFile()`, optional):
 
 ```
 BACKLOG_DOMAIN=your-domain.backlog.com
 BACKLOG_API_KEY=your-api-key
 ```
+
+Optional settings (each also has an equivalent CLI flag):
+
+| Variable                    | Purpose                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `MAX_TOKENS`                | Max tokens in a response (default 50000)                  |
+| `OPTIMIZE_RESPONSE`         | Enable GraphQL-style field selection                      |
+| `PREFIX`                    | Prefix prepended to every tool name                       |
+| `ENABLE_TOOLSETS`           | Comma-separated toolsets to enable (default `all`)        |
+| `ENABLE_DYNAMIC_TOOLSETS`   | Expose `enable_toolset` and friends                       |
+| `MCP_TRANSPORT`             | `stdio` (default) or `http`                               |
+| `MCP_HTTP_HOST` / `_PORT` / `_PATH` | HTTP transport bind settings                      |
+| `MCP_HTTP_JSON_RESPONSE`    | Prefer JSON responses over SSE                            |
+| `MCP_HTTP_ALLOWED_HOSTS`    | Allowed `Host` values (DNS rebinding protection)          |
+| `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport |
 
 ## Technical Constraints
 
@@ -70,9 +89,9 @@ BACKLOG_API_KEY=your-api-key
 
 ### MCP Protocol
 
-- Communicates through standard input/output (stdio)
+- Two transports are supported: stdio and Streamable HTTP
+- With HTTP, a fresh MCP server instance is created per session
 - Tool inputs and outputs must follow specific formats
-- Requires support for asynchronous processing
 - Response size should be managed to avoid token limit issues
 
 ### Containerization
@@ -97,7 +116,8 @@ graph TD
 
 ### CI/CD
 
-- Automation using GitHub Actions
+- Automation using GitHub Actions (`.github/workflows/ci.yml`, `release.yml`)
+- Node.js version comes from `.tool-versions` (`node-version-file`)
 - Testing and validation for each pull request
 - Automatic release on tag push
 - Building and publishing multi-architecture Docker images
@@ -114,11 +134,26 @@ graph TD
      ghcr.io/nulab/backlog-mcp-server
    ```
 
-2. **Node.js**:
+2. **npx**:
+
+   ```bash
+   BACKLOG_DOMAIN=your-domain.backlog.com \
+   BACKLOG_API_KEY=your-api-key \
+   npx backlog-mcp-server
+   ```
+
+3. **Node.js**:
+
    ```bash
    BACKLOG_DOMAIN=your-domain.backlog.com \
    BACKLOG_API_KEY=your-api-key \
    node build/index.js
+   ```
+
+4. **Streamable HTTP** (optionally with OAuth):
+
+   ```bash
+   MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
    ```
 
 ## Test Strategy
@@ -149,43 +184,44 @@ pnpm test -- -t "getSpace"
 ## Performance Considerations
 
 - Minimizing API requests
-- Appropriate error handling and retry strategies
+- Appropriate error handling
 - Pagination handling when dealing with large amounts of data
-- Token limiting for large responses
+- Token limiting for large responses (truncation once the limit is exceeded)
 - Field selection to reduce response size
-- Streaming large responses in chunks
+- Toolset selection to keep the advertised tool list small
 
 ## Security Considerations
 
 - Secure management of API keys
 - Injection of sensitive information through environment variables
+- OAuth tokens are held in an in-memory token store and expire; no persistence on disk
+- HTTP transport binds to `127.0.0.1` by default and validates `Host` headers
+  (DNS rebinding protection) when bound more widely
 - Principle of least privilege in containers
 - Input validation to prevent injection attacks
-- GraphQL field selection validation to prevent injection
 
 ## Multi-language Support
 
 - Multi-language support through translation files
 - Translation overrides through environment variables
-- Translation customization through configuration files
+- Translation customization through configuration files (`.backlog-mcp-serverrc.json`)
 - Fallback to default language (English)
-- Translation key tracking for consistency
+- Translation key tracking for consistency, dumpable via `--export-translations`
 
 ## Response Optimization
 
 ### Field Selection
 
 - GraphQL-style field selection syntax
+- Enabled with `--optimize-response` / `OPTIMIZE_RESPONSE` (off by default)
 - Allows clients to request only needed fields
-- Reduces response size and processing time
 - Example: `{ id name description }`
 
 ### Token Limiting
 
 - Configurable maximum token limit (default: 50,000)
 - Can be set via environment variable or CLI argument
-- Automatically truncates large responses
-- Streaming implementation for efficient processing
+- Responses over the limit are truncated with a notice appended
 
 ### Error Handling
 
