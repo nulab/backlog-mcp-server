@@ -47,7 +47,7 @@ export const addIssueCommentTool = (
     name: 'add_issue_comment',
     description: t(
       'TOOL_ADD_ISSUE_COMMENT_DESCRIPTION',
-      'Adds a comment to an issue'
+      'Adds a supplementary comment to an existing issue. Use this for follow-up notes, status updates, or discussion — not for the primary issue description. To set or update the main issue content, use add_issue or update_issue with the description field instead.'
     ),
     schema: z.object(addIssueCommentSchema(t)),
     outputSchema: IssueCommentSchema,
