@@ -473,18 +473,6 @@ or
 npx github:nulab/backlog-mcp-server --export-translations
 ```
 
-### Using a Japanese Translation Template
-
-A sample Japanese configuration file is provided at:
-
-```bash
-translationConfig/.backlog-mcp-serverrc.json.example
-```
-
-To use it, copy it to your home directory as .backlog-mcp-serverrc.json:
-
-You can then edit the file to customize the descriptions as needed.
-
 ### Using Environment Variables
 
 Alternatively, you can override tool descriptions via environment variables.

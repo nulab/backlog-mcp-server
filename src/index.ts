@@ -167,6 +167,19 @@ const createServer = () =>
   });
 
 if (argv.exportTranslations) {
+  // Translation keys are only recorded once a tool asks for them, so build a
+  // server with every toolset enabled before dumping. Without this the dump is
+  // empty, because no tool has been created yet at this point.
+  createBacklogMcpServer({
+    version,
+    useFields,
+    backlog,
+    clientRegistry,
+    transHelper,
+    enabledToolsets: ['all'],
+    mcpOption,
+    dynamicToolsets: true,
+  });
   const data = transHelper.dump();
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(data, null, 2));

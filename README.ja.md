@@ -363,18 +363,6 @@ docker run -i --rm ghcr.io/nulab/backlog-mcp-server node build/index.js --export
 npx github:nulab/backlog-mcp-server --export-translations
 ```
 
-### 日本語翻訳テンプレートの使用
-
-サンプルの日本語設定ファイルは次の場所に提供されています：
-
-```bash
-translationConfig/.backlog-mcp-serverrc.json.example
-```
-
-これを使用するには、ホームディレクトリに `.backlog-mcp-serverrc.json` としてコピーします：
-
-その後、必要に応じてファイルを編集して説明をカスタマイズできます。
-
 ### 環境変数の使用
 
 または、環境変数を介してツールの説明をオーバーライドすることもできます。
