@@ -112,6 +112,17 @@ describe('updateIssueTool', () => {
     });
   });
 
+  it('calls backlog.patchIssue with parentIssueId when changing the parent', async () => {
+    await tool.handler({
+      issueKey: 'TEST-1',
+      parentIssueId: 12345,
+    });
+
+    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+      parentIssueId: 12345,
+    });
+  });
+
   it('throws an error if neither issueId nor issueKey is provided', async () => {
     await expect(tool.handler({})).rejects.toThrow(Error);
   });

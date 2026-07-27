@@ -95,6 +95,10 @@ const updateIssueSchema = buildToolSchema((t) => ({
     .array(z.number())
     .optional()
     .describe(t('TOOL_UPDATE_ISSUE_ATTACHMENT_ID', 'Attachment IDs')),
+  parentIssueId: z
+    .number()
+    .optional()
+    .describe(t('TOOL_UPDATE_ISSUE_PARENT_ISSUE_ID', 'Parent issue ID')),
   comment: z
     .string()
     .optional()
