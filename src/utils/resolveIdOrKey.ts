@@ -45,7 +45,9 @@ function tryResolveIdOrField<F extends string>(
   fieldName: F,
   values: ResolveIdOrFieldInput<F>
 ): string | number | undefined {
-  return values.id !== undefined ? values.id : values[fieldName];
+  return values.id !== undefined && values.id > 0
+    ? values.id
+    : values[fieldName];
 }
 
 export const resolveIdOrKey = <E extends EntityName>(
