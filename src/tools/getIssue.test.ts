@@ -97,6 +97,15 @@ describe('getIssueTool', () => {
     expect(mockBacklog.getIssue).toHaveBeenCalledWith(1); // Expect number
   });
 
+  it('falls back to issue key when issue ID is not positive', async () => {
+    await tool.handler({
+      issueId: 0,
+      issueKey: 'TEST-1',
+    });
+
+    expect(mockBacklog.getIssue).toHaveBeenLastCalledWith('TEST-1');
+  });
+
   it('throws an error if neither issueId nor issueKey is provided', async () => {
     await expect(tool.handler({})).rejects.toThrow(Error);
   });
