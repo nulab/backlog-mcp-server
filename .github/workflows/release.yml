@@ -88,7 +88,14 @@ jobs:
             --push .
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance --access public
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+        run: |
+          if npm view "backlog-mcp-server@${NEW_VERSION}" version > /dev/null 2>&1; then
+            echo "backlog-mcp-server@${NEW_VERSION} is already published, skipping."
+            exit 0
+          fi
+          pnpm publish --no-git-checks --provenance --access public
 
       - name: Push version update
         env:
@@ -96,6 +103,10 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           git add package.json
+          if git diff --cached --quiet; then
+            echo "package.json is already at ${NEW_TAG}, skipping commit."
+            exit 0
+          fi
           git commit -m "chore(bump): ${NEW_TAG}"
           git push origin "HEAD:${DEFAULT_BRANCH}"
 
@@ -103,6 +114,10 @@ jobs:
         env:
           NEW_TAG: ${{ steps.bump.outputs.new_tag }}
         run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${NEW_TAG}" > /dev/null 2>&1; then
+            echo "Tag ${NEW_TAG} already exists, skipping."
+            exit 0
+          fi
           git tag "${NEW_TAG}"
           git push origin "${NEW_TAG}"
 
@@ -110,4 +125,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_TAG: ${{ steps.bump.outputs.new_tag }}
-        run: gh release create "${NEW_TAG}" --generate-notes
+        run: |
+          if gh release view "${NEW_TAG}" > /dev/null 2>&1; then
+            echo "Release ${NEW_TAG} already exists, skipping."
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            if gh release create "${NEW_TAG}" --generate-notes; then
+              exit 0
+            fi
+            echo "gh release create failed (attempt ${attempt}/3), retrying in 15s..."
+            sleep 15
+          done
+          echo "Failed to create release ${NEW_TAG} after 3 attempts." >&2
+          exit 1
