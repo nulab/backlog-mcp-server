@@ -1,5 +1,7 @@
 # Backlog MCP Server
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fnulab%2Fbacklog-mcp-server.svg)](https://mcptoplist.com/server/glama%2Fnulab%2Fbacklog-mcp-server)
+
 ![MIT License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Build](https://github.com/nulab/backlog-mcp-server/actions/workflows/ci.yml/badge.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/nulab/backlog-mcp-server.svg)
