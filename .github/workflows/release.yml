@@ -91,8 +91,9 @@ jobs:
         env:
           NEW_VERSION: ${{ steps.bump.outputs.new_version }}
         run: |
-          if npm view "backlog-mcp-server@${NEW_VERSION}" version > /dev/null 2>&1; then
-            echo "backlog-mcp-server@${NEW_VERSION} is already published, skipping."
+          package_name=$(node -p "require('./package.json').name")
+          if npm view "${package_name}@${NEW_VERSION}" version > /dev/null 2>&1; then
+            echo "${package_name}@${NEW_VERSION} is already published, skipping."
             exit 0
           fi
           pnpm publish --no-git-checks --provenance --access public
