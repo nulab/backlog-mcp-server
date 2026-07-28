@@ -18,6 +18,9 @@ import { getGitRepositoryTool } from './getGitRepository.js';
 import { getIssueTool } from './getIssue.js';
 import { getIssueCommentsTool } from './getIssueComments.js';
 import { getIssuesTool } from './getIssues.js';
+import { getRelatedIssuesTool } from './getRelatedIssues.js';
+import { addRelatedIssueTool } from './addRelatedIssue.js';
+import { removeRelatedIssueTool } from './removeRelatedIssue.js';
 import { getIssueTypesTool } from './getIssueTypes.js';
 import { getMyselfTool } from './getMyself.js';
 import { getNotificationsTool } from './getNotifications.js';
@@ -109,6 +112,9 @@ export const allTools = (
           getIssueCommentsTool(backlog, helper),
           addIssueCommentTool(backlog, helper),
           updateIssueCommentTool(backlog, helper),
+          getRelatedIssuesTool(backlog, helper),
+          addRelatedIssueTool(backlog, helper),
+          removeRelatedIssueTool(backlog, helper),
           getPrioritiesTool(backlog, helper),
           getCategoriesTool(backlog, helper),
           getCustomFieldsTool(backlog, helper),
