@@ -232,6 +232,11 @@ export const IssueSchema = z.object({
   stars: z.array(StarSchema),
 });
 
+// An issue plus the relation type that links it to the issue it was fetched from.
+export const RelatedIssueSchema = IssueSchema.extend({
+  type: z.string(),
+});
+
 export const ProjectSchema = z.object({
   id: z.number(),
   projectKey: z.string(),

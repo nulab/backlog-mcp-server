@@ -307,6 +307,9 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `get_issue_comments`: Returns list of comments for an issue.
 - `add_issue_comment`: Adds a comment to an issue.
 - `update_issue_comment`: Updates a comment on an issue.
+- `get_related_issues`: Returns list of issues related to a specific issue.
+- `add_related_issue`: Relates an issue to another issue.
+- `remove_related_issue`: Removes the relation between an issue and a related issue.
 - `get_priorities`: Returns list of priorities.
 - `get_categories`: Returns list of categories for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
