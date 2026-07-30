@@ -32,12 +32,7 @@ export const getDocumentTreeTool = (
     outputSchema: DocumentTreeFullSchemaZ,
     importantFields: ['projectId', 'activeTree', 'trashTree'],
     handler: async ({ projectIdOrKey }) => {
-      // backlog-js declares DocumentTree.projectId as `string`, but the API
-      // returns a number (verified against a live space: `"projectId": 1073957945`).
-      // The schema above is the correct one, so cast over the upstream mistype.
-      return (await backlog.getDocumentTree(
-        projectIdOrKey
-      )) as unknown as z.infer<typeof DocumentTreeFullSchemaZ>;
+      return backlog.getDocumentTree(projectIdOrKey);
     },
   };
 };
