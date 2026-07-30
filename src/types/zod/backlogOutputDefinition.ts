@@ -556,7 +556,10 @@ export const ActiveTrashTreeSchema = z.object({
   children: z.array(DocumentTreeNodeSchema),
 });
 
-export const DocumentTreeFullSchema: z.ZodRawShape = {
+// No `: z.ZodRawShape` annotation here: it erases the concrete shape, so
+// `z.infer<typeof DocumentTreeFullSchemaZ>` collapses to Record<string, unknown>
+// and backlog-js's DocumentTree (no index signature) stops being assignable.
+export const DocumentTreeFullSchema = {
   projectId: z.number(),
   activeTree: ActiveTrashTreeSchema.optional(),
   trashTree: ActiveTrashTreeSchema.optional(),
