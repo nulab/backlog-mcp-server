@@ -1,4 +1,4 @@
-import { z, ZodRawShape, ZodTypeAny } from 'zod';
+import { z, ZodRawShape, ZodType } from 'zod';
 
 /**
  * Generate GraphQL like fields and type specs from Zod types
@@ -34,7 +34,7 @@ function generateGraphQLType(
 ): string {
   const lines: string[] = [`type ${typeName} {`];
   for (const [key, value] of Object.entries(schema.shape)) {
-    lines.push(`  ${key}: ${mapZodTypeToGraphQLType(value as ZodTypeAny)}`);
+    lines.push(`  ${key}: ${mapZodTypeToGraphQLType(value as ZodType)}`);
   }
   lines.push('}');
   return lines.join('\n');
@@ -43,14 +43,23 @@ function generateGraphQLType(
 /**
  * Zod to graphql
  */
-function mapZodTypeToGraphQLType(zodType: z.ZodTypeAny): string {
+function mapZodTypeToGraphQLType(zodType: z.ZodType): string {
   if (zodType instanceof z.ZodString) return 'String!';
   if (zodType instanceof z.ZodNumber) return 'Int!';
   if (zodType instanceof z.ZodBoolean) return 'Boolean!';
+  // zod v4 types `.unwrap()` as the core `$ZodType` rather than the classic
+  // `ZodType`, so the recursive call needs a cast. The runtime value is a
+  // classic schema either way - only the declared type narrowed.
   if (zodType instanceof z.ZodNullable)
-    return mapZodTypeToGraphQLType(zodType.unwrap()).replace(/!$/, '');
+    return mapZodTypeToGraphQLType(zodType.unwrap() as z.ZodType).replace(
+      /!$/,
+      ''
+    );
   if (zodType instanceof z.ZodOptional)
-    return mapZodTypeToGraphQLType(zodType.unwrap()).replace(/!$/, '');
+    return mapZodTypeToGraphQLType(zodType.unwrap() as z.ZodType).replace(
+      /!$/,
+      ''
+    );
 
   // Spec: a nested part is JSON
   if (zodType instanceof z.ZodObject) return 'JSON';

@@ -58,7 +58,7 @@ function extendSchema<I extends z.ZodRawShape>(
     fields?: z.ZodString;
   }
 > {
-  const extension: Record<string, z.ZodTypeAny> = {
+  const extension: Record<string, z.ZodType> = {
     organization: z
       .string()
       .optional()
@@ -71,7 +71,10 @@ function extendSchema<I extends z.ZodRawShape>(
     extension.fields = z.string().describe(desc);
   }
 
-  return schema.extend(extension) as z.ZodObject<
+  // zod v4 reworked the ZodObject shape generics, so `extend()`'s result no
+  // longer overlaps the declared return type enough for a direct cast. The
+  // shape is correct at runtime; route through `unknown` to keep the assertion.
+  return schema.extend(extension) as unknown as z.ZodObject<
     I & {
       organization: z.ZodOptional<z.ZodString>;
       fields?: z.ZodString;
