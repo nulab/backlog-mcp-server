@@ -66,15 +66,30 @@ const updateIssueSchema = buildToolSchema((t) => ({
   categoryId: z
     .array(z.number())
     .optional()
-    .describe(t('TOOL_UPDATE_ISSUE_CATEGORY_ID', 'Category IDs')),
+    .describe(
+      t(
+        'TOOL_UPDATE_ISSUE_CATEGORY_ID',
+        'Category IDs. Pass an empty array to clear all categories. Omit this field to leave the current categories unchanged.'
+      )
+    ),
   versionId: z
     .array(z.number())
     .optional()
-    .describe(t('TOOL_UPDATE_ISSUE_VERSION_ID', 'Version IDs')),
+    .describe(
+      t(
+        'TOOL_UPDATE_ISSUE_VERSION_ID',
+        'Version IDs. Pass an empty array to clear all versions. Omit this field to leave the current versions unchanged.'
+      )
+    ),
   milestoneId: z
     .array(z.number())
     .optional()
-    .describe(t('TOOL_UPDATE_ISSUE_MILESTONE_ID', 'Milestone IDs')),
+    .describe(
+      t(
+        'TOOL_UPDATE_ISSUE_MILESTONE_ID',
+        'Milestone IDs. Pass an empty array to clear all milestones. Omit this field to leave the current milestones unchanged.'
+      )
+    ),
   statusId: z
     .number()
     .optional()
