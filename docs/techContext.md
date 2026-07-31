@@ -11,7 +11,8 @@
 
 ### Key Libraries
 
-- **@modelcontextprotocol/sdk**: Implementation of MCP (Model Context Protocol) server
+- **@modelcontextprotocol/server**: Implementation of MCP (Model Context Protocol) server (v2, MCP spec `2026-07-28`)
+- **@modelcontextprotocol/hono**: Hono middlewares for `Host` / `Origin` validation
 - **backlog-js**: Client library to simplify communication with Backlog API
 - **zod**: Provides schema validation and type safety
 - **cosmiconfig**: Configuration file loading and management
@@ -75,7 +76,7 @@ Optional settings (each also has an equivalent CLI flag):
 | `MCP_TRANSPORT`             | `stdio` (default) or `http`                               |
 | `MCP_HTTP_HOST` / `_PORT` / `_PATH` | HTTP transport bind settings                      |
 | `MCP_HTTP_JSON_RESPONSE`    | Prefer JSON responses over SSE                            |
-| `MCP_HTTP_ALLOWED_HOSTS`    | Allowed `Host` values (DNS rebinding protection)          |
+| `MCP_HTTP_ALLOWED_HOSTS`    | Allowed `Host` hostnames (DNS rebinding protection)       |
 | `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport |
 
 ## Technical Constraints
@@ -90,7 +91,8 @@ Optional settings (each also has an equivalent CLI flag):
 ### MCP Protocol
 
 - Two transports are supported: stdio and Streamable HTTP
-- With HTTP, a fresh MCP server instance is created per session
+- The protocol (`2026-07-28`) is stateless: no `initialize` handshake, no `mcp-session-id`
+- With HTTP, a fresh MCP server instance is created per request
 - Tool inputs and outputs must follow specific formats
 - Response size should be managed to avoid token limit issues
 

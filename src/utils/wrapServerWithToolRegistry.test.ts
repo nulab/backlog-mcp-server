@@ -10,15 +10,15 @@ describe('wrapServerWithToolRegistry', () => {
     toolCalls = [];
 
     mockServer = {
-      tool: vi.fn((name: string, description: string) => {
-        toolCalls.push({ name, description });
+      registerTool: vi.fn((name: string, config: { description: string }) => {
+        toolCalls.push({ name, description: config.description });
       }),
     };
   });
 
   it('registers a tool when not already registered', () => {
     const server = wrapServerWithToolRegistry(mockServer);
-    const schema = z.object({}).shape;
+    const schema = z.object({});
 
     server.registerOnce('hello', 'test tool', schema, () => ({
       content: [{ type: 'text', text: 'ok' }],
@@ -30,7 +30,7 @@ describe('wrapServerWithToolRegistry', () => {
 
   it('skips duplicate registration', () => {
     const server = wrapServerWithToolRegistry(mockServer);
-    const schema = z.object({}).shape;
+    const schema = z.object({});
 
     server.registerOnce('dup', 'first', schema, () => ({
       content: [{ type: 'text', text: 'ok' }],
@@ -46,7 +46,7 @@ describe('wrapServerWithToolRegistry', () => {
 
   it('does not throw if registerOnce is called twice with same name', () => {
     const server = wrapServerWithToolRegistry(mockServer);
-    const schema = z.object({}).shape;
+    const schema = z.object({});
 
     expect(() => {
       server.registerOnce('toolX', 'desc1', schema, () => ({
@@ -67,7 +67,7 @@ describe('wrapServerWithToolRegistry', () => {
 
   it('registers multiple distinct tools', () => {
     const server = wrapServerWithToolRegistry(mockServer);
-    const schema = z.object({}).shape;
+    const schema = z.object({});
 
     server.registerOnce('tool1', 'desc1', schema, () => ({
       content: [{ type: 'text', text: 'ok' }],

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Nulab inc.
 // Licensed under the MIT License.
 
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -249,9 +249,11 @@ async function main() {
     return;
   }
 
-  const server = createServer();
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // serveStdio owns the era decision for the connection: it pins one instance
+  // from the factory, serving both 2026-07-28 and 2025-era clients.
+  serveStdio(createServer, {
+    onerror: (err) => logger.error({ err }, 'MCP stdio error'),
+  });
   logger.info('Backlog MCP Server running on stdio');
 }
 

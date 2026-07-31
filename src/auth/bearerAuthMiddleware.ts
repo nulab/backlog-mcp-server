@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import type { MiddlewareHandler } from 'hono';
-import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 import { verifyBacklogToken } from './backlogOAuthClient.js';
 import type { TokenStore } from './tokenStore.js';

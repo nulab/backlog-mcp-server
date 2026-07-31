@@ -57,6 +57,7 @@ describe('createOAuthRoutes', () => {
         'https://mcp.example.com/register'
       );
       expect(body.code_challenge_methods_supported).toEqual(['S256']);
+      expect(body.authorization_response_iss_parameter_supported).toBe(true);
     });
   });
 
@@ -208,6 +209,7 @@ describe('createOAuthRoutes', () => {
       expect(res.status).toBe(302);
       const location = res.headers.get('location')!;
       expect(location).toContain('error=invalid_target');
+      expect(location).toContain('iss=https%3A%2F%2Fmcp.example.com');
     });
   });
 
@@ -237,6 +239,37 @@ describe('createOAuthRoutes', () => {
       const location = res.headers.get('location')!;
       expect(location).toContain('error=access_denied');
       expect(location).toContain('state=mcp-state-1');
+      expect(location).toContain('iss=https%3A%2F%2Fmcp.example.com');
+    });
+
+    it('includes the RFC 9207 iss parameter on a successful redirect', async () => {
+      store.registerClient({
+        client_id: 'c1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storePendingAuth('bl-state-ok', {
+        mcpClientId: 'c1',
+        codeChallenge: 'ch',
+        redirectUri: 'https://client.example.com/cb',
+        scopes: [],
+        state: 'mcp-state-ok',
+        createdAt: Date.now(),
+      });
+
+      const res = await app.request(
+        '/callback?code=bl-code&state=bl-state-ok',
+        {
+          redirect: 'manual',
+        }
+      );
+      expect(res.status).toBe(302);
+      const location = new URL(res.headers.get('location')!);
+      expect(location.searchParams.get('iss')).toBe('https://mcp.example.com');
+      expect(location.searchParams.get('state')).toBe('mcp-state-ok');
+      expect(location.searchParams.get('code')).toBeTruthy();
     });
 
     it('returns 400 for missing state parameter', async () => {

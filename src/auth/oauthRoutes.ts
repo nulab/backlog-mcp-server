@@ -66,6 +66,8 @@ export function createOAuthRoutes(
       grant_types_supported: ['authorization_code', 'refresh_token'],
       token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
       code_challenge_methods_supported: ['S256'],
+      // RFC 9207 — every authorization response carries `iss`
+      authorization_response_iss_parameter_supported: true,
     });
   });
 
@@ -211,6 +213,7 @@ export function createOAuthRoutes(
         'error_description',
         'Only response_type=code is supported'
       );
+      url.searchParams.set('iss', serverBaseUrl);
       if (state) url.searchParams.set('state', state);
       return c.redirect(url.href, 302);
     }
@@ -219,6 +222,7 @@ export function createOAuthRoutes(
       const url = new URL(effectiveRedirectUri);
       url.searchParams.set('error', 'invalid_request');
       url.searchParams.set('error_description', 'code_challenge is required');
+      url.searchParams.set('iss', serverBaseUrl);
       if (state) url.searchParams.set('state', state);
       return c.redirect(url.href, 302);
     }
@@ -230,6 +234,7 @@ export function createOAuthRoutes(
         'error_description',
         'Only code_challenge_method=S256 is supported'
       );
+      url.searchParams.set('iss', serverBaseUrl);
       if (state) url.searchParams.set('state', state);
       return c.redirect(url.href, 302);
     }
@@ -238,6 +243,7 @@ export function createOAuthRoutes(
       const url = new URL(effectiveRedirectUri);
       url.searchParams.set('error', 'invalid_target');
       url.searchParams.set('error_description', 'Invalid resource parameter');
+      url.searchParams.set('iss', serverBaseUrl);
       if (state) url.searchParams.set('state', state);
       return c.redirect(url.href, 302);
     }
@@ -289,6 +295,7 @@ export function createOAuthRoutes(
         url.searchParams.get('error_description') ??
           'Authorization was denied by the user'
       );
+      errorUrl.searchParams.set('iss', serverBaseUrl);
       if (pending.state) errorUrl.searchParams.set('state', pending.state);
       return c.redirect(errorUrl.href, 302);
     }
@@ -316,6 +323,7 @@ export function createOAuthRoutes(
         'error_description',
         'Failed to exchange authorization code with Backlog'
       );
+      url.searchParams.set('iss', serverBaseUrl);
       if (pending.state) url.searchParams.set('state', pending.state);
       return c.redirect(url.href, 302);
     }
@@ -332,6 +340,8 @@ export function createOAuthRoutes(
 
     const redirectUrl = new URL(pending.redirectUri);
     redirectUrl.searchParams.set('code', mcpCode);
+    // RFC 9207 — let the client confirm which AS answered
+    redirectUrl.searchParams.set('iss', serverBaseUrl);
     if (pending.state) redirectUrl.searchParams.set('state', pending.state);
 
     return c.redirect(redirectUrl.href, 302);
