@@ -72,6 +72,22 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
+  // Regression: under the stateless HTTP model the factory runs once per
+  // request, so a group built per server would throw away every
+  // `enable_toolset` mutation as soon as the request ended.
+  it('registers from a caller-supplied toolset group instead of building one', () => {
+    const sharedToolsetGroup = { toolsets: [] } as any;
+
+    createBacklogMcpServer({ ...baseConfig, toolsetGroup: sharedToolsetGroup });
+
+    expect(buildToolsetGroup).not.toHaveBeenCalled();
+    expect(registerTools).toHaveBeenCalledWith(
+      expect.anything(),
+      sharedToolsetGroup,
+      mcpOption
+    );
+  });
+
   it('calls registerTools with the toolset group and mcpOption', () => {
     const mockToolsetGroup = { toolsets: [] };
     vi.mocked(buildToolsetGroup).mockReturnValue(mockToolsetGroup as any);

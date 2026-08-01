@@ -8,6 +8,7 @@ import { registerDynamicTools, registerTools } from './registerTools.js';
 import { organizationTools } from './tools/dynamicTools/organizations.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import type { MCPOptions } from './types/mcp.js';
+import type { ToolsetGroup } from './types/toolsets.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -25,6 +26,14 @@ export type CreateBacklogMcpServerConfig = {
   enabledToolsets: string[];
   mcpOption: MCPOptions;
   dynamicToolsets: boolean;
+  /**
+   * A toolset group to register from, instead of building one from
+   * `enabledToolsets`. Callers that produce many servers from one factory pass
+   * a single shared group: `enable_toolset` mutates it, and under the stateless
+   * HTTP model — one server per request — a group built per server would throw
+   * that mutation away the moment the request ends.
+   */
+  toolsetGroup?: ToolsetGroup;
 };
 
 // The tool list is fixed for the process lifetime (it only depends on CLI flags
@@ -47,6 +56,7 @@ export function createBacklogMcpServer({
   enabledToolsets,
   mcpOption,
   dynamicToolsets,
+  toolsetGroup: sharedToolsetGroup,
 }: CreateBacklogMcpServerConfig): BacklogMCPServer {
   const server = wrapServerWithToolRegistry(
     new McpServer(
@@ -59,7 +69,9 @@ export function createBacklogMcpServer({
     )
   );
 
-  const toolsetGroup = buildToolsetGroup(backlog, transHelper, enabledToolsets);
+  const toolsetGroup =
+    sharedToolsetGroup ??
+    buildToolsetGroup(backlog, transHelper, enabledToolsets);
   registerTools(server, toolsetGroup, mcpOption);
   registerDynamicTools(
     server,

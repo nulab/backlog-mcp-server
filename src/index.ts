@@ -16,6 +16,7 @@ import {
   createOAuthBacklogClientRegistry,
 } from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
+import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 const { version } = packageJson;
@@ -152,8 +153,19 @@ const enabledToolsets = argv.dynamicToolsets
 
 const mcpOption = { useFields: useFields, maxTokens, prefix };
 
+// Built once and shared by every server the factory produces. `enable_toolset`
+// mutates this group, and the stateless HTTP model discards its server after
+// each request — so a per-server group would lose the enablement immediately.
+// Sharing it makes toolset state process-wide, which is the only scope left now
+// that the protocol has no sessions.
+const sharedToolsetGroup = buildToolsetGroup(
+  backlog,
+  transHelper,
+  enabledToolsets
+);
+
 // Factory: creates a fresh MCP server with all tools registered.
-// Used once for stdio; one fresh instance per HTTP session for Streamable HTTP.
+// Used once per stdio connection; one fresh instance per HTTP request.
 const createServer = () =>
   createBacklogMcpServer({
     version,
@@ -164,6 +176,7 @@ const createServer = () =>
     enabledToolsets,
     mcpOption,
     dynamicToolsets: argv.dynamicToolsets,
+    toolsetGroup: sharedToolsetGroup,
   });
 
 if (argv.exportTranslations) {
