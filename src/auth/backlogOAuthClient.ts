@@ -47,7 +47,7 @@ export async function exchangeBacklogCode(
     );
   }
 
-  return (await response.json()) as BacklogTokenData;
+  return await response.json();
 }
 
 export async function refreshBacklogToken(
@@ -77,7 +77,7 @@ export async function refreshBacklogToken(
     );
   }
 
-  return (await response.json()) as BacklogTokenData;
+  return await response.json();
 }
 
 export async function verifyBacklogToken(
@@ -92,9 +92,5 @@ export async function verifyBacklogToken(
     throw new Error(`Backlog token verification failed (${response.status})`);
   }
 
-  return (await response.json()) as {
-    id: number;
-    userId: string;
-    name: string;
-  };
+  return await response.json();
 }

@@ -33,12 +33,9 @@ function isValidRedirectUri(uri: string): boolean {
   try {
     const parsed = new URL(uri);
     if (parsed.protocol === 'https:') return true;
-    if (
-      parsed.protocol === 'http:' &&
-      LOCALHOST_HOSTS.includes(parsed.hostname)
-    )
-      return true;
-    return false;
+    return (
+      parsed.protocol === 'http:' && LOCALHOST_HOSTS.includes(parsed.hostname)
+    );
   } catch {
     return false;
   }
@@ -85,7 +82,7 @@ export function createOAuthRoutes(
   app.post('/register', async (c) => {
     let body: Record<string, unknown>;
     try {
-      body = (await c.req.json()) as Record<string, unknown>;
+      body = await c.req.json();
     } catch {
       return c.json(oauthError('invalid_request', 'Invalid JSON body'), 400);
     }
@@ -105,7 +102,7 @@ export function createOAuthRoutes(
       );
     }
 
-    for (const uri of redirectUris as string[]) {
+    for (const uri of redirectUris) {
       if (!isValidRedirectUri(uri)) {
         return c.json(
           oauthError(
