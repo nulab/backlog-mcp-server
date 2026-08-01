@@ -40,7 +40,8 @@
   ],
   "dependencies": {
     "@hono/node-server": "^2.0.10",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/hono": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
     "backlog-js": "^0.19.1",
     "cosmiconfig": "^9.0.1",
     "env-var": "^7.5.0",

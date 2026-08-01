@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/server';
 import { createTranslationHelper } from './createTranslationHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
@@ -10,9 +10,9 @@ import { createToolRegistrar } from './utils/toolRegistrar.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 
-vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
+vi.mock('@modelcontextprotocol/server', () => ({
   McpServer: vi.fn(function (this: Record<string, unknown>) {
-    this.tool = vi.fn();
+    this.registerTool = vi.fn();
   }),
 }));
 
@@ -72,6 +72,22 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
+  // Regression: under the stateless HTTP model the factory runs once per
+  // request, so a group built per server would throw away every
+  // `enable_toolset` mutation as soon as the request ended.
+  it('registers from a caller-supplied toolset group instead of building one', () => {
+    const sharedToolsetGroup = { toolsets: [] } as any;
+
+    createBacklogMcpServer({ ...baseConfig, toolsetGroup: sharedToolsetGroup });
+
+    expect(buildToolsetGroup).not.toHaveBeenCalled();
+    expect(registerTools).toHaveBeenCalledWith(
+      expect.anything(),
+      sharedToolsetGroup,
+      mcpOption
+    );
+  });
+
   it('calls registerTools with the toolset group and mcpOption', () => {
     const mockToolsetGroup = { toolsets: [] };
     vi.mocked(buildToolsetGroup).mockReturnValue(mockToolsetGroup as any);
@@ -126,7 +142,8 @@ describe('createBacklogMcpServer', () => {
     expect(McpServer).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'backlog (field selection enabled)',
-      })
+      }),
+      expect.anything()
     );
   });
 
@@ -135,7 +152,8 @@ describe('createBacklogMcpServer', () => {
     expect(McpServer).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'backlog',
-      })
+      }),
+      expect.anything()
     );
   });
 
@@ -144,8 +162,26 @@ describe('createBacklogMcpServer', () => {
     expect(McpServer).toHaveBeenCalledWith(
       expect.objectContaining({
         version: '2.0.0',
+      }),
+      expect.anything()
+    );
+  });
+
+  it('publishes a tools/list cache hint when the tool list is fixed', () => {
+    createBacklogMcpServer(baseConfig);
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        cacheHints: {
+          'tools/list': { ttlMs: 5 * 60 * 1000, cacheScope: 'public' },
+        },
       })
     );
+  });
+
+  it('omits the tools/list cache hint when dynamic toolsets can grow the list', () => {
+    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
+    expect(McpServer).toHaveBeenCalledWith(expect.anything(), undefined);
   });
 
   it('passes correct arguments to dynamicTools when dynamicToolsets is true', () => {

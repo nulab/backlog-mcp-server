@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TranslationHelper } from '../createTranslationHelper.js';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolResult } from '@modelcontextprotocol/server';
 
 export type ToolDefinition<
   Shape extends z.ZodRawShape,

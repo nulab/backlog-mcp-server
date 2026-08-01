@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Nulab inc.
 // Licensed under the MIT License.
 
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -16,6 +16,7 @@ import {
   createOAuthBacklogClientRegistry,
 } from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
+import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 const { version } = packageJson;
@@ -87,6 +88,12 @@ const argv = yargs(hideBin(process.argv))
       'Comma-separated allowed Host header values when binding to all interfaces (recommended with 0.0.0.0)',
     default: env.get('MCP_HTTP_ALLOWED_HOSTS').default('').asString(),
   })
+  .option('http-allowed-origins', {
+    type: 'string',
+    describe:
+      'Comma-separated allowed Origin header hostnames for browser-based clients. Defaults to the localhost set on a loopback bind, and to no Origin check otherwise',
+    default: env.get('MCP_HTTP_ALLOWED_ORIGINS').default('').asString(),
+  })
   .option('max-tokens', {
     type: 'number',
     describe: 'Maximum number of tokens allowed in the response',
@@ -152,8 +159,19 @@ const enabledToolsets = argv.dynamicToolsets
 
 const mcpOption = { useFields: useFields, maxTokens, prefix };
 
+// Built once and shared by every server the factory produces. `enable_toolset`
+// mutates this group, and the stateless HTTP model discards its server after
+// each request — so a per-server group would lose the enablement immediately.
+// Sharing it makes toolset state process-wide, which is the only scope left now
+// that the protocol has no sessions.
+const sharedToolsetGroup = buildToolsetGroup(
+  backlog,
+  transHelper,
+  enabledToolsets
+);
+
 // Factory: creates a fresh MCP server with all tools registered.
-// Used once for stdio; one fresh instance per HTTP session for Streamable HTTP.
+// Used once per stdio connection; one fresh instance per HTTP request.
 const createServer = () =>
   createBacklogMcpServer({
     version,
@@ -164,6 +182,7 @@ const createServer = () =>
     enabledToolsets,
     mcpOption,
     dynamicToolsets: argv.dynamicToolsets,
+    toolsetGroup: sharedToolsetGroup,
   });
 
 if (argv.exportTranslations) {
@@ -202,14 +221,16 @@ async function main() {
 
   if (argv.transport === 'http') {
     const httpPath = normalizeHttpPath(argv.httpPath);
-    const allowedHostsRaw = argv.httpAllowedHosts;
-    const allowedHosts =
-      allowedHostsRaw && allowedHostsRaw.trim().length > 0
-        ? allowedHostsRaw
+    const parseHostList = (raw?: string): string[] | undefined =>
+      raw && raw.trim().length > 0
+        ? raw
             .split(',')
             .map((h) => h.trim())
             .filter(Boolean)
         : undefined;
+
+    const allowedHosts = parseHostList(argv.httpAllowedHosts);
+    const allowedOrigins = parseHostList(argv.httpAllowedOrigins);
 
     const { shutdown } = await runHttpMcpServer({
       host: argv.httpHost,
@@ -218,6 +239,7 @@ async function main() {
       version,
       enableJsonResponse: argv.httpJsonResponse,
       allowedHosts,
+      allowedOrigins,
       createServer,
       oauthConfig,
       tokenStore,
@@ -249,9 +271,11 @@ async function main() {
     return;
   }
 
-  const server = createServer();
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // serveStdio owns the era decision for the connection: it pins one instance
+  // from the factory, serving both 2026-07-28 and 2025-era clients.
+  serveStdio(createServer, {
+    onerror: (err) => logger.error({ err }, 'MCP stdio error'),
+  });
   logger.info('Backlog MCP Server running on stdio');
 }
 

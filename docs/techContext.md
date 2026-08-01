@@ -11,7 +11,8 @@
 
 ### Key Libraries
 
-- **@modelcontextprotocol/sdk**: Implementation of MCP (Model Context Protocol) server
+- **@modelcontextprotocol/server**: Implementation of MCP (Model Context Protocol) server (v2, MCP spec `2026-07-28`)
+- **@modelcontextprotocol/hono**: Hono middlewares for `Host` / `Origin` validation
 - **backlog-js**: Client library to simplify communication with Backlog API
 - **zod**: Provides schema validation and type safety
 - **cosmiconfig**: Configuration file loading and management
@@ -65,18 +66,19 @@ BACKLOG_API_KEY=your-api-key
 
 Optional settings (each also has an equivalent CLI flag):
 
-| Variable                    | Purpose                                                  |
-| --------------------------- | -------------------------------------------------------- |
-| `MAX_TOKENS`                | Max tokens in a response (default 50000)                  |
-| `OPTIMIZE_RESPONSE`         | Enable GraphQL-style field selection                      |
-| `PREFIX`                    | Prefix prepended to every tool name                       |
-| `ENABLE_TOOLSETS`           | Comma-separated toolsets to enable (default `all`)        |
-| `ENABLE_DYNAMIC_TOOLSETS`   | Expose `enable_toolset` and friends                       |
-| `MCP_TRANSPORT`             | `stdio` (default) or `http`                               |
-| `MCP_HTTP_HOST` / `_PORT` / `_PATH` | HTTP transport bind settings                      |
-| `MCP_HTTP_JSON_RESPONSE`    | Prefer JSON responses over SSE                            |
-| `MCP_HTTP_ALLOWED_HOSTS`    | Allowed `Host` values (DNS rebinding protection)          |
-| `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport |
+| Variable                                                     | Purpose                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `MAX_TOKENS`                                                 | Max tokens in a response (default 50000)                   |
+| `OPTIMIZE_RESPONSE`                                          | Enable GraphQL-style field selection                       |
+| `PREFIX`                                                     | Prefix prepended to every tool name                        |
+| `ENABLE_TOOLSETS`                                            | Comma-separated toolsets to enable (default `all`)         |
+| `ENABLE_DYNAMIC_TOOLSETS`                                    | Expose `enable_toolset` and friends                        |
+| `MCP_TRANSPORT`                                              | `stdio` (default) or `http`                                |
+| `MCP_HTTP_HOST` / `_PORT` / `_PATH`                          | HTTP transport bind settings                               |
+| `MCP_HTTP_JSON_RESPONSE`                                     | Prefer JSON responses over SSE (`2026-07-28` clients only) |
+| `MCP_HTTP_ALLOWED_HOSTS`                                     | Allowed `Host` hostnames (DNS rebinding protection)        |
+| `MCP_HTTP_ALLOWED_ORIGINS`                                   | Allowed `Origin` hostnames for browser-based clients       |
+| `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport                         |
 
 ## Technical Constraints
 
@@ -90,7 +92,8 @@ Optional settings (each also has an equivalent CLI flag):
 ### MCP Protocol
 
 - Two transports are supported: stdio and Streamable HTTP
-- With HTTP, a fresh MCP server instance is created per session
+- The protocol (`2026-07-28`) is stateless: no `initialize` handshake, no `mcp-session-id`
+- With HTTP, a fresh MCP server instance is created per request
 - Tool inputs and outputs must follow specific formats
 - Response size should be managed to avoid token limit issues
 

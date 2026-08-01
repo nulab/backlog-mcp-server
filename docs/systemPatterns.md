@@ -19,11 +19,11 @@ graph TD
 
 - Parses CLI flags and environment variables with yargs / env-var
 - Chooses the transport: stdio (default) or Streamable HTTP (`--transport http`)
-- Builds a `createServer` factory: one server for stdio, one fresh server per HTTP session
+- Builds a `createServer` factory: one server per stdio connection, one fresh server per HTTP request
 
 ### 2. MCP Server Factory (`createBacklogMcpServer.ts`)
 
-- Creates an `McpServer` from `@modelcontextprotocol/sdk`, wrapped by
+- Creates an `McpServer` from `@modelcontextprotocol/server`, wrapped by
   `wrapServerWithToolRegistry` so duplicate tool names are registered only once
 - Builds the enabled toolset group and registers static tools, organization tools,
   and (optionally) dynamic toolset tools
@@ -50,8 +50,13 @@ graph TD
 
 ### 6. HTTP Transport and OAuth (`httpMcpServer.ts`, `src/auth/`)
 
-- Hono app serving the Streamable HTTP MCP endpoint, with session management and
-  DNS-rebinding protection via allowed `Host` values
+- Hono app serving the Streamable HTTP MCP endpoint. MCP `2026-07-28` has no protocol
+  sessions, so `createMcpHandler` builds a fresh server per request; clients on
+  `2025-11-25` and earlier are served statelessly over the same endpoint
+- DNS-rebinding protection via the `Host` / `Origin` middlewares from
+  `@modelcontextprotocol/hono`. `Host` and `Origin` are configured independently:
+  a bare loopback bind defaults both to the localhost set, while `allowedHosts` /
+  `allowedOrigins` each override their own axis
 - When OAuth is configured, the server also exposes OAuth metadata, dynamic client
   registration, `/authorize`, `/callback`, and `/token`, and guards MCP requests with
   a bearer auth middleware backed by an in-memory token store

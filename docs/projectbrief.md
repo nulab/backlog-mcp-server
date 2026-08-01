@@ -35,7 +35,7 @@
 
 - **stdio** (default): authenticated with `BACKLOG_API_KEY`
 - **Streamable HTTP** (`--transport http`): can additionally run as an OAuth 2.1 authorization
-  server in front of Backlog OAuth (`src/auth/`), issuing per-session Backlog access tokens
+  server in front of Backlog OAuth (`src/auth/`), issuing per-user Backlog access tokens
 
 ## Deployment Method
 

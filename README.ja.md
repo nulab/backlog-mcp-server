@@ -154,11 +154,11 @@ MCPサーバーをネットワーク経由で公開する場合、OAuth 2.0認�
 
 2. 以下の環境変数を設定します（`BACKLOG_DOMAIN` に加えて）：
 
-| 変数 | 説明 |
-| ---- | ---- |
-| `BACKLOG_OAUTH_CLIENT_ID` | Backlogアプリケーションの OAuth Client ID |
-| `BACKLOG_OAUTH_CLIENT_SECRET` | Backlogアプリケーションの OAuth Client Secret |
-| `MCP_SERVER_BASE_URL` | MCPサーバーの公開URL（例：`https://mcp.example.com`） |
+| 変数                          | 説明                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| `BACKLOG_OAUTH_CLIENT_ID`     | Backlogアプリケーションの OAuth Client ID             |
+| `BACKLOG_OAUTH_CLIENT_SECRET` | Backlogアプリケーションの OAuth Client Secret         |
+| `MCP_SERVER_BASE_URL`         | MCPサーバーの公開URL（例：`https://mcp.example.com`） |
 
 > **注意:** OAuth有効時は `BACKLOG_API_KEY` は**不要**です。各ユーザーが自分のBacklogアカウントで認証します。
 
@@ -169,23 +169,27 @@ BACKLOG_DOMAIN=your-space.backlog.com \
 BACKLOG_OAUTH_CLIENT_ID=your-client-id \
 BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret \
 MCP_SERVER_BASE_URL=https://mcp.example.com \
-node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333 \
+  --http-allowed-hosts mcp.example.com
 ```
+
+`0.0.0.0` にバインドする場合、`--http-allowed-hosts` は実質必須です。指定しないとDNSリバインディング保護が一切効かず、起動時に警告がログ出力されます。
 
 OAuth有効時、サーバーは以下のOAuthエンドポイントを自動的に公開します：
 
-| エンドポイント | 説明 |
-| ------------- | ---- |
-| `GET /.well-known/oauth-authorization-server` | OAuth認可サーバーメタデータ（[RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)） |
-| `GET /.well-known/oauth-protected-resource/mcp` | OAuthリソースメタデータ（[RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)） |
-| `POST /register` | 動的クライアント登録（[RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)） |
-| `GET /authorize` | 認可エンドポイント（Backlog OAuthへリダイレクト） |
-| `GET /callback` | Backlog OAuthコールバック |
-| `POST /token` | トークンエンドポイント（認可コード＆リフレッシュトークン） |
+| エンドポイント                                  | 説明                                                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET /.well-known/oauth-authorization-server`   | OAuth認可サーバーメタデータ（[RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)） |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuthリソースメタデータ（[RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)）     |
+| `POST /register`                                | 動的クライアント登録（[RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)）        |
+| `GET /authorize`                                | 認可エンドポイント（Backlog OAuthへリダイレクト）                                        |
+| `GET /callback`                                 | Backlog OAuthコールバック                                                                |
+| `POST /token`                                   | トークンエンドポイント（認可コード＆リフレッシュトークン）                               |
 
 MCP認可仕様に対応するMCPクライアントは、これらのエンドポイントを自動的に使用します。
 
 > **制約事項:**
+>
 > - OAuthモードは現在、単一のBacklog組織のみをサポートしています。複数組織設定との併用はできません。
 > - クライアント登録やトークンはメモリ内に保持されるため、サーバー再起動時に失われます。
 
@@ -246,6 +250,8 @@ CLI経由での有効化：
 ```
 
 動的ツールセットを有効にすると、LLMはツールインターフェースを介してオンデマンドでツールセットを一覧表示およびアクティブ化できるようになります。
+
+> **HTTPでのスコープ:** MCP `2026-07-28` にはプロトコルセッションがないため、アクティブ化したツールセットはクライアント単位ではなく**サーバープロセス単位**で保持されます。HTTPトランスポートでは接続中の全クライアントが1つのツールセット状態を共有し、プロセス再起動でリセットされます。共有されるのはツールの*可視性*のみで、認可は共有されません（各呼び出しは呼び出し元自身の認証情報で認証されます）。
 
 ## 利用可能なツール
 

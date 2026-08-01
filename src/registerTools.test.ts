@@ -1,5 +1,5 @@
 import { registerTools } from './registerTools';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/server';
 import { Backlog } from 'backlog-js';
 import { TranslationHelper } from './createTranslationHelper';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
@@ -29,7 +29,7 @@ describe('registerTools', () => {
 
   it('registers tools from enabled toolsets only', () => {
     const mockServer = wrapServerWithToolRegistry({
-      tool: vi.fn(),
+      registerTool: vi.fn(),
     } as unknown as McpServer);
     const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['space']);
 
@@ -38,8 +38,10 @@ describe('registerTools', () => {
       prefix: '',
       maxTokens: 5000,
     });
-    expect(mockServer.tool).toHaveBeenCalledTimes(spaceToolSet.tools.length);
-    const calledToolNames = (mockServer.tool as Mock).mock.calls.map(
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(
+      spaceToolSet.tools.length
+    );
+    const calledToolNames = (mockServer.registerTool as Mock).mock.calls.map(
       (call) => call[0]
     );
     expect(calledToolNames).toEqual(
@@ -49,7 +51,7 @@ describe('registerTools', () => {
 
   it('applies prefix to tool name', () => {
     const mockServer = wrapServerWithToolRegistry({
-      tool: vi.fn(),
+      registerTool: vi.fn(),
     } as unknown as McpServer);
     const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['space']);
     registerTools(mockServer, toolsetGroup, {
@@ -58,7 +60,7 @@ describe('registerTools', () => {
       maxTokens: 5000,
     });
 
-    const calledToolNames = (mockServer.tool as Mock).mock.calls.map(
+    const calledToolNames = (mockServer.registerTool as Mock).mock.calls.map(
       (call) => call[0]
     );
     expect(calledToolNames).toEqual(
@@ -68,7 +70,7 @@ describe('registerTools', () => {
 
   it('enables all toolsets when "all" is specified', () => {
     const mockServer = wrapServerWithToolRegistry({
-      tool: vi.fn(),
+      registerTool: vi.fn(),
     } as unknown as McpServer);
     const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['all']);
     registerTools(mockServer, toolsetGroup, {
@@ -77,7 +79,7 @@ describe('registerTools', () => {
       prefix: '',
     });
 
-    expect(mockServer.tool).toHaveBeenCalledTimes(
+    expect(mockServer.registerTool).toHaveBeenCalledTimes(
       toolsetGroup.toolsets.flatMap((a) => a.tools).length
     );
   });

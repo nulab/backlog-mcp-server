@@ -71,7 +71,7 @@ function registerToolsets({
       server.registerOnce(
         toolNameWithPrefix,
         tool.description,
-        tool.schema.shape,
+        tool.schema,
         handler
       );
     }

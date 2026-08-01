@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import {
-  CallToolResult,
-  ServerNotification,
-  ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolResult, ServerContext } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { ErrorLike } from '../../types/result.js';
 import { ToolDefinition } from '../../types/tool.js';
@@ -15,7 +10,7 @@ const dummyErrorHandler = (err: unknown): ErrorLike => ({
   message: 'Handled: ' + (err as Error).message,
 });
 
-const dummyExtra = {} as RequestHandlerExtra<ServerRequest, ServerNotification>;
+const dummyExtra = {} as ServerContext;
 
 describe('composeToolHandler', () => {
   const baseSchema = z.object({
