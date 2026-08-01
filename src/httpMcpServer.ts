@@ -26,6 +26,7 @@ type RunHttpMcpServerOptions = {
   version: string;
   enableJsonResponse: boolean;
   allowedHosts?: string[];
+  allowedOrigins?: string[];
   createServer: () => BacklogMCPServer;
   oauthConfig?: BacklogOAuthConfig;
   tokenStore?: TokenStore;
@@ -58,6 +59,7 @@ export const runHttpMcpServer = async (
     version,
     enableJsonResponse,
     allowedHosts,
+    allowedOrigins,
     createServer,
     oauthConfig,
     tokenStore,
@@ -74,15 +76,23 @@ export const runHttpMcpServer = async (
   const isLocalhostBind = LOCALHOST_BINDS.includes(host);
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
-  // DNS rebinding protection. An explicit allow list wins and drives BOTH the
-  // Host and the Origin check: a loopback bind behind a reverse proxy is a
-  // supported deployment, and pinning Origin to localhost there would reject
-  // every browser-based client with no way to opt out.
+  // DNS rebinding protection. `Host` is the actual defense: a rebinding page
+  // reaches us carrying its own hostname, which the allow list rejects.
   if (allowedHosts?.length) {
     app.use('*', hostHeaderValidation(allowedHosts));
-    app.use('*', originValidation(allowedHosts));
   } else if (isLocalhostBind) {
     app.use('*', localhostHostValidation());
+  }
+
+  // `Origin` is a separate axis and cannot be derived from the allow list: a
+  // browser client's Origin is its own site, never this server's hostname, so
+  // validating one against the other would reject every legitimate remote
+  // client. Default to the localhost set only for a bare loopback bind (the
+  // desktop case, where a drive-by page is the threat); a deployment that
+  // declares its hosts opts out unless it names its client origins too.
+  if (allowedOrigins?.length) {
+    app.use('*', originValidation(allowedOrigins));
+  } else if (isLocalhostBind && !allowedHosts?.length) {
     app.use('*', localhostOriginValidation());
   }
 

@@ -132,15 +132,15 @@ describe('runHttpMcpServer', () => {
   });
 
   describe('allowedHosts on a loopback bind (reverse-proxy deployment)', () => {
-    // Regression: the allow list has to govern the Origin check too. Pinning
-    // Origin to localhost here would 403 every browser-based client behind a
-    // proxy with no way to opt out.
-    it('serves a request whose Host and Origin match the allow list', async () => {
+    // Regression: pinning Origin to localhost here 403s every browser-based
+    // client behind a proxy, with no way to opt out. A browser client's Origin
+    // is its own site, so it can never be derived from the host allow list.
+    it('serves a browser client whose Origin is its own site', async () => {
       const port = await start({ allowedHosts: ['mcp.example.com'] });
       const res = await send(port, {
         headers: {
           host: 'mcp.example.com',
-          origin: 'https://mcp.example.com',
+          origin: 'https://claude.ai',
           'mcp-method': 'tools/list',
         },
         body: modernToolsList,
@@ -148,20 +148,6 @@ describe('runHttpMcpServer', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toContain('ping');
-    });
-
-    it('still rejects an Origin outside the allow list', async () => {
-      const port = await start({ allowedHosts: ['mcp.example.com'] });
-      const res = await send(port, {
-        headers: {
-          host: 'mcp.example.com',
-          origin: 'https://evil.example.com',
-          'mcp-method': 'tools/list',
-        },
-        body: modernToolsList,
-      });
-
-      expect(res.status).toBe(403);
     });
 
     it('rejects a Host outside the allow list', async () => {
@@ -174,10 +160,46 @@ describe('runHttpMcpServer', () => {
       expect(res.status).toBe(403);
     });
 
-    it('no longer rejects a localhost Host once an allow list is set', async () => {
+    it('no longer accepts a localhost Host once an allow list is set', async () => {
       const port = await start({ allowedHosts: ['mcp.example.com'] });
       const res = await send(port, {
         headers: { host: '127.0.0.1', 'mcp-method': 'tools/list' },
+        body: modernToolsList,
+      });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('allowedOrigins', () => {
+    it('serves an Origin on the list', async () => {
+      const port = await start({
+        allowedHosts: ['mcp.example.com'],
+        allowedOrigins: ['claude.ai'],
+      });
+      const res = await send(port, {
+        headers: {
+          host: 'mcp.example.com',
+          origin: 'https://claude.ai',
+          'mcp-method': 'tools/list',
+        },
+        body: modernToolsList,
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('rejects an Origin off the list', async () => {
+      const port = await start({
+        allowedHosts: ['mcp.example.com'],
+        allowedOrigins: ['claude.ai'],
+      });
+      const res = await send(port, {
+        headers: {
+          host: 'mcp.example.com',
+          origin: 'https://evil.example.com',
+          'mcp-method': 'tools/list',
+        },
         body: modernToolsList,
       });
 

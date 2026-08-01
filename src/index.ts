@@ -88,6 +88,12 @@ const argv = yargs(hideBin(process.argv))
       'Comma-separated allowed Host header values when binding to all interfaces (recommended with 0.0.0.0)',
     default: env.get('MCP_HTTP_ALLOWED_HOSTS').default('').asString(),
   })
+  .option('http-allowed-origins', {
+    type: 'string',
+    describe:
+      'Comma-separated allowed Origin header hostnames for browser-based clients. Defaults to the localhost set on a loopback bind, and to no Origin check otherwise',
+    default: env.get('MCP_HTTP_ALLOWED_ORIGINS').default('').asString(),
+  })
   .option('max-tokens', {
     type: 'number',
     describe: 'Maximum number of tokens allowed in the response',
@@ -215,14 +221,16 @@ async function main() {
 
   if (argv.transport === 'http') {
     const httpPath = normalizeHttpPath(argv.httpPath);
-    const allowedHostsRaw = argv.httpAllowedHosts;
-    const allowedHosts =
-      allowedHostsRaw && allowedHostsRaw.trim().length > 0
-        ? allowedHostsRaw
+    const parseHostList = (raw?: string): string[] | undefined =>
+      raw && raw.trim().length > 0
+        ? raw
             .split(',')
             .map((h) => h.trim())
             .filter(Boolean)
         : undefined;
+
+    const allowedHosts = parseHostList(argv.httpAllowedHosts);
+    const allowedOrigins = parseHostList(argv.httpAllowedOrigins);
 
     const { shutdown } = await runHttpMcpServer({
       host: argv.httpHost,
@@ -231,6 +239,7 @@ async function main() {
       version,
       enableJsonResponse: argv.httpJsonResponse,
       allowedHosts,
+      allowedOrigins,
       createServer,
       oauthConfig,
       tokenStore,

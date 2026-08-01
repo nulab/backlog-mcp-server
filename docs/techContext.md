@@ -66,18 +66,19 @@ BACKLOG_API_KEY=your-api-key
 
 Optional settings (each also has an equivalent CLI flag):
 
-| Variable                    | Purpose                                                  |
-| --------------------------- | -------------------------------------------------------- |
-| `MAX_TOKENS`                | Max tokens in a response (default 50000)                  |
-| `OPTIMIZE_RESPONSE`         | Enable GraphQL-style field selection                      |
-| `PREFIX`                    | Prefix prepended to every tool name                       |
-| `ENABLE_TOOLSETS`           | Comma-separated toolsets to enable (default `all`)        |
-| `ENABLE_DYNAMIC_TOOLSETS`   | Expose `enable_toolset` and friends                       |
-| `MCP_TRANSPORT`             | `stdio` (default) or `http`                               |
-| `MCP_HTTP_HOST` / `_PORT` / `_PATH` | HTTP transport bind settings                      |
-| `MCP_HTTP_JSON_RESPONSE`    | Prefer JSON responses over SSE (`2026-07-28` clients only) |
-| `MCP_HTTP_ALLOWED_HOSTS`    | Allowed `Host` hostnames (DNS rebinding protection)       |
-| `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport |
+| Variable                                                     | Purpose                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `MAX_TOKENS`                                                 | Max tokens in a response (default 50000)                   |
+| `OPTIMIZE_RESPONSE`                                          | Enable GraphQL-style field selection                       |
+| `PREFIX`                                                     | Prefix prepended to every tool name                        |
+| `ENABLE_TOOLSETS`                                            | Comma-separated toolsets to enable (default `all`)         |
+| `ENABLE_DYNAMIC_TOOLSETS`                                    | Expose `enable_toolset` and friends                        |
+| `MCP_TRANSPORT`                                              | `stdio` (default) or `http`                                |
+| `MCP_HTTP_HOST` / `_PORT` / `_PATH`                          | HTTP transport bind settings                               |
+| `MCP_HTTP_JSON_RESPONSE`                                     | Prefer JSON responses over SSE (`2026-07-28` clients only) |
+| `MCP_HTTP_ALLOWED_HOSTS`                                     | Allowed `Host` hostnames (DNS rebinding protection)        |
+| `MCP_HTTP_ALLOWED_ORIGINS`                                   | Allowed `Origin` hostnames for browser-based clients       |
+| `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET`, `MCP_SERVER_BASE_URL` | Enable OAuth on the HTTP transport                         |
 
 ## Technical Constraints
 
