@@ -37,16 +37,6 @@ type HttpMcpServerHandle = {
   shutdown: () => Promise<void>;
 };
 
-type JsonRpcErrorBody = {
-  jsonrpc: '2.0';
-  error: { code: number; message: string };
-  id: null;
-};
-
-const jsonRpcError = (code: number, message: string): JsonRpcErrorBody => {
-  return { jsonrpc: '2.0', error: { code, message }, id: null };
-};
-
 const LOCALHOST_BINDS = ['127.0.0.1', 'localhost', '::1'];
 
 export const runHttpMcpServer = async (
@@ -132,7 +122,14 @@ export const runHttpMcpServer = async (
         : await dispatch();
     } catch (error) {
       logger.error({ err: error }, 'Error handling MCP request');
-      return c.json(jsonRpcError(-32603, 'Internal server error'), 500);
+      return c.json(
+        {
+          jsonrpc: '2.0',
+          error: { code: -32603, message: 'Internal server error' },
+          id: null,
+        },
+        500
+      );
     }
   });
 
