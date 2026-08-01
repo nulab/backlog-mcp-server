@@ -12,7 +12,7 @@ import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 
 vi.mock('@modelcontextprotocol/server', () => ({
   McpServer: vi.fn(function (this: Record<string, unknown>) {
-    this.tool = vi.fn();
+    this.registerTool = vi.fn();
   }),
 }));
 

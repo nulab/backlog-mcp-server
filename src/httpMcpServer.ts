@@ -8,6 +8,7 @@ import {
   hostHeaderValidation,
   localhostHostValidation,
   localhostOriginValidation,
+  originValidation,
 } from '@modelcontextprotocol/hono';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import { createMcpHandler } from '@modelcontextprotocol/server';
@@ -73,14 +74,15 @@ export const runHttpMcpServer = async (
   const isLocalhostBind = LOCALHOST_BINDS.includes(host);
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
-  // DNS rebinding protection: validate Host against the explicit allow list
-  // when one is given, and against the localhost set when bound to loopback.
+  // DNS rebinding protection. An explicit allow list wins and drives BOTH the
+  // Host and the Origin check: a loopback bind behind a reverse proxy is a
+  // supported deployment, and pinning Origin to localhost there would reject
+  // every browser-based client with no way to opt out.
   if (allowedHosts?.length) {
     app.use('*', hostHeaderValidation(allowedHosts));
+    app.use('*', originValidation(allowedHosts));
   } else if (isLocalhostBind) {
     app.use('*', localhostHostValidation());
-  }
-  if (isLocalhostBind) {
     app.use('*', localhostOriginValidation());
   }
 

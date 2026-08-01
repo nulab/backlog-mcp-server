@@ -54,7 +54,8 @@ graph TD
   sessions, so `createMcpHandler` builds a fresh server per request; clients on
   `2025-11-25` and earlier are served statelessly over the same endpoint
 - DNS-rebinding protection via the `Host` / `Origin` middlewares from
-  `@modelcontextprotocol/hono`
+  `@modelcontextprotocol/hono`. An explicit `allowedHosts` list drives both checks;
+  otherwise a loopback bind falls back to the localhost set for both
 - When OAuth is configured, the server also exposes OAuth metadata, dynamic client
   registration, `/authorize`, `/callback`, and `/token`, and guards MCP requests with
   a bearer auth middleware backed by an in-memory token store

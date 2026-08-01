@@ -152,7 +152,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 - **Endpoint:** `POST` (and `GET` for server-initiated streams) on `http://<host>:<port><path>` (default path `/mcp`).
 - **Protocol:** MCP `2026-07-28`. The protocol is stateless: there is no `initialize` handshake and no `mcp-session-id` header. Clients send their metadata in `_meta` on every request and discover capabilities via `server/discover`. Streamable HTTP also requires the `Mcp-Method` header (and `Mcp-Name` on `tools/call`).
 - **Backward compatibility:** Clients on `2025-11-25` and earlier are still served over the same endpoint, statelessly. Because no session is kept, the 2025 session operations (`GET` / `DELETE` with an `mcp-session-id`) answer `405`.
-- **Security:** Default bind is `127.0.0.1`. On a loopback bind, `Host` and `Origin` headers are validated (DNS rebinding protection). Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
+- **Security:** Default bind is `127.0.0.1`. On a loopback bind, `Host` and `Origin` headers are validated against the localhost set (DNS rebinding protection). Setting `--http-allowed-hosts` replaces that set for both headers — use it when running behind a reverse proxy, where the public hostname reaches the server as `Host` / `Origin`. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
 
 Environment variables (CLI flags override when both are set):
 
@@ -162,8 +162,8 @@ Environment variables (CLI flags override when both are set):
 | `MCP_HTTP_HOST`          | Bind address (default `127.0.0.1`)                                                         |
 | `MCP_HTTP_PORT`          | Port (default `3333`)                                                                      |
 | `MCP_HTTP_PATH`          | URL path (default `/mcp`)                                                                  |
-| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported                                    |
-| `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` hostnames (port-agnostic) when binding to `0.0.0.0` (DNS rebinding protection) |
+| `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE (applies to `2026-07-28` clients only)            |
+| `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` / `Origin` hostnames (port-agnostic). Required when binding to `0.0.0.0`; also the escape hatch for a loopback bind behind a proxy (DNS rebinding protection) |
 
 ### OAuth 2.0 Authentication (Remote MCP)
 
@@ -645,8 +645,8 @@ The server supports several command line options:
 
 - `--transport stdio|http`: MCP transport (default: stdio). Use `http` for Streamable HTTP.
 - `--http-host`, `--http-port`, `--http-path`: HTTP bind address, port, and path (defaults: `127.0.0.1`, `3333`, `/mcp`).
-- `--http-json-response`: Prefer JSON responses over SSE when the transport supports it.
-- `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic) when binding to all interfaces.
+- `--http-json-response`: Prefer JSON responses over SSE. Applies to `2026-07-28` clients only; the backward-compatible `2025-11-25` path is served with the SDK's default response shaping.
+- `--http-allowed-hosts`: Comma-separated allowed `Host` and `Origin` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--export-translations`: Export all translation keys and values
 - `--optimize-response`: Enable GraphQL-style field selection
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
