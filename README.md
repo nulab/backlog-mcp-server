@@ -196,8 +196,11 @@ BACKLOG_DOMAIN=your-space.backlog.com \
 BACKLOG_OAUTH_CLIENT_ID=your-client-id \
 BACKLOG_OAUTH_CLIENT_SECRET=your-client-secret \
 MCP_SERVER_BASE_URL=https://mcp.example.com \
-node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333 \
+  --http-allowed-hosts mcp.example.com
 ```
+
+`--http-allowed-hosts` is required in practice when binding to `0.0.0.0`: without it there is no DNS rebinding protection, and the server logs a warning at startup.
 
 The server automatically exposes the following OAuth endpoints when OAuth is enabled:
 
