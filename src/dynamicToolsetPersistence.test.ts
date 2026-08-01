@@ -87,4 +87,42 @@ describe('dynamic toolset enablement across servers from one factory', () => {
       'get_space'
     );
   });
+
+  // `composeToolHandler` extends `tool.schema` in place. That mutation used to
+  // land on throwaway per-server definitions; sharing the group makes it
+  // cross-request, so its convergence is now load-bearing rather than
+  // incidental — a re-extension that accumulated keys would corrupt the tool
+  // schema every client sees after the first request.
+  it('keeps tool input schemas stable across repeated registration', () => {
+    const transHelper = createTranslationHelper();
+    const sharedToolsetGroup = buildToolsetGroup(backlog, transHelper, ['all']);
+
+    const shapeOfFirstTool = () => {
+      const tool = sharedToolsetGroup.toolsets[0].tools[0];
+      return Object.keys((tool.schema as { shape: object }).shape).sort();
+    };
+
+    const register = () =>
+      createBacklogMcpServer({
+        version: '1.0.0',
+        useFields: true, // adds `fields` on top of `organization`
+        backlog,
+        clientRegistry,
+        transHelper,
+        enabledToolsets: ['all'],
+        mcpOption: { ...mcpOption, useFields: true },
+        dynamicToolsets: false,
+        toolsetGroup: sharedToolsetGroup,
+      });
+
+    register();
+    const afterFirst = shapeOfFirstTool();
+    expect(afterFirst).toEqual(
+      expect.arrayContaining(['organization', 'fields'])
+    );
+
+    register();
+    register();
+    expect(shapeOfFirstTool()).toEqual(afterFirst);
+  });
 });

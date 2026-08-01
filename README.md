@@ -274,6 +274,8 @@ Or via environment variable::
 
 With dynamic toolsets enabled, the LLM will be able to list and activate toolsets on demand via tool interface.
 
+> **Scope over HTTP:** MCP `2026-07-28` has no protocol sessions, so an activated toolset is remembered per **server process**, not per client. On the HTTP transport every connected client shares one toolset state, and it resets when the process restarts. Tool *visibility* is shared; authorization is not — every call is still authenticated with the caller's own credentials.
+
 ## Available Tools
 
 ### Toolset: `space`
