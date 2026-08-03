@@ -8,7 +8,12 @@ import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import type { Toolset } from './types/toolsets.js';
 
-vi.mock('./handlers/builders/composeToolHandler');
+vi.mock('./handlers/builders/composeToolHandler', () => ({
+  composeToolHandler: vi.fn((tool) => ({
+    schema: tool.schema,
+    handler: vi.fn(),
+  })),
+}));
 
 describe('registerTools', () => {
   const mockBacklog = {} as Backlog;
