@@ -20,6 +20,14 @@ export type BacklogClientRegistry = {
   createScopedClient: () => Backlog;
   listOrganizations: () => BacklogOrganizationInfo[];
   getDefaultOrganization: () => string | undefined;
+  /**
+   * Whether more than one Backlog space can be addressed. Only then is it worth
+   * spending an `organization` parameter on every tool and publishing
+   * `list_organizations` — with a single space there is nothing to choose.
+   * Keyed on the configured mode, not the organization count, so a multi-org
+   * setup that happens to declare one space still exposes the parameter.
+   */
+  isMultiOrganization: boolean;
 };
 
 type Environment = Record<string, string | undefined>;
@@ -77,6 +85,7 @@ export function createBacklogClientRegistry(
       }),
     listOrganizations: () => [info],
     getDefaultOrganization: () => defaultName,
+    isMultiOrganization: false,
   };
 }
 
@@ -189,6 +198,7 @@ function createMultiOrganizationRegistryFromEnv(
       }),
     listOrganizations: () => organizationInfo,
     getDefaultOrganization: () => defaultOrganization,
+    isMultiOrganization: true,
   };
 }
 
@@ -234,6 +244,8 @@ export function createOAuthBacklogClientRegistry(
     createScopedClient: () => createBacklogClientProxy(resolveOAuthClient),
     listOrganizations: () => [info],
     getDefaultOrganization: () => defaultName,
+    // OAuth authorises against one Backlog domain per server.
+    isMultiOrganization: false,
   };
 }
 

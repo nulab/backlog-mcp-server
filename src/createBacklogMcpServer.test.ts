@@ -41,7 +41,12 @@ describe('createBacklogMcpServer', () => {
   const mockBacklog = {} as Backlog;
   const mockClientRegistry = {} as BacklogClientRegistry;
   const mockTransHelper = createTranslationHelper();
-  const mcpOption = { useFields: false, maxTokens: 50000, prefix: '' };
+  const mcpOption = {
+    useFields: false,
+    maxTokens: 50000,
+    prefix: '',
+    useOrganization: true,
+  };
 
   const baseConfig = {
     version: '1.0.0',
@@ -105,12 +110,26 @@ describe('createBacklogMcpServer', () => {
     createBacklogMcpServer({ ...baseConfig, dynamicToolsets: false });
     expect(createToolRegistrar).not.toHaveBeenCalled();
     expect(dynamicTools).not.toHaveBeenCalled();
-    // organizationTools are always registered regardless of dynamicToolsets
+    // organizationTools are registered independently of dynamicToolsets, as
+    // long as more than one organization is configured
     expect(organizationTools).toHaveBeenCalledWith(
       mockClientRegistry,
       mockTransHelper
     );
     expect(registerDynamicTools).toHaveBeenCalledTimes(1);
+  });
+
+  // A single Backlog space leaves `list_organizations` nothing to report, and
+  // the `organization` parameter its description refers to is not published
+  // either, so advertising the tool would only mislead.
+  it('does not register list_organizations for a single organization', () => {
+    createBacklogMcpServer({
+      ...baseConfig,
+      mcpOption: { ...mcpOption, useOrganization: false },
+    });
+
+    expect(organizationTools).not.toHaveBeenCalled();
+    expect(registerDynamicTools).not.toHaveBeenCalled();
   });
 
   it('registers dynamic toolsets when dynamicToolsets is true', () => {

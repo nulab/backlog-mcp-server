@@ -13,6 +13,12 @@ interface ComposeOptions {
   useFields: boolean;
   errorHandler?: (err: unknown) => ErrorLike;
   maxTokens: number;
+  /**
+   * Whether to advertise `organization`. Defaults to false: with a single
+   * Backlog space the parameter has exactly one legal value, and repeating it
+   * across every tool costs the client ~8 KB of schema for nothing.
+   */
+  useOrganization?: boolean;
 }
 
 type ComposedInput = {
@@ -26,7 +32,12 @@ export function composeToolHandler(
   tool: ToolDefinition<any, any>,
   options: ComposeOptions
 ) {
-  const { useFields, errorHandler, maxTokens } = options;
+  const {
+    useFields,
+    errorHandler,
+    maxTokens,
+    useOrganization = false,
+  } = options;
 
   // Step 1: Add `fields` to schema if needed
   const fieldDesc = useFields
@@ -36,7 +47,7 @@ export function composeToolHandler(
         tool.name
       )
     : undefined;
-  tool.schema = extendSchema(tool.schema, fieldDesc);
+  tool.schema = extendSchema(tool.schema, fieldDesc, useOrganization);
 
   // Step 2: Compose
   const baseHandler: ComposedHandler = wrapWithErrorHandling(
@@ -51,21 +62,24 @@ export function composeToolHandler(
 
 function extendSchema<I extends z.ZodRawShape>(
   schema: z.ZodObject<I>,
-  desc?: string
+  desc?: string,
+  withOrganization = false
 ): z.ZodObject<
   I & {
-    organization: z.ZodOptional<z.ZodString>;
+    organization?: z.ZodOptional<z.ZodString>;
     fields?: z.ZodString;
   }
 > {
-  const extension: Record<string, z.ZodType> = {
-    organization: z
+  const extension: Record<string, z.ZodType> = {};
+
+  if (withOrganization) {
+    extension.organization = z
       .string()
       .optional()
       .describe(
         'Optional organization name. Use list_organizations to inspect available organizations.'
-      ),
-  };
+      );
+  }
 
   if (desc) {
     extension.fields = z.string().describe(desc);
@@ -76,7 +90,7 @@ function extendSchema<I extends z.ZodRawShape>(
   // shape is correct at runtime; route through `unknown` to keep the assertion.
   return schema.extend(extension) as unknown as z.ZodObject<
     I & {
-      organization: z.ZodOptional<z.ZodString>;
+      organization?: z.ZodOptional<z.ZodString>;
       fields?: z.ZodString;
     }
   >;

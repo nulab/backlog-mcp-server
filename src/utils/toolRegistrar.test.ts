@@ -23,6 +23,7 @@ const options: MCPOptions = {
   useFields: true,
   maxTokens: 5000,
   prefix: '',
+  useOrganization: false,
 };
 
 describe('createToolRegistrar', () => {

@@ -73,11 +73,17 @@ export function createBacklogMcpServer({
     sharedToolsetGroup ??
     buildToolsetGroup(backlog, transHelper, enabledToolsets);
   registerTools(server, toolsetGroup, mcpOption);
-  registerDynamicTools(
-    server,
-    organizationTools(clientRegistry, transHelper),
-    mcpOption.prefix
-  );
+
+  // `list_organizations` only has something to report when more than one space
+  // is configured; the `organization` parameter its description points at is
+  // published under the same condition.
+  if (mcpOption.useOrganization) {
+    registerDynamicTools(
+      server,
+      organizationTools(clientRegistry, transHelper),
+      mcpOption.prefix
+    );
+  }
 
   if (dynamicToolsets) {
     const registrar = createToolRegistrar(server, toolsetGroup, mcpOption);
