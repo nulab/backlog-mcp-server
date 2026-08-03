@@ -11,7 +11,6 @@ type RegisterOptions = {
   server: BacklogMCPServer;
   toolsetGroup: ToolsetSource;
   prefix: string;
-  onlyEnabled?: boolean;
   /**
    * Produces what the tool is registered with. Returning the schema instead of
    * reading it back off the definition keeps the definition immutable, which is
