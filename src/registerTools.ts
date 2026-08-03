@@ -24,7 +24,7 @@ export function registerTools(
   toolsetGroup: ToolsetGroup,
   options: MCPOptions
 ) {
-  const { useFields, maxTokens, prefix } = options;
+  const { useFields, maxTokens, prefix, useOrganization } = options;
 
   registerToolsets({
     server,
@@ -36,6 +36,7 @@ export function registerTools(
         useFields,
         errorHandler: backlogErrorHandler,
         maxTokens,
+        useOrganization,
       }),
   });
 }

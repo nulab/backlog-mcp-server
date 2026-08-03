@@ -64,7 +64,6 @@ describe('composeToolHandler', () => {
     });
 
     expect(toolWithoutFields.schema.shape).not.toHaveProperty('fields');
-    expect(toolWithoutFields.schema.shape).toHaveProperty('organization');
 
     const result = await composed({ id: 456 }, dummyExtra);
     const content = (result as CallToolResult).content[0];
@@ -93,7 +92,7 @@ describe('composeToolHandler', () => {
     }
   });
 
-  it("adds 'organization' to the schema when composing handlers", async () => {
+  it("adds 'organization' when useOrganization is true", async () => {
     const orgTool: ToolDefinition<any, any> = {
       ...tool,
       schema: z.object({
@@ -104,9 +103,50 @@ describe('composeToolHandler', () => {
     composeToolHandler(orgTool, {
       useFields: true,
       maxTokens: 100,
+      useOrganization: true,
     });
 
     expect(orgTool.schema.shape).toHaveProperty('organization');
+  });
+
+  // With a single Backlog space the parameter has exactly one legal value, so
+  // repeating it across every tool is ~8 KB of schema the client cannot use.
+  it("omits 'organization' when useOrganization is false", async () => {
+    const soloTool: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({ name: z.string() }),
+    };
+
+    composeToolHandler(soloTool, {
+      useFields: true,
+      maxTokens: 100,
+      useOrganization: false,
+    });
+
+    expect(soloTool.schema.shape).not.toHaveProperty('organization');
+    expect(soloTool.schema.shape).toHaveProperty('fields');
+  });
+
+  // Not advertising the parameter must not turn it into a hazard. The
+  // organization wrapper stays in the chain whatever `useOrganization` says, so
+  // a handler that still receives the field is served rather than erroring.
+  // (Over the wire the schema strips it first, so the single configured space is
+  // used — verified against a running server, not reachable from here.)
+  it('tolerates an organization reaching the handler when not advertised', async () => {
+    const orgTool: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({ name: z.string() }),
+      handler: async () => ({ id: 1, name: 'Sample' }),
+    };
+
+    const composed = composeToolHandler(orgTool, {
+      useFields: false,
+      maxTokens: 100,
+      useOrganization: false,
+    });
+
+    const result = await composed({ organization: 'primary' }, dummyExtra);
+    expect((result as CallToolResult).isError).not.toBe(true);
   });
 
   it('handles error with provided errorHandler', async () => {

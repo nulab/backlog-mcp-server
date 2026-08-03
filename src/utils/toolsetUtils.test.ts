@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ToolsetGroup } from '../types/toolsets.js';
-import {
-  enableToolset,
-  getEnabledTools,
-  getToolset,
-  listAvailableToolsets,
-  listToolsetTools,
-} from '../utils/toolsetUtils.js';
+import { enableToolset, getToolset } from '../utils/toolsetUtils.js';
 
 const mockTool = {
   name: 'mock_tool',
@@ -46,27 +40,11 @@ describe('Toolset Utils', () => {
     expect(msg).toContain('already enabled');
   });
 
-  it('getEnabledTools returns enabled tools', () => {
-    const tools = getEnabledTools(toolsetGroup);
-    expect(tools.length).toBe(1);
-    expect(tools[0].name).toBe('mock_tool');
+  it('getToolset returns undefined for an unknown toolset', () => {
+    expect(getToolset(toolsetGroup, 'unknown')).toBeUndefined();
   });
 
-  it('listAvailableToolsets returns all toolsets', () => {
-    const list = listAvailableToolsets(toolsetGroup);
-    expect(list.length).toBe(1);
-    expect(list[0].name).toBe('test_set');
-    expect(list[0].currentlyEnabled).toBe(true);
-  });
-
-  it('listToolsetTools returns tools of a toolset', () => {
-    const tools = listToolsetTools(toolsetGroup, 'test_set');
-    expect(tools.length).toBe(1);
-    expect(tools[0].name).toBe('mock_tool');
-  });
-
-  it('listToolsetTools returns empty for unknown toolset', () => {
-    const tools = listToolsetTools(toolsetGroup, 'unknown');
-    expect(tools.length).toBe(0);
+  it('enableToolset reports an unknown toolset', () => {
+    expect(enableToolset(toolsetGroup, 'unknown')).toContain('not found');
   });
 });

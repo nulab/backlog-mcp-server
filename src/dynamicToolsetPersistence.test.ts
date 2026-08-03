@@ -19,7 +19,12 @@ describe('dynamic toolset enablement across servers from one factory', () => {
   const clientRegistry = {
     createScopedClient: () => backlog,
   } as unknown as BacklogClientRegistry;
-  const mcpOption = { useFields: false, maxTokens: 50000, prefix: '' };
+  const mcpOption = {
+    useFields: false,
+    maxTokens: 50000,
+    prefix: '',
+    useOrganization: true,
+  };
 
   const buildFactory = () => {
     const transHelper = createTranslationHelper();

@@ -157,7 +157,12 @@ const enabledToolsets = argv.dynamicToolsets
   ? (argv.enableToolsets as string[]).filter((a) => a !== 'all')
   : (argv.enableToolsets as string[]);
 
-const mcpOption = { useFields: useFields, maxTokens, prefix };
+const mcpOption = {
+  useFields: useFields,
+  maxTokens,
+  prefix,
+  useOrganization: clientRegistry.isMultiOrganization,
+};
 
 // Built once and shared by every server the factory produces. `enable_toolset`
 // mutates this group, and the stateless HTTP model discards its server after

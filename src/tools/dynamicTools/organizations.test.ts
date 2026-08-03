@@ -21,6 +21,7 @@ describe('organizationTools', () => {
         },
       ],
       getDefaultOrganization: () => 'primary',
+      isMultiOrganization: true,
     };
 
     const group = organizationTools(registry, createTranslationHelper());

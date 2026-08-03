@@ -37,6 +37,7 @@ describe('registerTools', () => {
       useFields: false,
       prefix: '',
       maxTokens: 5000,
+      useOrganization: false,
     });
     expect(mockServer.registerTool).toHaveBeenCalledTimes(
       spaceToolSet.tools.length
@@ -58,6 +59,7 @@ describe('registerTools', () => {
       useFields: false,
       prefix: 'backlog.',
       maxTokens: 5000,
+      useOrganization: false,
     });
 
     const calledToolNames = (mockServer.registerTool as Mock).mock.calls.map(
@@ -77,6 +79,7 @@ describe('registerTools', () => {
       useFields: false,
       maxTokens: 1000,
       prefix: '',
+      useOrganization: false,
     });
 
     expect(mockServer.registerTool).toHaveBeenCalledTimes(

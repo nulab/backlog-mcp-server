@@ -715,7 +715,9 @@ BACKLOG_API_KEY=your-api-key
 
 ### Tool Usage
 
-All normal tools accept an optional `organization` input field. When provided, the tool call is routed to that Backlog organization.
+When multi-organization env vars are configured, all normal tools accept an optional `organization` input field. When provided, the tool call is routed to that Backlog organization.
+
+In single-organization mode the field is not published, since there would be only one organization to route to. Omitting it keeps roughly 8 KB of tool schema out of every `tools/list` response.
 
 Examples:
 
@@ -733,7 +735,7 @@ If `organization` is omitted:
 
 ### Organization Discovery
 
-The server provides a `list_organizations` tool that returns the configured organization names, their domains, and which one is the default.
+In multi-organization mode the server provides a `list_organizations` tool that returns the configured organization names, their domains, and which one is the default. It is not registered in single-organization mode.
 
 Example response:
 
