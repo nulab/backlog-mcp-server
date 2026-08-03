@@ -32,12 +32,12 @@ describe('composeToolHandler', () => {
   };
 
   it("adds 'fields' when useFields is true", async () => {
-    const composed = composeToolHandler(tool, {
+    const { schema, handler: composed } = composeToolHandler(tool, {
       useFields: true,
       maxTokens: 500,
     });
 
-    expect(tool.schema.shape).toHaveProperty('fields');
+    expect(schema.shape).toHaveProperty('fields');
 
     const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
     const content = (result as CallToolResult).content[0];
@@ -58,12 +58,15 @@ describe('composeToolHandler', () => {
       })),
     };
 
-    const composed = composeToolHandler(toolWithoutFields, {
-      useFields: false,
-      maxTokens: 500,
-    });
+    const { schema, handler: composed } = composeToolHandler(
+      toolWithoutFields,
+      {
+        useFields: false,
+        maxTokens: 500,
+      }
+    );
 
-    expect(toolWithoutFields.schema.shape).not.toHaveProperty('fields');
+    expect(schema.shape).not.toHaveProperty('fields');
 
     const result = await composed({ id: 456 }, dummyExtra);
     const content = (result as CallToolResult).content[0];
@@ -75,7 +78,7 @@ describe('composeToolHandler', () => {
   });
 
   it('extends schema and composes handler with field picking and token limit', async () => {
-    const composed = composeToolHandler(tool, {
+    const { handler: composed } = composeToolHandler(tool, {
       useFields: true,
       errorHandler: dummyErrorHandler,
       maxTokens: 100,
@@ -92,7 +95,7 @@ describe('composeToolHandler', () => {
     }
   });
 
-  it("adds 'organization' when useOrganization is true", async () => {
+  it("adds 'organization' to the returned schema when useOrganization is true", async () => {
     const orgTool: ToolDefinition<any, any> = {
       ...tool,
       schema: z.object({
@@ -100,13 +103,30 @@ describe('composeToolHandler', () => {
       }),
     };
 
-    composeToolHandler(orgTool, {
+    const { schema } = composeToolHandler(orgTool, {
       useFields: true,
       maxTokens: 100,
       useOrganization: true,
     });
 
-    expect(orgTool.schema.shape).toHaveProperty('organization');
+    expect(schema.shape).toHaveProperty('organization');
+  });
+
+  // One toolset group is shared by every per-request server on the HTTP
+  // transport, so composing must not touch the definition: a mutation would be
+  // re-applied on every request and seen by requests composing concurrently.
+  it('leaves the tool definition untouched', () => {
+    const pristine: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({ name: z.string() }),
+    };
+    const before = pristine.schema;
+
+    composeToolHandler(pristine, { useFields: true, maxTokens: 100 });
+    composeToolHandler(pristine, { useFields: true, maxTokens: 100 });
+
+    expect(pristine.schema).toBe(before);
+    expect(Object.keys(pristine.schema.shape)).toEqual(['name']);
   });
 
   // With a single Backlog space the parameter has exactly one legal value, so
@@ -117,14 +137,14 @@ describe('composeToolHandler', () => {
       schema: z.object({ name: z.string() }),
     };
 
-    composeToolHandler(soloTool, {
+    const { schema } = composeToolHandler(soloTool, {
       useFields: true,
       maxTokens: 100,
       useOrganization: false,
     });
 
-    expect(soloTool.schema.shape).not.toHaveProperty('organization');
-    expect(soloTool.schema.shape).toHaveProperty('fields');
+    expect(schema.shape).not.toHaveProperty('organization');
+    expect(schema.shape).toHaveProperty('fields');
   });
 
   // Not advertising the parameter must not turn it into a hazard. The
@@ -139,7 +159,7 @@ describe('composeToolHandler', () => {
       handler: async () => ({ id: 1, name: 'Sample' }),
     };
 
-    const composed = composeToolHandler(orgTool, {
+    const { handler: composed } = composeToolHandler(orgTool, {
       useFields: false,
       maxTokens: 100,
       useOrganization: false,
@@ -157,7 +177,7 @@ describe('composeToolHandler', () => {
       },
     };
 
-    const composed = composeToolHandler(errorTool, {
+    const { handler: composed } = composeToolHandler(errorTool, {
       useFields: true,
       errorHandler: dummyErrorHandler,
       maxTokens: 100,

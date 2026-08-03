@@ -28,6 +28,14 @@ type ComposedInput = {
 
 type ComposedHandler = (input: ComposedInput) => Promise<SafeResult<unknown>>;
 
+/**
+ * Builds the schema and handler a tool is registered with.
+ *
+ * The returned schema is a fresh object: the tool definition is never mutated.
+ * That matters under the stateless HTTP model, where one toolset group is shared
+ * by every per-request server — an in-place extension would be re-applied on
+ * every request, against a definition other requests are reading concurrently.
+ */
 export function composeToolHandler(
   tool: ToolDefinition<any, any>,
   options: ComposeOptions
@@ -47,7 +55,7 @@ export function composeToolHandler(
         tool.name
       )
     : undefined;
-  tool.schema = extendSchema(tool.schema, fieldDesc, useOrganization);
+  const schema = extendSchema(tool.schema, fieldDesc, useOrganization);
 
   // Step 2: Compose
   const baseHandler: ComposedHandler = wrapWithErrorHandling(
@@ -55,9 +63,12 @@ export function composeToolHandler(
     errorHandler
   );
 
-  const handler = useFields ? wrapWithFieldPicking(baseHandler) : baseHandler;
+  const composed = useFields ? wrapWithFieldPicking(baseHandler) : baseHandler;
 
-  return wrapWithToolResult(wrapWithTokenLimit(handler, maxTokens));
+  return {
+    schema,
+    handler: wrapWithToolResult(wrapWithTokenLimit(composed, maxTokens)),
+  };
 }
 
 function extendSchema<I extends z.ZodRawShape>(

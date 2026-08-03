@@ -93,24 +93,27 @@ describe('dynamic toolset enablement across servers from one factory', () => {
     );
   });
 
-  // `composeToolHandler` extends `tool.schema` in place. That mutation used to
-  // land on throwaway per-server definitions; sharing the group makes it
-  // cross-request, so its convergence is now load-bearing rather than
-  // incidental — a re-extension that accumulated keys would corrupt the tool
-  // schema every client sees after the first request.
-  it('keeps tool input schemas stable across repeated registration', () => {
+  // Registration composes `organization` (and `fields`) onto a copy of the
+  // tool's schema. The shared group is read by every per-request server, so
+  // registration must leave the definitions exactly as `buildToolsetGroup` left
+  // them — a definition that grew keys per request would corrupt the schema
+  // every client sees after the first one.
+  it('does not mutate shared tool definitions when registering', () => {
     const transHelper = createTranslationHelper();
     const sharedToolsetGroup = buildToolsetGroup(backlog, transHelper, ['all']);
 
-    const shapeOfFirstTool = () => {
-      const tool = sharedToolsetGroup.toolsets[0].tools[0];
-      return Object.keys((tool.schema as { shape: object }).shape).sort();
-    };
+    const firstTool = () => sharedToolsetGroup.toolsets[0].tools[0];
+    const shapeOfFirstTool = () =>
+      Object.keys((firstTool().schema as { shape: object }).shape).sort();
+
+    const pristineSchema = firstTool().schema;
+    const pristineShape = shapeOfFirstTool();
+    expect(pristineShape).not.toContain('organization');
 
     const register = () =>
       createBacklogMcpServer({
         version: '1.0.0',
-        useFields: true, // adds `fields` on top of `organization`
+        useFields: true, // would add `fields` on top of `organization`
         backlog,
         clientRegistry,
         transHelper,
@@ -121,13 +124,10 @@ describe('dynamic toolset enablement across servers from one factory', () => {
       });
 
     register();
-    const afterFirst = shapeOfFirstTool();
-    expect(afterFirst).toEqual(
-      expect.arrayContaining(['organization', 'fields'])
-    );
+    register();
+    register();
 
-    register();
-    register();
-    expect(shapeOfFirstTool()).toEqual(afterFirst);
+    expect(firstTool().schema).toBe(pristineSchema);
+    expect(shapeOfFirstTool()).toEqual(pristineShape);
   });
 });

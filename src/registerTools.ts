@@ -12,11 +12,20 @@ type RegisterOptions = {
   toolsetGroup: ToolsetSource;
   prefix: string;
   onlyEnabled?: boolean;
-  handlerStrategy: (
+  /**
+   * Produces what the tool is registered with. Returning the schema instead of
+   * reading it back off the definition keeps the definition immutable, which is
+   * required now that one toolset group is shared across per-request servers.
+   */
+  prepareTool: (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tool: ToolDefinition<any, any> | DynamicToolDefinition<any>
+  ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) => (...args: any[]) => any;
+    schema: ToolDefinition<any, any>['schema'];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler: (...args: any[]) => any;
+  };
 };
 
 export function registerTools(
@@ -30,7 +39,7 @@ export function registerTools(
     server,
     toolsetGroup,
     prefix,
-    handlerStrategy: (tool) =>
+    prepareTool: (tool) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       composeToolHandler(tool as ToolDefinition<any, any>, {
         useFields,
@@ -50,7 +59,7 @@ export function registerDynamicTools(
     server,
     toolsetGroup: dynamicToolsetGroup,
     prefix,
-    handlerStrategy: (tool) => tool.handler,
+    prepareTool: (tool) => ({ schema: tool.schema, handler: tool.handler }),
   });
 }
 
@@ -58,7 +67,7 @@ function registerToolsets({
   server,
   toolsetGroup,
   prefix,
-  handlerStrategy,
+  prepareTool,
 }: RegisterOptions) {
   for (const toolset of toolsetGroup.toolsets) {
     if (!toolset.enabled) {
@@ -67,12 +76,12 @@ function registerToolsets({
 
     for (const tool of toolset.tools) {
       const toolNameWithPrefix = `${prefix}${tool.name}`;
-      const handler = handlerStrategy(tool);
+      const { schema, handler } = prepareTool(tool);
 
       server.registerOnce(
         toolNameWithPrefix,
         tool.description,
-        tool.schema,
+        schema,
         handler
       );
     }

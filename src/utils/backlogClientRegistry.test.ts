@@ -47,7 +47,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
@@ -73,7 +73,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
@@ -101,7 +101,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
@@ -130,7 +130,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
@@ -209,7 +209,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
@@ -237,7 +237,7 @@ describe('createBacklogClientRegistry', () => {
       registry.createScopedClient(),
       createTranslationHelper()
     );
-    const handler = composeToolHandler(tool, {
+    const { handler } = composeToolHandler(tool, {
       useFields: false,
       maxTokens: 5000,
     });
