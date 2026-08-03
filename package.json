@@ -5,6 +5,19 @@
   "bin": {
     "backlog-mcp-server": "./build/index.js"
   },
+  "main": "./build/lib.js",
+  "types": "./build/lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/lib.d.ts",
+      "import": "./build/lib.js"
+    },
+    "./translation": {
+      "types": "./build/createTranslationHelper.d.ts",
+      "import": "./build/createTranslationHelper.js"
+    },
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=22"
   },

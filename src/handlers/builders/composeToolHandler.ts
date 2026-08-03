@@ -9,7 +9,7 @@ import { generateFieldsDescription } from '../../utils/generateFieldsDescription
 import { ErrorLike, SafeResult } from '../../types/result.js';
 import { ToolDefinition } from '../../types/tool.js';
 
-interface ComposeOptions {
+export interface ComposeOptions {
   useFields: boolean;
   errorHandler?: (err: unknown) => ErrorLike;
   maxTokens: number;
