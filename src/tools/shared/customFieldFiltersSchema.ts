@@ -122,7 +122,3 @@ export const buildCustomFieldFilterSchema = (t: TranslationHelper['t']) => {
     }
   });
 };
-
-export type CustomFieldFilterSchema = ReturnType<
-  typeof buildCustomFieldFilterSchema
->;

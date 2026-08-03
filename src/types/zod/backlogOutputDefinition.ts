@@ -92,8 +92,6 @@ export const CustomFieldTypeSchema = z.nativeEnum({
   Radio: 8,
 });
 
-export const WebhookActivityIdSchema = z.number();
-
 export const UserSchema = z.object({
   id: z.number(),
   userId: z.string(),
@@ -481,23 +479,6 @@ export const WikiListItemSchema = z.object({
 
 export const WikiCountSchema = z.object({
   count: z.number(),
-});
-
-export const DocumentSchema = z.object({
-  id: z.number(),
-  projectId: z.number(),
-  name: z.string(),
-  content: z.string(),
-  createdUser: UserSchema,
-  created: z.string(),
-  updatedUser: UserSchema,
-  updated: z.string(),
-});
-
-export const DocumentAttachmentSchema = z.object({
-  filename: z.string(),
-  body: z.any(),
-  url: z.string(),
 });
 
 export const DocumentTagSchema = z.object({

@@ -18,31 +18,6 @@ export function enableToolset(group: ToolsetGroup, name: string): string {
   return `Toolset ${name} enabled`;
 }
 
-export function getEnabledTools(group: ToolsetGroup) {
-  return group.toolsets.filter((ts) => ts.enabled).flatMap((ts) => ts.tools);
-}
-
-export function listAvailableToolsets(group: ToolsetGroup) {
-  return group.toolsets.map((ts) => ({
-    name: ts.name,
-    description: ts.description,
-    currentlyEnabled: ts.enabled,
-    canEnable: true,
-  }));
-}
-
-export function listToolsetTools(group: ToolsetGroup, name: string) {
-  const ts = getToolset(group, name);
-  return (
-    ts?.tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      toolset: name,
-      canEnable: true,
-    })) ?? []
-  );
-}
-
 export const buildToolsetGroup = (
   backlog: Backlog,
   helper: TranslationHelper,
