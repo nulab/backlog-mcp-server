@@ -127,7 +127,12 @@ describe('composeToolHandler', () => {
     expect(soloTool.schema.shape).toHaveProperty('fields');
   });
 
-  it('still routes an organization passed by a client to the context', async () => {
+  // Not advertising the parameter must not turn it into a hazard. The
+  // organization wrapper stays in the chain whatever `useOrganization` says, so
+  // a handler that still receives the field is served rather than erroring.
+  // (Over the wire the schema strips it first, so the single configured space is
+  // used — verified against a running server, not reachable from here.)
+  it('tolerates an organization reaching the handler when not advertised', async () => {
     const orgTool: ToolDefinition<any, any> = {
       ...tool,
       schema: z.object({ name: z.string() }),
@@ -140,8 +145,6 @@ describe('composeToolHandler', () => {
       useOrganization: false,
     });
 
-    // The organization wrapper stays in the chain either way, so a client that
-    // sends the parameter anyway is served rather than erroring.
     const result = await composed({ organization: 'primary' }, dummyExtra);
     expect((result as CallToolResult).isError).not.toBe(true);
   });
