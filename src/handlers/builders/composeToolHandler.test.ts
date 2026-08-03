@@ -147,6 +147,29 @@ describe('composeToolHandler', () => {
     expect(schema.shape).toHaveProperty('fields');
   });
 
+  // The consequence of the mutation this replaced: once a `useFields: true`
+  // compose had baked `fields` into the definition, every later compose kept
+  // advertising it — including `useFields: false` ones, which do not apply
+  // field picking, so clients saw a parameter that was silently ignored.
+  it('honours useFields per call on a reused definition', () => {
+    const reused: ToolDefinition<any, any> = {
+      ...tool,
+      schema: z.object({ name: z.string() }),
+    };
+
+    const withFields = composeToolHandler(reused, {
+      useFields: true,
+      maxTokens: 100,
+    });
+    expect(withFields.schema.shape).toHaveProperty('fields');
+
+    const withoutFields = composeToolHandler(reused, {
+      useFields: false,
+      maxTokens: 100,
+    });
+    expect(withoutFields.schema.shape).not.toHaveProperty('fields');
+  });
+
   // Not advertising the parameter must not turn it into a hazard. The
   // organization wrapper stays in the chain whatever `useOrganization` says, so
   // a handler that still receives the field is served rather than erroring.
