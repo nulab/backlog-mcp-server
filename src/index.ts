@@ -9,6 +9,7 @@ import { hideBin } from 'yargs/helpers';
 import { getBacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
 import { createTokenStore } from './auth/tokenStore.js';
 import { createTranslationHelper } from './createTranslationHelper.js';
+import { loadTranslationOverrides } from './loadTranslationOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
 import {
@@ -149,7 +150,7 @@ if (tokenStore) {
 
 const useFields = argv.optimizeResponse;
 
-const transHelper = createTranslationHelper();
+const transHelper = createTranslationHelper(loadTranslationOverrides());
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
