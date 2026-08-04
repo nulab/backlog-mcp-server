@@ -7,16 +7,15 @@
  * This module exposes the pieces needed to build a server, and nothing that runs
  * on import.
  *
- * `createTranslationHelper` is deliberately not re-exported here even though
- * `allTools` needs a `TranslationHelper`: it pulls in `cosmiconfig` and `node:os`,
- * which are unavailable on non-Node runtimes such as Cloudflare Workers. Importing
- * `allTools` must not drag them in. It is published under the `./translation`
- * subpath instead, so consumers on Node can still use it while others supply their
- * own implementation of the interface.
+ * Nothing reachable from here may touch a Node built-in. `loadTranslationOverrides`
+ * is the counter-example worth remembering: it reads the override file from disk,
+ * so it belongs to the CLI and is deliberately absent below. Consumers on other
+ * runtimes pass their own overrides to `createTranslationHelper`.
  */
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
+export { createTranslationHelper } from './createTranslationHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
