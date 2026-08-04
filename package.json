@@ -12,10 +12,6 @@
       "types": "./build/lib.d.ts",
       "import": "./build/lib.js"
     },
-    "./translation": {
-      "types": "./build/createTranslationHelper.d.ts",
-      "import": "./build/createTranslationHelper.js"
-    },
     "./package.json": "./package.json"
   },
   "engines": {
