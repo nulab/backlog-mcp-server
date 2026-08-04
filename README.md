@@ -418,9 +418,11 @@ Create a new pull request from branch "feature/new-feature" to "main" in the rep
 Show me all items I'm watching
 ```
 
-### i18n / Overriding Descriptions
+### Overriding Tool Descriptions
 
 You can override the descriptions of tools by creating a `.backlog-mcp-serverrc.json` file in your **home directory**.
+
+These descriptions are what the model reads when it decides which tool to call and how to fill in its arguments. They are never shown to the end user, so overriding them is a way to steer tool selection — for example to disambiguate two similar tools, or to add a rule your team follows — rather than a way to change the language of the answers you get.
 
 The file should contain a JSON object with the tool names as keys and the new descriptions as values.  
 For example:
@@ -436,7 +438,9 @@ When the server starts, it determines the final description for each tool based 
 
 1. Environment variables (e.g., `BACKLOG_MCP_TOOL_ADD_ISSUE_COMMENT_DESCRIPTION`)
 2. Entries in `.backlog-mcp-serverrc.json` - Supported configuration file formats: .json, .yaml, .yml
-3. Built-in fallback values (English)
+3. Built-in defaults
+
+Values that are not strings are ignored, and the built-in default is used instead.
 
 Sample config:
 
@@ -466,11 +470,11 @@ Sample config:
 }
 ```
 
-### Exporting Current Translations
+### Exporting Current Descriptions
 
-You can export the current default translations (including any overrides) by running the binary with the --export-translations flag.
+You can export the current descriptions (including any overrides) by running the binary with the --export-translations flag.
 
-This will print all tool descriptions to stdout, including any customizations you have made.
+This will print every overridable key and its current value to stdout, including any customizations you have made. Use it to discover the key names you can override.
 
 Example:
 
@@ -654,7 +658,7 @@ The server supports several command line options:
 - `--http-json-response`: Prefer JSON responses over SSE. Applies to `2026-07-28` clients only; the backward-compatible `2025-11-25` path is served with the SDK's default response shaping.
 - `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--http-allowed-origins`: Comma-separated allowed `Origin` hostnames for browser-based clients. Defaults to the localhost set on a bare loopback bind, and to no `Origin` check otherwise.
-- `--export-translations`: Export all translation keys and values
+- `--export-translations`: Export all overridable description keys and values
 - `--optimize-response`: Enable GraphQL-style field selection
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
 - `--prefix=STRING`: Optional string prefix to prepend to all tool names (default: "")
