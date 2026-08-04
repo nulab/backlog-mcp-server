@@ -8,7 +8,12 @@ type BaseToolset<TTool> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Toolset = BaseToolset<ToolDefinition<any, any>>;
+export type Toolset = BaseToolset<ToolDefinition<any, any>> & {
+  // Some tools return native MCP content (for example, binary resources)
+  // instead of structured JSON and therefore bypass the static tool pipeline.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dynamicTools?: DynamicToolDefinition<any>[];
+};
 export type ToolsetGroup = { toolsets: Toolset[] };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

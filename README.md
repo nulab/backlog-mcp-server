@@ -306,6 +306,7 @@ Tools for managing projects, categories, custom fields, and issue types.
 Tools for managing issues, their comments, and related items like priorities, categories, custom fields, issue types, resolutions, and watching lists.
 
 - `get_issue`: Returns information about a specific issue.
+- `get_issue_attachment`: Downloads an issue attachment and returns it as an MCP image or embedded resource.
 - `get_issues`: Returns list of issues.
 - `count_issues`: Returns count of issues.
 - `add_issue`: Creates a new issue in the specified project.

@@ -17,6 +17,7 @@ import { getGitRepositoriesTool } from './getGitRepositories.js';
 import { getGitRepositoryTool } from './getGitRepository.js';
 import { getIssueTool } from './getIssue.js';
 import { getIssueCommentsTool } from './getIssueComments.js';
+import { getIssueAttachmentTool } from './getIssueAttachment.js';
 import { getIssuesTool } from './getIssues.js';
 import { getRelatedIssuesTool } from './getRelatedIssues.js';
 import { addRelatedIssueTool } from './addRelatedIssue.js';
@@ -131,6 +132,7 @@ export const allTools = (
           updateVersionMilestoneTool(backlog, helper),
           deleteVersionTool(backlog, helper),
         ],
+        dynamicTools: [getIssueAttachmentTool(backlog, helper)],
       },
       {
         name: 'wiki',

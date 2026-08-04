@@ -33,6 +33,9 @@ graph TD
 - Tools are grouped into toolsets: `space`, `project`, `issue`, `wiki`, `git`, `document`, `notifications`
 - Every toolset starts `enabled: false`; `buildToolsetGroup` enables the ones selected
   by `--enable-toolsets` / `ENABLE_TOOLSETS` (default `all`)
+- A toolset can contain structured JSON `tools` and native-content `dynamicTools`.
+  Native-content tools return MCP content blocks directly, which is required for
+  binary images and embedded resources.
 - With `--dynamic-toolsets`, the tools `enable_toolset`, `list_available_toolsets`, and
   `get_toolset_tools` let the client turn toolsets on at runtime through a `ToolRegistrar`
 
@@ -84,8 +87,8 @@ graph TD
 
 - Translation system selects appropriate translations from different sources
   (environment variables, configuration files, default values)
-- Registration strategy differs between static tools (composed handler) and dynamic
-  tools (raw handler), sharing the same `registerToolsets` loop
+- Registration strategy differs between structured tools, native-content tools, and
+  standalone control tools, while sharing the same `registerToolsets` loop
 
 ### 5. Decorator Pattern
 
@@ -95,8 +98,10 @@ graph TD
 
 ### 6. Pipeline Pattern
 
-- Response processing follows a clear pipeline:
-  handler → error handling → field picking → token limiting → result formatting
+- Structured response processing follows a clear pipeline:
+  handler → organization routing → error handling → field picking → token limiting → result formatting
+- Native-content tools use a smaller pipeline:
+  handler → organization routing → error handling → MCP content result
 
 ## Important Implementation Paths
 
@@ -110,6 +115,7 @@ sequenceDiagram
     participant Tools as tools.ts
     participant Register as registerTools.ts
     participant Compose as composeToolHandler.ts
+    participant DynamicCompose as composeDynamicToolHandler.ts
 
     Main->>Factory: createBacklogMcpServer(config)
     Factory->>Toolsets: buildToolsetGroup(backlog, helper, enabledToolsets)
@@ -119,6 +125,8 @@ sequenceDiagram
     Factory->>Register: registerTools(server, toolsetGroup, options)
     Register->>Compose: composeToolHandler(tool, options)
     Compose-->>Register: Composed handler
+    Register->>DynamicCompose: composeDynamicToolHandler(dynamicTool, options)
+    DynamicCompose-->>Register: Native-content handler
     Register->>Register: registerOnce(prefix + name, ...) — skips duplicates
 ```
 
@@ -214,6 +222,9 @@ Each tool has the following structure:
 - **ImportantFields**: List of fields that are most commonly needed (for examples)
 - **Handler**: Function that performs the actual processing
 
+Native-content tools omit `OutputSchema` and `ImportantFields`; their handlers
+return MCP `CallToolResult` content blocks directly.
+
 ### Handler Composition Structure
 
 ```mermaid
@@ -223,6 +234,9 @@ graph TD
     FieldPicker --> TokenLimiter[Token Limiter]
     TokenLimiter --> ResultFormatter[Result Formatter]
     ResultFormatter --> FinalHandler[Final Handler]
+    NativeHandler[Native-content Handler] --> NativeOrganization[Organization Context]
+    NativeOrganization --> NativeError[Error Handler]
+    NativeError --> NativeResult[MCP Content Result]
 ```
 
 ### File Structure
@@ -247,7 +261,8 @@ src/
 │   └── parseBacklogAPIError.ts    # Error parsing utilities
 ├── handlers/
 │   ├── builders/
-│   │   └── composeToolHandler.ts  # Handler composition
+│   │   ├── composeToolHandler.ts         # Structured handler composition
+│   │   └── composeDynamicToolHandler.ts  # Native-content handler composition
 │   └── transformers/
 │       ├── wrapWithErrorHandling.ts
 │       ├── wrapWithFieldPicking.ts

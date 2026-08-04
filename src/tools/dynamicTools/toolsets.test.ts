@@ -1,6 +1,10 @@
 import { describe, expect, vi, it } from 'vitest';
 import { z } from 'zod';
-import { ToolDefinition, ToolRegistrar } from '../../types/tool.js';
+import {
+  DynamicToolDefinition,
+  ToolDefinition,
+  ToolRegistrar,
+} from '../../types/tool.js';
 import { ToolsetGroup } from '../../types/toolsets.js';
 import {
   enableToolsetTool,
@@ -30,6 +34,12 @@ describe('dynamicTools', () => {
       content: [{ type: 'text', text: 'dummy' }],
     }),
   };
+  const dummyDynamicTool: DynamicToolDefinition<any> = {
+    name: 'download_project_export',
+    description: 'Downloads a project export',
+    schema: z.object({}),
+    handler: async () => ({ content: [] }),
+  };
 
   const mockToolsetGroup: ToolsetGroup = {
     toolsets: [
@@ -38,6 +48,7 @@ describe('dynamicTools', () => {
         description: 'Project management tools',
         enabled: false,
         tools: [dummyTool],
+        dynamicTools: [dummyDynamicTool],
       },
     ],
   };
@@ -97,6 +108,12 @@ describe('dynamicTools', () => {
       expect(json[0]).toEqual({
         name: 'get_project_list',
         description: 'Returns a list of projects',
+        toolset: 'project',
+        canEnable: true,
+      });
+      expect(json[1]).toEqual({
+        name: 'download_project_export',
+        description: 'Downloads a project export',
         toolset: 'project',
         canEnable: true,
       });

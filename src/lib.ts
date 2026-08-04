@@ -17,11 +17,13 @@
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
+export { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
 
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
+export type { ComposeDynamicOptions } from './handlers/builders/composeDynamicToolHandler.js';
 export type { TranslationHelper } from './createTranslationHelper.js';
 export type {
   ToolDefinition,

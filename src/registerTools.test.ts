@@ -7,9 +7,17 @@ import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import type { Toolset } from './types/toolsets.js';
+import { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
 
 vi.mock('./handlers/builders/composeToolHandler', () => ({
   composeToolHandler: vi.fn((tool) => ({
+    schema: tool.schema,
+    handler: vi.fn(),
+  })),
+}));
+
+vi.mock('./handlers/builders/composeDynamicToolHandler', () => ({
+  composeDynamicToolHandler: vi.fn((tool) => ({
     schema: tool.schema,
     handler: vi.fn(),
   })),
@@ -26,6 +34,12 @@ describe('registerTools', () => {
   );
   if (spaceToolSet == null) {
     throw new Error(`Toolset "space" not found in allTools. Check test setup.`);
+  }
+  const issueToolSet = toolsetGroup.toolsets.find(
+    (a: Toolset) => a.name === 'issue'
+  );
+  if (issueToolSet == null) {
+    throw new Error(`Toolset "issue" not found in allTools. Check test setup.`);
   }
 
   beforeEach(() => {
@@ -88,7 +102,56 @@ describe('registerTools', () => {
     });
 
     expect(mockServer.registerTool).toHaveBeenCalledTimes(
-      toolsetGroup.toolsets.flatMap((a) => a.tools).length
+      toolsetGroup.toolsets.flatMap((a) => [
+        ...a.tools,
+        ...(a.dynamicTools ?? []),
+      ]).length
+    );
+  });
+
+  it('registers native MCP content tools with their enabled toolset', () => {
+    const mockServer = wrapServerWithToolRegistry({
+      registerTool: vi.fn(),
+    } as unknown as McpServer);
+    const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['issue']);
+
+    registerTools(mockServer, toolsetGroup, {
+      useFields: false,
+      maxTokens: 1000,
+      prefix: '',
+      useOrganization: false,
+    });
+
+    const calledToolNames = (mockServer.registerTool as Mock).mock.calls.map(
+      (call) => call[0]
+    );
+    expect(calledToolNames).toEqual(
+      expect.arrayContaining(
+        (issueToolSet.dynamicTools ?? []).map((tool) => tool.name)
+      )
+    );
+    expect(composeDynamicToolHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'get_issue_attachment' }),
+      expect.objectContaining({ useOrganization: false })
+    );
+  });
+
+  it('advertises organization on native MCP content tools in multi-org mode', () => {
+    const mockServer = wrapServerWithToolRegistry({
+      registerTool: vi.fn(),
+    } as unknown as McpServer);
+    const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['issue']);
+
+    registerTools(mockServer, toolsetGroup, {
+      useFields: false,
+      maxTokens: 1000,
+      prefix: '',
+      useOrganization: true,
+    });
+
+    expect(composeDynamicToolHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'get_issue_attachment' }),
+      expect.objectContaining({ useOrganization: true })
     );
   });
 });
