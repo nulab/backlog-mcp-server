@@ -1,6 +1,7 @@
 /**
- * Resolves the user-facing strings every tool definition passes through `t()`:
- * tool descriptions and parameter descriptions.
+ * Resolves the schema strings every tool definition passes through `t()`: tool
+ * descriptions and parameter descriptions. These are read by the model when it
+ * picks a tool and fills in arguments; they never reach the end user.
  *
  * This module intentionally imports nothing. Every tool in `src/tools/` depends on
  * it, so anything imported here is reachable from the tool layer — and the tool
