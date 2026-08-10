@@ -1,50 +1,55 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
+import type { Backlog } from 'backlog-js';
+import { buildToolsetGroup } from './toolsetUtils.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-import { ToolsetGroup } from '../types/toolsets.js';
-import { enableToolset, getToolset } from '../utils/toolsetUtils.js';
+/**
+ * This file used to cover `getToolset` and `enableToolset`, which existed only
+ * for `enable_toolset`. Both are gone with it; `buildToolsetGroup` is what is
+ * left in this module, and it had no direct coverage.
+ */
+describe('buildToolsetGroup', () => {
+  const backlog = {} as Backlog;
+  const helper = createDescriptionHelper();
 
-const mockTool = {
-  name: 'mock_tool',
-  description: 'A mock tool',
-  schema: { shape: {} },
-  handler: async () => ({ content: [] }),
-  outputSchema: {},
-};
-
-const toolsetGroup: ToolsetGroup = {
-  toolsets: [
-    {
-      name: 'test_set',
-      description: 'Test set',
-      enabled: false,
-      tools: [mockTool as unknown as any],
-    },
-  ],
-};
-
-describe('Toolset Utils', () => {
-  it('getToolset returns correct toolset', () => {
-    const ts = getToolset(toolsetGroup, 'test_set');
-    expect(ts).toBeDefined();
-    expect(ts?.name).toBe('test_set');
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('enableToolset enables a toolset', () => {
-    const msg = enableToolset(toolsetGroup, 'test_set');
-    expect(msg).toContain('enabled');
-    expect(getToolset(toolsetGroup, 'test_set')?.enabled).toBe(true);
+  const names = (enabled: string[]) =>
+    buildToolsetGroup(backlog, helper, enabled)
+      .toolsets.filter((ts) => ts.enabled)
+      .map((ts) => ts.name);
+
+  it("enables every toolset for 'all'", () => {
+    const group = buildToolsetGroup(backlog, helper, ['all']);
+
+    expect(group.toolsets.length).toBeGreaterThan(1);
+    expect(group.toolsets.every((ts) => ts.enabled)).toBe(true);
   });
 
-  it('enableToolset returns already enabled message', () => {
-    const msg = enableToolset(toolsetGroup, 'test_set');
-    expect(msg).toContain('already enabled');
+  it('enables only the named toolsets', () => {
+    expect(names(['space', 'wiki']).sort()).toEqual(['space', 'wiki']);
   });
 
-  it('getToolset returns undefined for an unknown toolset', () => {
-    expect(getToolset(toolsetGroup, 'unknown')).toBeUndefined();
+  it('enables nothing when nothing is named', () => {
+    expect(names([])).toEqual([]);
   });
 
-  it('enableToolset reports an unknown toolset', () => {
-    expect(enableToolset(toolsetGroup, 'unknown')).toContain('not found');
+  it('returns every toolset regardless, marking the rest disabled', () => {
+    const group = buildToolsetGroup(backlog, helper, ['space']);
+
+    expect(group.toolsets.length).toBeGreaterThan(1);
+    expect(group.toolsets.filter((ts) => !ts.enabled).length).toBeGreaterThan(
+      0
+    );
+  });
+
+  it('warns about a name that matches no toolset, and ignores it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(names(['space', 'nope'])).toEqual(['space']);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0]?.[0]).toContain('nope');
   });
 });

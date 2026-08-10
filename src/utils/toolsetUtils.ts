@@ -1,22 +1,7 @@
 import { Backlog } from 'backlog-js';
-import { ToolsetGroup, Toolset } from '../types/toolsets.js';
+import { ToolsetGroup } from '../types/toolsets.js';
 import { allTools } from '../tools/tools.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-
-export function getToolset(
-  group: ToolsetGroup,
-  name: string
-): Toolset | undefined {
-  return group.toolsets.find((t) => t.name === name);
-}
-
-export function enableToolset(group: ToolsetGroup, name: string): string {
-  const ts = getToolset(group, name);
-  if (!ts) return `Toolset ${name} not found`;
-  if (ts.enabled) return `Toolset ${name} is already enabled`;
-  ts.enabled = true;
-  return `Toolset ${name} enabled`;
-}
 
 export const buildToolsetGroup = (
   backlog: Backlog,

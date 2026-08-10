@@ -47,7 +47,6 @@ export function reportUnknownOverrideKeys({
     descriptionHelper: probe,
     enabledToolsets: ['all'],
     mcpOption: { ...mcpOption, useOrganization: true },
-    dynamicToolsets: true,
   });
 
   const known = new Set(Object.keys(probe.dump()));

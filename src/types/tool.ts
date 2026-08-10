@@ -31,7 +31,3 @@ export type DynamicToolDefinition<Shape extends z.ZodRawShape> = {
   schema: z.ZodObject<Shape>;
   handler: (input: z.infer<z.ZodObject<Shape>>) => Promise<CallToolResult>;
 };
-
-export interface ToolRegistrar {
-  enableToolsetAndRefresh(toolset: string): Promise<string>;
-}
