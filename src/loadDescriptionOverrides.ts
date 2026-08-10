@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 import os from 'os';
 import path from 'path';
 import { logger } from './utils/logger.js';
@@ -61,7 +61,7 @@ function readCandidate(filePath: string): ReadOutcome {
     if (raw.trim() === '') return { status: 'found', config: undefined };
     return {
       status: 'found',
-      config: filePath.endsWith('.json') ? JSON.parse(raw) : yaml.load(raw),
+      config: filePath.endsWith('.json') ? JSON.parse(raw) : load(raw),
     };
   } catch (error) {
     return { status: 'unreadable', error };
