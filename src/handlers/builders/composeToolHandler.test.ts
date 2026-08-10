@@ -60,7 +60,7 @@ describe('composeToolHandler', () => {
 
     expect(schema.shape).toHaveProperty('fields');
 
-    const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
+    const result = await composed({ id: 123, fields: ['id'] }, dummyExtra);
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
@@ -105,7 +105,7 @@ describe('composeToolHandler', () => {
       maxTokens: 100,
     });
 
-    const input = { name: 'test', fields: '{ id name }' };
+    const input = { name: 'test', fields: ['id', 'name'] };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('content');
     const content = result.content[0];
@@ -227,7 +227,7 @@ describe('composeToolHandler', () => {
       maxTokens: 100,
     });
 
-    const input = { name: 'test', fields: '{ id name }' };
+    const input = { name: 'test', fields: ['id', 'name'] };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('isError', true);
     const content = result.content[0];

@@ -16,7 +16,7 @@ Backlog API とやり取りするための Model Context Protocol（MCP）サー
 - Wikiページサポート
 - Gitリポジトリとプルリクエストツール
 - 通知ツール
-- 最適化されたレスポンスのためのGraphQLスタイルのフィールド選択
+- 最適化されたレスポンスのためのフィールド選択
 - 大規模なレスポンスに対するトークン制限
 
 ## 利用開始
@@ -425,7 +425,7 @@ PREFIX="backlog_"
 
 ### レスポンスの最適化とトークン制限
 
-#### フィールド選択（GraphQLスタイル）
+#### フィールド選択
 
 ```
 --optimize-response
@@ -437,17 +437,13 @@ PREFIX="backlog_"
 OPTIMIZE_RESPONSE=1
 ```
 
-次に、特定のフィールドのみを要求します：
+各ツールに `fields` パラメータ（省略可）が追加されます。値はそのツールの結果のトップレベルのフィールド名のリストで、enum として公開されるため、そのツールに存在しない名前は無視されずに拒否されます。
 
 ```
-get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
+get_project(projectIdOrKey: "PROJECT-KEY", fields: ["name", "key", "description"])
 ```
 
-AIはフィールド選択を使用してレスポンスを最適化します：
-
-```
-get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
-```
+`fields` を省略すると結果全体が返ります。選択は 1 階層のみで、オブジェクトや配列のフィールドを指定した場合はそのまま丸ごと返ります。
 
 利点：
 
@@ -533,7 +529,7 @@ pnpm test
 サーバーはいくつかのコマンドラインオプションをサポートしています：
 
 - `--export-descriptions`: ツール一覧の構築時に解決される説明キーと値をエクスポート。旧名は `--export-translations` で、非推奨エイリアスとして当面動作しますが、将来のリリースで削除されます
-- `--optimize-response`: GraphQLスタイルのフィールド選択を有効にする
+- `--optimize-response`: 各ツールに、返す結果フィールドを選ぶ `fields` パラメータを追加する
 - `--max-tokens=NUMBER`: レスポンスの最大トークン制限を設定
 - `--prefix=STRING`: すべてのツール名に付加するオプションの文字列プレフィックス（デフォルト：""）
 - `--enable-toolsets <toolsets...>`: 有効にするツールセットを指定します（カンマ区切りまたは複数の引数）。デフォルトは "all" です。

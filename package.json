@@ -53,7 +53,6 @@
     "@modelcontextprotocol/server": "^2.0.0",
     "backlog-js": "^0.19.1",
     "env-var": "^7.5.0",
-    "graphql": "^17.0.2",
     "hono": "^4.12.34",
     "js-yaml": "^5.2.3",
     "pino": "^10.3.1",
