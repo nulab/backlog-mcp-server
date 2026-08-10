@@ -107,8 +107,39 @@ describe('loadDescriptionOverrides', () => {
 
       expect(errorSpy).toHaveBeenCalledOnce();
       expect(errorSpy.mock.calls[0]?.[0]).toMatchObject({
-        searchPath: searchDir,
+        filePath: path.join(searchDir, '.backlog-mcp-serverrc.yaml'),
       });
     });
+
+    it('does not treat a missing file as unreadable', () => {
+      loadDescriptionOverrides({ searchDir });
+
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('prefers .json over .yaml and .yml', () => {
+    writeConfig(
+      '.backlog-mcp-serverrc.json',
+      JSON.stringify({ WHICH: 'json' })
+    );
+    writeConfig('.backlog-mcp-serverrc.yaml', 'WHICH: yaml\n');
+    writeConfig('.backlog-mcp-serverrc.yml', 'WHICH: yml\n');
+
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({ WHICH: 'json' });
+  });
+
+  it('reads a .yml config file', () => {
+    writeConfig('.backlog-mcp-serverrc.yml', 'HELLO: From yml\n');
+
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({
+      HELLO: 'From yml',
+    });
+  });
+
+  it('returns an empty object when the search directory does not exist', () => {
+    expect(
+      loadDescriptionOverrides({ searchDir: path.join(searchDir, 'nope') })
+    ).toEqual({});
   });
 });

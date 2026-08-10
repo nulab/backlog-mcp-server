@@ -52,16 +52,17 @@
     "@modelcontextprotocol/hono": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "backlog-js": "^0.19.1",
-    "cosmiconfig": "^9.0.1",
     "env-var": "^7.5.0",
     "graphql": "^16.14.1",
     "hono": "^4.12.34",
+    "js-yaml": "^4.3.1",
     "pino": "^10.3.1",
     "yargs": "^18.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.9.2",
     "@types/yargs": "^17.0.35",
     "@typescript-eslint/eslint-plugin": "^8.60.1",
