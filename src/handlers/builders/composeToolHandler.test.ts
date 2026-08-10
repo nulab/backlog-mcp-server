@@ -31,6 +31,27 @@ describe('composeToolHandler', () => {
     importantFields: ['id', 'name'],
   };
 
+  it("leaves 'fields' optional so a call without a selection still works", async () => {
+    // `wrapWithFieldPicking` returns the whole result when `fields` is absent,
+    // and the declared shape has always said optional. Built as a required
+    // string, every call under --optimize-response failed instead.
+    const { schema, handler: composed } = composeToolHandler(tool, {
+      useFields: true,
+      maxTokens: 500,
+    });
+
+    expect(schema.safeParse({ name: 'Sample' }).success).toBe(true);
+
+    const result = await composed({ name: 'Sample' }, dummyExtra);
+    const content = (result as CallToolResult).content[0];
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      // no selection, so nothing is dropped
+      expect(content.text).toContain('id');
+      expect(content.text).toContain('name');
+    }
+  });
+
   it("adds 'fields' when useFields is true", async () => {
     const { schema, handler: composed } = composeToolHandler(tool, {
       useFields: true,
