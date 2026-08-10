@@ -215,6 +215,14 @@ The server automatically exposes the following OAuth endpoints when OAuth is ena
 
 MCP clients that support the MCP authorization specification will use these endpoints automatically.
 
+`POST /register` restricts which redirect URIs a client may register. A loopback
+URI (`http://localhost`, `http://127.0.0.1`, `http://[::1]`) is how an app running
+on the user's machine receives the authorization code, and is accepted from a
+client that declares `"application_type": "native"` — or, when the field is
+absent, from one whose redirect URIs are _all_ loopback. A client declaring
+`"application_type": "web"`, or mixing a remote `https:` URI with a loopback one
+without declaring itself, is rejected with `invalid_client_metadata`.
+
 > **Limitations:**
 >
 > - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.

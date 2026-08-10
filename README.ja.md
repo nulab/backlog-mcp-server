@@ -188,6 +188,14 @@ OAuth有効時、サーバーは以下のOAuthエンドポイントを自動的�
 
 MCP認可仕様に対応するMCPクライアントは、これらのエンドポイントを自動的に使用します。
 
+`POST /register` は登録できる redirect URI を制限します。ループバック URI
+（`http://localhost`、`http://127.0.0.1`、`http://[::1]`）はユーザーのマシン上で動く
+アプリが認可コードを受け取るための手段で、`"application_type": "native"` を宣言した
+クライアント、または宣言がない場合は redirect URI が**すべて**ループバックである
+クライアントから受け付けます。`"application_type": "web"` を宣言したクライアントや、
+宣言なしでリモートの `https:` URI とループバック URI を混在させた登録は
+`invalid_client_metadata` で拒否されます。
+
 > **制約事項:**
 >
 > - OAuthモードは現在、単一のBacklog組織のみをサポートしています。複数組織設定との併用はできません。

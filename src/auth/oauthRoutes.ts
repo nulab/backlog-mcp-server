@@ -156,7 +156,10 @@ export function createOAuthRoutes(
       }
     }
 
-    const declaredApplicationType = body.application_type;
+    // `null` counts as not declared. Serialisers that emit null for an absent
+    // optional field are common, and rejecting it would break clients this
+    // change is meant to leave alone.
+    const declaredApplicationType = body.application_type ?? undefined;
     if (
       declaredApplicationType !== undefined &&
       !APPLICATION_TYPES.includes(declaredApplicationType as ApplicationType)

@@ -208,6 +208,25 @@ describe('createOAuthRoutes', () => {
         expect(res.status).toBe(201);
       });
 
+      it('treats a null application_type as not declared', async () => {
+        // Serialisers that emit null for an absent optional field are common,
+        // and this registration is accepted today.
+        const res = await register({
+          application_type: null,
+          redirect_uris: ['http://localhost:9999/callback'],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
+      it('recognises the IPv6 loopback as loopback', async () => {
+        const res = await register({
+          redirect_uris: ['http://[::1]:9999/callback'],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
       it('rejects an application_type it does not define', async () => {
         const res = await register({
           application_type: 'browser',
