@@ -474,7 +474,7 @@ Sample config:
 
 ### Exporting Current Descriptions
 
-You can export the current descriptions (including any overrides) by running the binary with the `--export-descriptions` flag.
+You can export the current descriptions (including any overrides) by running the binary with the `--export-descriptions` flag. This flag was called `--export-translations` until 0.15.x; the old name still works but prints a deprecation notice and is removed in 0.16.0.
 
 This prints every key that is resolved while the tool list is built, with its current value, including any customizations you have made. That covers all tool and parameter descriptions, and it is the practical way to discover key names.
 
@@ -662,7 +662,7 @@ The server supports several command line options:
 - `--http-json-response`: Prefer JSON responses over SSE. Applies to `2026-07-28` clients only; the backward-compatible `2025-11-25` path is served with the SDK's default response shaping.
 - `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--http-allowed-origins`: Comma-separated allowed `Origin` hostnames for browser-based clients. Defaults to the localhost set on a bare loopback bind, and to no `Origin` check otherwise.
-- `--export-descriptions`: Export the description keys and values resolved when building the tool list
+- `--export-descriptions`: Export the description keys and values resolved when building the tool list. Was named `--export-translations`; that spelling still works as a deprecated alias and is removed in 0.16.0
 - `--optimize-response`: Enable GraphQL-style field selection
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
 - `--prefix=STRING`: Optional string prefix to prepend to all tool names (default: "")

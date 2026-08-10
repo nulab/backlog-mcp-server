@@ -113,6 +113,11 @@ const argv = yargs(hideBin(process.argv))
   })
   .option('export-descriptions', {
     type: 'boolean',
+    // Deprecated alias, removed in 0.16.0. Kept because the old name is
+    // documented with docker and npx examples, and dropping it outright would
+    // not fail loudly: yargs ignores unknown flags, so the process would fall
+    // through to starting a server and the caller would see a hang.
+    alias: 'export-translations',
     describe: 'Export tool and parameter descriptions and exit',
     default: false,
   })
@@ -134,18 +139,21 @@ Available toolsets:
       'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
     default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
   })
-  // `--export-translations` was renamed, not aliased. Without this check yargs
-  // ignores the unknown flag and the process goes on to start a server, which on
-  // stdio just sits there — the caller sees a hang instead of an error.
-  .check((parsed) => {
-    if ('export-translations' in parsed || 'exportTranslations' in parsed) {
-      throw new Error(
-        '--export-translations has been renamed to --export-descriptions.'
-      );
-    }
-    return true;
-  })
   .parseSync();
+
+// The alias resolves both spellings to the same argv key, so which one was typed
+// is only visible in the raw arguments. Written straight to stderr rather than
+// through `logger`, which drops anything below `error` in production — and stdout
+// carries the JSON-RPC stream, so a notice there would corrupt the protocol.
+if (
+  hideBin(process.argv).some(
+    (arg) => arg.split('=')[0] === '--export-translations'
+  )
+) {
+  process.stderr.write(
+    '--export-translations is deprecated and will be removed in 0.16.0. Use --export-descriptions.\n'
+  );
+}
 
 const clientRegistry = oauthConfig
   ? createOAuthBacklogClientRegistry(oauthConfig.backlogDomain)
