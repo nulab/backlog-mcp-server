@@ -241,26 +241,6 @@ ENABLE_TOOLSETS="space,project,issue"
 
 > 🧩 ヒント: `project` ツールセットは、他の多くのツールがエントリポイントとしてプロジェクトデータに依存しているため、強く推奨されます。
 
-### 動的なツールセット検出（実験的）
-
-MCPサーバーをAIエージェントと共に使用している場合、実行時にツールセットの動的な検出を有効にすることができます：
-
-CLI経由での有効化：
-
-```
---dynamic-toolsets
-```
-
-または環境変数経由：
-
-```
--e ENABLE_DYNAMIC_TOOLSETS=1 \
-```
-
-動的ツールセットを有効にすると、LLMはツールインターフェースを介してオンデマンドでツールセットを一覧表示およびアクティブ化できるようになります。
-
-> **stdio 専用です。** `--dynamic-toolsets` と `--transport http` の併用は起動時に拒否されます。`enable_toolset` は「有効化した状態が呼び出し元に対して持続する」ことを約束しますが、MCP `2026-07-28` にはそれを保持するプロトコルセッションがありません。ツールセットの状態は**サーバープロセス単位**になるため、あるクライアントの呼び出しが他の全クライアントのツール一覧を変えてしまい、取り消す手段もありません。stdio は 1 プロセスにクライアントが 1 つなので約束が成立します。HTTP では `--enable-toolsets` で最初にツールセットを選んでください。
-
 ## 利用可能なツール
 
 以下のような Backlog 機能に対応するツールを提供しています：
@@ -526,8 +506,7 @@ MAX_TOKENS=10000
         "MAX_TOKENS": "10000",
         "OPTIMIZE_RESPONSE": "1",
         "PREFIX": "backlog_",
-        "ENABLE_TOOLSETS": "space,project,issue",
-        "ENABLE_DYNAMIC_TOOLSETS": "1"
+        "ENABLE_TOOLSETS": "space,project,issue"
       }
     }
   }

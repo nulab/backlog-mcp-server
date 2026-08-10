@@ -13,7 +13,6 @@ import { loadDescriptionOverrides } from './loadDescriptionOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
 import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys.js';
-import { validateTransportOptions } from './validateTransportOptions.js';
 import {
   createBacklogClientRegistry,
   createOAuthBacklogClientRegistry,
@@ -135,24 +134,6 @@ Available toolsets:
   - notifications: Tools for managing user notifications`,
     default: env.get('ENABLE_TOOLSETS').default('all').asArray(','),
   })
-  .option('dynamic-toolsets', {
-    type: 'boolean',
-    describe:
-      'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
-    default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
-  })
-  // Runs on the resolved values, so a combination set through the environment
-  // rather than the command line is caught too.
-  .check((parsed) => {
-    // yargs types argv loosely inside `check`, before the option types are
-    // resolved, so both values arrive as `unknown`.
-    const problem = validateTransportOptions({
-      transport: String(parsed.transport),
-      dynamicToolsets: Boolean(parsed.dynamicToolsets),
-    });
-    if (problem) throw new Error(problem);
-    return true;
-  })
   .parseSync();
 
 // The alias resolves both spellings to the same argv key, so which one was typed
@@ -166,6 +147,21 @@ if (
 ) {
   process.stderr.write(
     '--export-translations is deprecated and will be removed in a future release. Use --export-descriptions.\n'
+  );
+}
+
+// Dynamic toolsets are gone. yargs ignores the unknown flag, so without this the
+// server would start with a quietly different tool list: the flag used to drop
+// `all` from the enabled toolsets, so a setup that passed only this one went from
+// no toolsets plus three meta-tools to every toolset enabled.
+if (
+  hideBin(process.argv).some(
+    (arg) => arg.split('=')[0] === '--dynamic-toolsets'
+  ) ||
+  process.env.ENABLE_DYNAMIC_TOOLSETS
+) {
+  process.stderr.write(
+    'Dynamic toolsets have been removed, and --dynamic-toolsets / ENABLE_DYNAMIC_TOOLSETS no longer do anything. Every toolset is enabled unless you narrow it with --enable-toolsets or ENABLE_TOOLSETS.\n'
   );
 }
 
@@ -188,9 +184,7 @@ const descriptionHelper = createDescriptionHelper(descriptionOverrides);
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
-const enabledToolsets = argv.dynamicToolsets
-  ? (argv.enableToolsets as string[]).filter((a) => a !== 'all')
-  : (argv.enableToolsets as string[]);
+const enabledToolsets = argv.enableToolsets as string[];
 
 const mcpOption = {
   useFields: useFields,
@@ -199,11 +193,9 @@ const mcpOption = {
   useOrganization: clientRegistry.isMultiOrganization,
 };
 
-// Built once and shared by every server the factory produces. `enable_toolset`
-// mutates this group, and the stateless HTTP model discards its server after
-// each request — so a per-server group would lose the enablement immediately.
-// Sharing it makes toolset state process-wide, which is the only scope left now
-// that the protocol has no sessions.
+// Built once and shared by every server the factory produces. Nothing mutates
+// it, so this is purely to avoid rebuilding the whole tool tree per request under
+// the stateless HTTP model.
 const sharedToolsetGroup = buildToolsetGroup(
   backlog,
   descriptionHelper,
@@ -229,7 +221,6 @@ const createServer = () =>
     descriptionHelper,
     enabledToolsets,
     mcpOption,
-    dynamicToolsets: argv.dynamicToolsets,
     toolsetGroup: sharedToolsetGroup,
   });
 
@@ -245,7 +236,6 @@ if (argv.exportDescriptions) {
     descriptionHelper,
     enabledToolsets: ['all'],
     mcpOption,
-    dynamicToolsets: true,
   });
   const data = descriptionHelper.dump();
   // eslint-disable-next-line no-console

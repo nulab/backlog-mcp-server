@@ -268,26 +268,6 @@ Using selective toolsets can be helpful if the toolset list is too large for you
 
 > 🧩 Tip: `project` toolset is highly recommended, as many other tools rely on project data as an entry point.
 
-### Dynamic Toolset Discovery (Experimental)
-
-If you're using the MCP server with AI agents, you can enable dynamic discovery of toolsets at runtime:
-
-Enabling via CLI:
-
-```
---dynamic-toolsets
-```
-
-Or via environment variable::
-
-```
--e ENABLE_DYNAMIC_TOOLSETS=1 \
-```
-
-With dynamic toolsets enabled, the LLM will be able to list and activate toolsets on demand via tool interface.
-
-> **stdio only.** `--dynamic-toolsets` with `--transport http` is refused at startup. `enable_toolset` promises the caller that a toolset stays enabled for them, and MCP `2026-07-28` has no protocol sessions to keep that in: the toolset state would belong to the **server process**, so one client's call would change the tool list for every other client, with no way to undo it. On stdio there is one client per process, so it holds. Over HTTP, choose the toolsets up front with `--enable-toolsets`.
-
 ## Available Tools
 
 ### Toolset: `space`
@@ -638,8 +618,7 @@ This section demonstrates advanced configuration using multiple environment vari
         "MAX_TOKENS": "10000",
         "OPTIMIZE_RESPONSE": "1",
         "PREFIX": "backlog_",
-        "ENABLE_TOOLSETS": "space,project,issue",
-        "ENABLE_DYNAMIC_TOOLSETS": "1"
+        "ENABLE_TOOLSETS": "space,project,issue"
       }
     }
   }
