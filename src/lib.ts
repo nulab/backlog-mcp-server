@@ -7,21 +7,21 @@
  * This module exposes the pieces needed to build a server, and nothing that runs
  * on import.
  *
- * Nothing reachable from here may touch a Node built-in. `loadTranslationOverrides`
+ * Nothing reachable from here may touch a Node built-in. `loadDescriptionOverrides`
  * is the counter-example worth remembering: it reads the override file from disk,
  * so it belongs to the CLI and is deliberately absent below. Consumers on other
- * runtimes pass their own overrides to `createTranslationHelper`.
+ * runtimes pass their own overrides to `createDescriptionHelper`.
  */
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
-export { createTranslationHelper } from './createTranslationHelper.js';
+export { createDescriptionHelper } from './createDescriptionHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
 
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
-export type { TranslationHelper } from './createTranslationHelper.js';
+export type { DescriptionHelper } from './createDescriptionHelper.js';
 export type {
   ToolDefinition,
   DynamicToolDefinition,

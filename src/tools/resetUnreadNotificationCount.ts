@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { NotificationCountSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const resetUnreadNotificationCountSchema = buildToolSchema((_t) => ({}));
 
 export const resetUnreadNotificationCountTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof resetUnreadNotificationCountSchema>,
   (typeof NotificationCountSchema)['shape']

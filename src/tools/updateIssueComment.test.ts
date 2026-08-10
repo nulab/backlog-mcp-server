@@ -1,7 +1,7 @@
 import { updateIssueCommentTool } from './updateIssueComment.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('updateIssueCommentTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -27,10 +27,10 @@ describe('updateIssueCommentTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = updateIssueCommentTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   beforeEach(() => {

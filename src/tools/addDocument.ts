@@ -1,6 +1,6 @@
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { DocumentItemSchema } from '../types/zod/backlogOutputDefinition.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 
@@ -32,7 +32,7 @@ const addDocumentSchema = buildToolSchema((t) => ({
 
 export const addDocumentTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addDocumentSchema>,
   (typeof DocumentItemSchema)['shape']

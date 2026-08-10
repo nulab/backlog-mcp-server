@@ -1,10 +1,10 @@
-import { loadTranslationOverrides } from './loadTranslationOverrides';
+import { loadDescriptionOverrides } from './loadDescriptionOverrides';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-describe('loadTranslationOverrides', () => {
+describe('loadDescriptionOverrides', () => {
   let searchDir: string;
 
   beforeEach(() => {
@@ -19,7 +19,7 @@ describe('loadTranslationOverrides', () => {
     writeFileSync(path.join(searchDir, name), contents, 'utf-8');
 
   it('returns an empty object when no config file is found', () => {
-    expect(loadTranslationOverrides({ searchDir })).toEqual({});
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({});
   });
 
   it('reads a JSON config file', () => {
@@ -28,7 +28,7 @@ describe('loadTranslationOverrides', () => {
       JSON.stringify({ HELLO: 'From json' })
     );
 
-    expect(loadTranslationOverrides({ searchDir })).toEqual({
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({
       HELLO: 'From json',
     });
   });
@@ -36,7 +36,7 @@ describe('loadTranslationOverrides', () => {
   it('reads a YAML config file', () => {
     writeConfig('.backlog-mcp-serverrc.yaml', 'HELLO: From yaml\n');
 
-    expect(loadTranslationOverrides({ searchDir })).toEqual({
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({
       HELLO: 'From yaml',
     });
   });
@@ -44,7 +44,7 @@ describe('loadTranslationOverrides', () => {
   it('returns an empty object when the config file is empty', () => {
     writeConfig('.backlog-mcp-serverrc.json', '');
 
-    expect(loadTranslationOverrides({ searchDir })).toEqual({});
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({});
   });
 
   it('drops values that are not strings', () => {
@@ -60,7 +60,7 @@ describe('loadTranslationOverrides', () => {
       })
     );
 
-    expect(loadTranslationOverrides({ searchDir })).toEqual({
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({
       KEPT: 'a string',
     });
   });
@@ -68,14 +68,14 @@ describe('loadTranslationOverrides', () => {
   it('returns an empty object when the config file is not an object', () => {
     writeConfig('.backlog-mcp-serverrc.json', JSON.stringify(['a', 'b']));
 
-    expect(loadTranslationOverrides({ searchDir })).toEqual({});
+    expect(loadDescriptionOverrides({ searchDir })).toEqual({});
   });
 
   it('honours a custom config name', () => {
     writeConfig('.otherrc.json', JSON.stringify({ HELLO: 'From other' }));
 
     expect(
-      loadTranslationOverrides({ searchDir, configName: 'other' })
+      loadDescriptionOverrides({ searchDir, configName: 'other' })
     ).toEqual({ HELLO: 'From other' });
   });
 });

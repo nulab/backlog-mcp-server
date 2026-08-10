@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { StarCountSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getUserStarsCountSchema = buildToolSchema((t) => ({
@@ -30,7 +30,7 @@ const getUserStarsCountSchema = buildToolSchema((t) => ({
 
 export const getUserStarsCountTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getUserStarsCountSchema>,
   (typeof StarCountSchema)['shape']

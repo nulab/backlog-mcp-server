@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
-import { createTranslationHelper } from './createTranslationHelper.js';
+import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
 import { organizationTools } from './tools/dynamicTools/organizations.js';
@@ -40,7 +40,7 @@ vi.mock('./tools/dynamicTools/organizations.js', () => ({
 describe('createBacklogMcpServer', () => {
   const mockBacklog = {} as Backlog;
   const mockClientRegistry = {} as BacklogClientRegistry;
-  const mockTransHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const mcpOption = {
     useFields: false,
     maxTokens: 50000,
@@ -53,7 +53,7 @@ describe('createBacklogMcpServer', () => {
     useFields: false,
     backlog: mockBacklog,
     clientRegistry: mockClientRegistry,
-    transHelper: mockTransHelper,
+    descriptionHelper: mockDescriptionHelper,
     enabledToolsets: ['all'],
     mcpOption,
     dynamicToolsets: false,
@@ -72,7 +72,7 @@ describe('createBacklogMcpServer', () => {
     createBacklogMcpServer(baseConfig);
     expect(buildToolsetGroup).toHaveBeenCalledWith(
       mockBacklog,
-      mockTransHelper,
+      mockDescriptionHelper,
       ['all']
     );
   });
@@ -114,7 +114,7 @@ describe('createBacklogMcpServer', () => {
     // long as more than one organization is configured
     expect(organizationTools).toHaveBeenCalledWith(
       mockClientRegistry,
-      mockTransHelper
+      mockDescriptionHelper
     );
     expect(registerDynamicTools).toHaveBeenCalledTimes(1);
   });
@@ -218,7 +218,7 @@ describe('createBacklogMcpServer', () => {
     );
     expect(dynamicTools).toHaveBeenCalledWith(
       mockRegistrar,
-      mockTransHelper,
+      mockDescriptionHelper,
       mockToolsetGroup
     );
   });

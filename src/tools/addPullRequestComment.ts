@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { PullRequestCommentSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
@@ -48,7 +48,7 @@ const addPullRequestCommentSchema = buildToolSchema((t) => ({
 
 export const addPullRequestCommentTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addPullRequestCommentSchema>,
   (typeof PullRequestCommentSchema)['shape']

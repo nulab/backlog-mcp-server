@@ -1,7 +1,7 @@
 import { getSpaceTool } from './getSpace.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getSpaceTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -18,8 +18,8 @@ describe('getSpaceTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = getSpaceTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = getSpaceTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns space information as formatted JSON text', async () => {
     const result = await tool.handler({});

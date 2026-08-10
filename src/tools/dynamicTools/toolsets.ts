@@ -5,11 +5,11 @@ import {
   ToolRegistrar,
 } from '../../types/tool.js';
 import { DynamicToolsetGroup, ToolsetGroup } from '../../types/toolsets.js';
-import { TranslationHelper } from '../../createTranslationHelper.js';
+import { DescriptionHelper } from '../../createDescriptionHelper.js';
 
 export const dynamicTools = function (
   toolRegistrar: ToolRegistrar,
-  helper: TranslationHelper,
+  helper: DescriptionHelper,
   toolsetGroup: ToolsetGroup
 ): DynamicToolsetGroup {
   return {
@@ -37,7 +37,7 @@ const enableToolsetSchema = buildToolSchema((t) => ({
 
 export const enableToolsetTool = (
   toolRegistrar: ToolRegistrar,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): DynamicToolDefinition<ReturnType<typeof enableToolsetSchema>> => {
   return {
     name: 'enable_toolset',
@@ -61,7 +61,7 @@ export const enableToolsetTool = (
 };
 
 export const listAvailableToolsets = (
-  { t }: TranslationHelper,
+  { t }: DescriptionHelper,
   toolsetGroup: ToolsetGroup
 ): DynamicToolDefinition<Record<string, never>> => {
   return {
@@ -98,7 +98,7 @@ const getToolsetToolsSchema = buildToolSchema((t) => ({
 }));
 
 export const getToolsetTools = (
-  { t }: TranslationHelper,
+  { t }: DescriptionHelper,
   toolsetGroup: ToolsetGroup
 ): DynamicToolDefinition<ReturnType<typeof getToolsetToolsSchema>> => {
   return {

@@ -1,7 +1,7 @@
 import { updateProjectTool } from './updateProject.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('updateProjectTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -18,8 +18,8 @@ describe('updateProjectTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = updateProjectTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = updateProjectTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns updated project', async () => {
     const result = await tool.handler({

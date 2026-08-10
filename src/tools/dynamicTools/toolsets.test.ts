@@ -11,7 +11,7 @@ import {
 describe('dynamicTools', () => {
   const mockT = (key: string, fallback: string) => fallback;
 
-  const mockTranslationHelper = {
+  const mockDescriptionHelper = {
     t: mockT,
     dump: () => ({}),
   };
@@ -43,7 +43,7 @@ describe('dynamicTools', () => {
   };
 
   it('enableToolsetTool - returns message after enabling toolset', async () => {
-    const tool = enableToolsetTool(mockToolRegistrar, mockTranslationHelper);
+    const tool = enableToolsetTool(mockToolRegistrar, mockDescriptionHelper);
     const schema = tool.schema;
 
     const validInput = schema.parse({ toolset: 'project' });
@@ -64,7 +64,7 @@ describe('dynamicTools', () => {
   });
 
   it('listAvailableToolsets - returns list of toolsets', async () => {
-    const tool = listAvailableToolsets(mockTranslationHelper, mockToolsetGroup);
+    const tool = listAvailableToolsets(mockDescriptionHelper, mockToolsetGroup);
 
     const result = await tool.handler({});
     const content = result.content[0];
@@ -83,7 +83,7 @@ describe('dynamicTools', () => {
   });
 
   it('getToolsetTools - returns tools of a specific toolset', async () => {
-    const tool = getToolsetTools(mockTranslationHelper, mockToolsetGroup);
+    const tool = getToolsetTools(mockDescriptionHelper, mockToolsetGroup);
     const schema = tool.schema;
 
     const input = schema.parse({ toolset: 'project' });
@@ -104,7 +104,7 @@ describe('dynamicTools', () => {
   });
 
   it('getToolsetTools - returns error if toolset not found', async () => {
-    const tool = getToolsetTools(mockTranslationHelper, mockToolsetGroup);
+    const tool = getToolsetTools(mockDescriptionHelper, mockToolsetGroup);
     const result = await tool.handler({ toolset: 'nonexistent' });
 
     expect(result).toEqual({

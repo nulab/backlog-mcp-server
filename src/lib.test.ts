@@ -12,7 +12,7 @@ import type {
   ToolRegistrar,
   Toolset,
   ToolsetGroup,
-  TranslationHelper,
+  DescriptionHelper,
 } from './lib';
 
 /**
@@ -28,7 +28,7 @@ describe('library entry point', () => {
       'backlogErrorHandler',
       'buildToolSchema',
       'composeToolHandler',
-      'createTranslationHelper',
+      'createDescriptionHelper',
       'isErrorLike',
     ]);
   });
@@ -53,7 +53,7 @@ describe('library entry point', () => {
       ToolRegistrar?,
       Toolset?,
       ToolsetGroup?,
-      TranslationHelper?,
+      DescriptionHelper?,
     ] = [];
 
     expect(types).toEqual([]);
@@ -61,6 +61,6 @@ describe('library entry point', () => {
 
   it('does not leak the Node-only override loader', () => {
     // It reads from disk, which would defeat the point of this entry point.
-    expect(lib).not.toHaveProperty('loadTranslationOverrides');
+    expect(lib).not.toHaveProperty('loadDescriptionOverrides');
   });
 });

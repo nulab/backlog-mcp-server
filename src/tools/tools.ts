@@ -1,5 +1,5 @@
 import { Backlog } from 'backlog-js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { ToolsetGroup } from '../types/toolsets.js';
 import { addIssueTool } from './addIssue.js';
 import { addIssueCommentTool } from './addIssueComment.js';
@@ -66,7 +66,7 @@ import { addDocumentTool } from './addDocument.js';
 
 export const allTools = (
   backlog: Backlog,
-  helper: TranslationHelper
+  helper: DescriptionHelper
 ): ToolsetGroup => {
   return {
     toolsets: [

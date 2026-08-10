@@ -1,7 +1,7 @@
 import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getPullRequestsCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -10,10 +10,10 @@ describe('getPullRequestsCountTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getPullRequestsCountTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns pull requests count', async () => {

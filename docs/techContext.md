@@ -203,14 +203,18 @@ pnpm test -- -t "getSpace"
 - Principle of least privilege in containers
 - Input validation to prevent injection attacks
 
-## Multi-language Support
+## Description Overrides
 
-- Multi-language support through translation files
-- Translation overrides through environment variables
-- Translation customization through configuration files
-  (`.backlog-mcp-serverrc.json`; see `translationConfig/` for a Japanese example)
-- Fallback to default language (English)
-- Translation key tracking for consistency, dumpable via `--export-translations`
+Almost all strings resolved through `t()` are the tool and parameter descriptions
+the model reads when it picks a tool and fills in arguments; a few are validation
+error messages. The server ships no translations to choose between, so overriding
+is for steering tool selection, not for changing the language of answers.
+
+- Overrides through environment variables (`BACKLOG_MCP_*`)
+- Overrides through configuration files (`.backlog-mcp-serverrc.json`, cosmiconfig)
+- Fallback to the built-in default when an override is empty or not a string
+- Resolved keys are tracked and dumpable via `--export-descriptions`
+  (deprecated alias `--export-translations`, to be removed in a future release)
 
 ## Response Optimization
 

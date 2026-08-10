@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { ResolutionSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getResolutionsSchema = buildToolSchema((_t) => ({}));
 
 export const getResolutionsTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getResolutionsSchema>,
   (typeof ResolutionSchema)['shape']

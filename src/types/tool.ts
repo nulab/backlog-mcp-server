@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { CallToolResult } from '@modelcontextprotocol/server';
 
 export type ToolDefinition<
@@ -22,7 +22,7 @@ export type ToolDefinition<
 };
 
 export const buildToolSchema = <T extends z.ZodRawShape>(
-  fn: (t: TranslationHelper['t']) => T
+  fn: (t: DescriptionHelper['t']) => T
 ) => fn;
 
 export type DynamicToolDefinition<Shape extends z.ZodRawShape> = {

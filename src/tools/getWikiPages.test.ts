@@ -1,7 +1,7 @@
 import { getWikiPagesTool } from './getWikiPages.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getWikiPagesTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -61,8 +61,8 @@ describe('getWikiPagesTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = getWikiPagesTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = getWikiPagesTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns wiki pages as formatted JSON text', async () => {
     const result = await tool.handler({

@@ -1,7 +1,7 @@
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
 import { vi, describe, expect, it } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('updateVersionMilestoneTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -16,10 +16,10 @@ describe('updateVersionMilestoneTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = updateVersionMilestoneTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns updated version milestone', async () => {

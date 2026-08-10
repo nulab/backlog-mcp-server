@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTranslationHelper } from '../../createTranslationHelper.js';
+import { createDescriptionHelper } from '../../createDescriptionHelper.js';
 import { organizationTools } from './organizations.js';
 import { BacklogClientRegistry } from '../../utils/backlogClientRegistry.js';
 
@@ -24,7 +24,7 @@ describe('organizationTools', () => {
       isMultiOrganization: true,
     };
 
-    const group = organizationTools(registry, createTranslationHelper());
+    const group = organizationTools(registry, createDescriptionHelper());
     const tool = group.toolsets[0].tools[0];
     const result = await tool.handler({});
     const content = result.content[0];

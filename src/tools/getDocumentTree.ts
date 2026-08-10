@@ -1,6 +1,6 @@
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import {
   DocumentTreeFullSchema,
   DocumentTreeFullSchemaZ,
@@ -17,7 +17,7 @@ const getDocumentTreeSchema = buildToolSchema((t) => ({
 
 export const getDocumentTreeTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getDocumentTreeSchema>,
   typeof DocumentTreeFullSchema

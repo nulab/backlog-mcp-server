@@ -47,4 +47,4 @@
 
 - Register as an MCP server in the client's settings
 - Set necessary environment variables when running Docker
-- Multi-language support available through translation files
+- Override the tool and parameter descriptions the model reads, via config file or environment variables

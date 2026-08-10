@@ -1,7 +1,7 @@
 import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getUserRecentUpdatesTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -26,10 +26,10 @@ describe('getUserRecentUpdatesTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getUserRecentUpdatesTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns activities list', async () => {

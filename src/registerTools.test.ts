@@ -1,7 +1,7 @@
 import { registerTools } from './registerTools';
 import { McpServer } from '@modelcontextprotocol/server';
 import { Backlog } from 'backlog-js';
-import { TranslationHelper } from './createTranslationHelper';
+import { DescriptionHelper } from './createDescriptionHelper';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -19,7 +19,7 @@ describe('registerTools', () => {
   const mockBacklog = {} as Backlog;
   const mockHelper = {
     t: vi.fn(),
-  } as unknown as TranslationHelper;
+  } as unknown as DescriptionHelper;
   const toolsetGroup = allTools(mockBacklog, mockHelper);
   const spaceToolSet = toolsetGroup.toolsets.find(
     (a: Toolset) => a.name === 'space'

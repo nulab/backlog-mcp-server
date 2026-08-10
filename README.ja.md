@@ -359,7 +359,7 @@ PROJECT-KEYプロジェクトの「repo-name」リポジトリで、ブランチ
 
 ### 現在の説明のエクスポート
 
-`--export-translations` フラグを指定してバイナリを実行することで、現在の説明（オーバーライドを含む）をエクスポートできます。
+`--export-descriptions` フラグを指定してバイナリを実行することで、現在の説明（オーバーライドを含む）をエクスポートできます。このフラグは以前 `--export-translations` という名前でした。旧名も当面は動作しますが、非推奨の警告を出力し、将来のリリースで削除されます。
 
 ツール一覧の構築時に解決されるすべてのキーと現在の値が、行ったカスタマイズを含めて標準出力に出力されます。ツール説明・パラメータ説明はすべて含まれるため、キー名を調べる用途にはこれを使ってください。
 
@@ -368,13 +368,13 @@ PROJECT-KEYプロジェクトの「repo-name」リポジトリで、ブランチ
 例：
 
 ```bash
-docker run -i --rm ghcr.io/nulab/backlog-mcp-server node build/index.js --export-translations
+docker run -i --rm ghcr.io/nulab/backlog-mcp-server node build/index.js --export-descriptions
 ```
 
 または
 
 ```bash
-npx github:nulab/backlog-mcp-server --export-translations
+npx github:nulab/backlog-mcp-server --export-descriptions
 ```
 
 ### 環境変数の使用
@@ -545,7 +545,7 @@ pnpm test
 
 サーバーはいくつかのコマンドラインオプションをサポートしています：
 
-- `--export-translations`: ツール一覧の構築時に解決される説明キーと値をエクスポート
+- `--export-descriptions`: ツール一覧の構築時に解決される説明キーと値をエクスポート。旧名は `--export-translations` で、非推奨エイリアスとして当面動作しますが、将来のリリースで削除されます
 - `--optimize-response`: GraphQLスタイルのフィールド選択を有効にする
 - `--max-tokens=NUMBER`: レスポンスの最大トークン制限を設定
 - `--prefix=STRING`: すべてのツール名に付加するオプションの文字列プレフィックス（デフォルト：""）

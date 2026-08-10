@@ -1,7 +1,7 @@
 import { Backlog } from 'backlog-js';
 import { ToolsetGroup, Toolset } from '../types/toolsets.js';
 import { allTools } from '../tools/tools.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 export function getToolset(
   group: ToolsetGroup,
@@ -20,7 +20,7 @@ export function enableToolset(group: ToolsetGroup, name: string): string {
 
 export const buildToolsetGroup = (
   backlog: Backlog,
-  helper: TranslationHelper,
+  helper: DescriptionHelper,
   enabledToolsets: string[]
 ): ToolsetGroup => {
   const toolsetGroup = allTools(backlog, helper);

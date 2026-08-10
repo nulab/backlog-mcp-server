@@ -1,7 +1,7 @@
 import { getPrioritiesTool } from './getPriorities.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getPrioritiesTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -21,8 +21,8 @@ describe('getPrioritiesTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = getPrioritiesTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = getPrioritiesTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns priorities list as formatted JSON text', async () => {
     const result = await tool.handler({});

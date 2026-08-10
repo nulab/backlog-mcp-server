@@ -1,4 +1,4 @@
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 export type EntityName = 'issue' | 'project' | 'repository';
 
@@ -23,7 +23,7 @@ function resolveIdOrField<E extends EntityName, F extends string>(
   entity: E,
   fieldName: F,
   values: ResolveIdOrFieldInput<F>,
-  t: TranslationHelper['t']
+  t: DescriptionHelper['t']
 ): ResolveResult {
   const value = tryResolveIdOrField(fieldName, values);
   if (value === undefined) {
@@ -53,13 +53,13 @@ function tryResolveIdOrField<F extends string>(
 export const resolveIdOrKey = <E extends EntityName>(
   entity: E,
   values: { id?: number; key?: string },
-  t: TranslationHelper['t']
+  t: DescriptionHelper['t']
 ): ResolveResult => resolveIdOrField(entity, 'key', values, t);
 
 export const resolveIdOrName = <E extends EntityName>(
   entity: E,
   values: { id?: number; name?: string },
-  t: TranslationHelper['t']
+  t: DescriptionHelper['t']
 ): ResolveResult => resolveIdOrField(entity, 'name', values, t);
 
 function capitalize(str: string): string {
