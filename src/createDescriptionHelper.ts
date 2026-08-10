@@ -7,16 +7,16 @@
  * it, so anything imported here is reachable from the tool layer — and the tool
  * layer is meant to run on non-Node runtimes too. Discovering and reading the
  * override file needs a filesystem and a home directory, so that part lives in
- * `loadTranslationOverrides` and the CLI passes the result in.
+ * `loadDescriptionOverrides` and the CLI passes the result in.
  */
-export interface TranslationHelper {
+export interface DescriptionHelper {
   t: (key: string, fallback: string) => string;
   dump: () => Record<string, string>;
 }
 
-export function createTranslationHelper(
+export function createDescriptionHelper(
   overrides: Record<string, string> = {}
-): TranslationHelper {
+): DescriptionHelper {
   const usedKeys: Record<string, string> = {};
 
   function toEnvKey(key: string): string {

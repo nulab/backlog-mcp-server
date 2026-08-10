@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
 import { getSpaceTool } from '../tools/getSpace.js';
 import { createBacklogClientRegistry } from './backlogClientRegistry.js';
@@ -45,7 +45,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,
@@ -71,7 +71,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,
@@ -99,7 +99,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,
@@ -128,7 +128,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,
@@ -207,7 +207,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,
@@ -235,7 +235,7 @@ describe('createBacklogClientRegistry', () => {
 
     const tool = getSpaceTool(
       registry.createScopedClient(),
-      createTranslationHelper()
+      createDescriptionHelper()
     );
     const { handler } = composeToolHandler(tool, {
       useFields: false,

@@ -5,7 +5,7 @@ import os from 'os';
  * Reads description overrides from a `.backlog-mcp-serverrc` file (`.json`,
  * `.yaml` or `.yml`) in the user's home directory.
  *
- * Node-only, and kept separate from `createTranslationHelper` for that reason:
+ * Node-only, and kept separate from `createDescriptionHelper` for that reason:
  * cosmiconfig walks the filesystem and the default search path is the home
  * directory. The CLI calls this and hands the result to the helper.
  *
@@ -14,7 +14,7 @@ import os from 'os';
  * description, and a number or an array there would produce an invalid
  * `tools/list` payload.
  */
-export function loadTranslationOverrides(options?: {
+export function loadDescriptionOverrides(options?: {
   configName?: string;
   searchDir?: string;
 }): Record<string, string> {

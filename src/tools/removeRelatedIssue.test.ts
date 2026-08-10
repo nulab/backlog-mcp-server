@@ -1,7 +1,7 @@
 import { removeRelatedIssueTool } from './removeRelatedIssue.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('removeRelatedIssueTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -15,10 +15,10 @@ describe('removeRelatedIssueTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = removeRelatedIssueTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns the unlinked issue', async () => {

@@ -8,8 +8,8 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { getBacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
 import { createTokenStore } from './auth/tokenStore.js';
-import { createTranslationHelper } from './createTranslationHelper.js';
-import { loadTranslationOverrides } from './loadTranslationOverrides.js';
+import { createDescriptionHelper } from './createDescriptionHelper.js';
+import { loadDescriptionOverrides } from './loadDescriptionOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
 import {
@@ -111,9 +111,9 @@ const argv = yargs(hideBin(process.argv))
     describe: 'Optional string prefix to prepend to all generated outputs',
     default: env.get('PREFIX').default('').asString(),
   })
-  .option('export-translations', {
+  .option('export-descriptions', {
     type: 'boolean',
-    describe: 'Export translations and exit',
+    describe: 'Export tool and parameter descriptions and exit',
     default: false,
   })
   .option('enable-toolsets', {
@@ -134,6 +134,17 @@ Available toolsets:
       'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
     default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
   })
+  // `--export-translations` was renamed, not aliased. Without this check yargs
+  // ignores the unknown flag and the process goes on to start a server, which on
+  // stdio just sits there — the caller sees a hang instead of an error.
+  .check((parsed) => {
+    if ('export-translations' in parsed || 'exportTranslations' in parsed) {
+      throw new Error(
+        '--export-translations has been renamed to --export-descriptions.'
+      );
+    }
+    return true;
+  })
   .parseSync();
 
 const clientRegistry = oauthConfig
@@ -150,7 +161,7 @@ if (tokenStore) {
 
 const useFields = argv.optimizeResponse;
 
-const transHelper = createTranslationHelper(loadTranslationOverrides());
+const descriptionHelper = createDescriptionHelper(loadDescriptionOverrides());
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
@@ -172,7 +183,7 @@ const mcpOption = {
 // that the protocol has no sessions.
 const sharedToolsetGroup = buildToolsetGroup(
   backlog,
-  transHelper,
+  descriptionHelper,
   enabledToolsets
 );
 
@@ -184,15 +195,15 @@ const createServer = () =>
     useFields,
     backlog,
     clientRegistry,
-    transHelper,
+    descriptionHelper,
     enabledToolsets,
     mcpOption,
     dynamicToolsets: argv.dynamicToolsets,
     toolsetGroup: sharedToolsetGroup,
   });
 
-if (argv.exportTranslations) {
-  // Translation keys are only recorded once a tool asks for them, so build a
+if (argv.exportDescriptions) {
+  // Description keys are only recorded once a tool asks for them, so build a
   // server with every toolset enabled before dumping. Without this the dump is
   // empty, because no tool has been created yet at this point.
   createBacklogMcpServer({
@@ -200,12 +211,12 @@ if (argv.exportTranslations) {
     useFields,
     backlog,
     clientRegistry,
-    transHelper,
+    descriptionHelper,
     enabledToolsets: ['all'],
     mcpOption,
     dynamicToolsets: true,
   });
-  const data = transHelper.dump();
+  const data = descriptionHelper.dump();
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(data, null, 2));
   process.exit(0);

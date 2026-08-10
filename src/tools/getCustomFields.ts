@@ -1,7 +1,7 @@
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { ToolDefinition, buildToolSchema } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { CustomFieldSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
@@ -28,7 +28,7 @@ const getCustomFieldsInputSchema = buildToolSchema((t) => ({
 
 export const getCustomFieldsTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getCustomFieldsInputSchema>, // Shape for input schema
   (typeof CustomFieldSchema)['shape'] // Shape for output schema (single item)

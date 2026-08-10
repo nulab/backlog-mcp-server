@@ -1,7 +1,7 @@
 import { getNotificationsTool } from './getNotifications.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getNotificationsTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -57,10 +57,10 @@ describe('getNotificationsTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getNotificationsTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns notifications list as formatted JSON text', async () => {

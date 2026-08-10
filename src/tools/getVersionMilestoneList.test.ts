@@ -1,7 +1,7 @@
 import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getVersionMilestoneTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -39,10 +39,10 @@ describe('getVersionMilestoneTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getVersionMilestoneListTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns versions list as formatted JSON text', async () => {

@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, type Mock } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { getCustomFieldsTool } from './getCustomFields';
-import { createTranslationHelper } from '../createTranslationHelper';
+import { createDescriptionHelper } from '../createDescriptionHelper';
 
 // Derive the custom field definition type from the public Backlog API instead of
 // importing backlog-js internals (deep imports are not exported since 0.17.0).
@@ -14,13 +14,13 @@ describe('getCustomFieldsTool', () => {
     getCustomFields: vi.fn<() => Promise<CustomField[]>>(),
   };
 
-  // Use the actual createTranslationHelper for consistency
-  const mockTranslationHelper = createTranslationHelper();
+  // Use the actual createDescriptionHelper for consistency
+  const mockDescriptionHelper = createDescriptionHelper();
 
-  // Instantiate the tool with the mocked Backlog and real TranslationHelper
+  // Instantiate the tool with the mocked Backlog and real DescriptionHelper
   const tool = getCustomFieldsTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
   const toolHandler = tool.handler; // Get the handler from the instantiated tool
 

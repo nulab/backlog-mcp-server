@@ -1,7 +1,7 @@
 import { markNotificationAsReadTool } from './markNotificationAsRead.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('markNotificationAsReadTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -10,10 +10,10 @@ describe('markNotificationAsReadTool', () => {
       .mockResolvedValue(undefined),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = markNotificationAsReadTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns success message as formatted JSON text', async () => {

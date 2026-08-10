@@ -3,7 +3,7 @@
 
 import { McpServer } from '@modelcontextprotocol/server';
 import type { Backlog } from 'backlog-js';
-import type { TranslationHelper } from './createTranslationHelper.js';
+import type { DescriptionHelper } from './createDescriptionHelper.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
 import { organizationTools } from './tools/dynamicTools/organizations.js';
 import { dynamicTools } from './tools/dynamicTools/toolsets.js';
@@ -22,7 +22,7 @@ export type CreateBacklogMcpServerConfig = {
   useFields: boolean;
   backlog: Backlog;
   clientRegistry: BacklogClientRegistry;
-  transHelper: TranslationHelper;
+  descriptionHelper: DescriptionHelper;
   enabledToolsets: string[];
   mcpOption: MCPOptions;
   dynamicToolsets: boolean;
@@ -52,7 +52,7 @@ export function createBacklogMcpServer({
   useFields,
   backlog,
   clientRegistry,
-  transHelper,
+  descriptionHelper,
   enabledToolsets,
   mcpOption,
   dynamicToolsets,
@@ -71,7 +71,7 @@ export function createBacklogMcpServer({
 
   const toolsetGroup =
     sharedToolsetGroup ??
-    buildToolsetGroup(backlog, transHelper, enabledToolsets);
+    buildToolsetGroup(backlog, descriptionHelper, enabledToolsets);
   registerTools(server, toolsetGroup, mcpOption);
 
   // `list_organizations` only has something to report when more than one space
@@ -80,7 +80,7 @@ export function createBacklogMcpServer({
   if (mcpOption.useOrganization) {
     registerDynamicTools(
       server,
-      organizationTools(clientRegistry, transHelper),
+      organizationTools(clientRegistry, descriptionHelper),
       mcpOption.prefix
     );
   }
@@ -89,7 +89,7 @@ export function createBacklogMcpServer({
     const registrar = createToolRegistrar(server, toolsetGroup, mcpOption);
     const dynamicToolsetGroup = dynamicTools(
       registrar,
-      transHelper,
+      descriptionHelper,
       toolsetGroup
     );
     registerDynamicTools(server, dynamicToolsetGroup, mcpOption.prefix);

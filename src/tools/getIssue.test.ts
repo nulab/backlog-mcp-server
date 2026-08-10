@@ -1,7 +1,7 @@
 import { getIssueTool } from './getIssue.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getIssueTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -66,8 +66,8 @@ describe('getIssueTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = getIssueTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = getIssueTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns issue information as formatted JSON text', async () => {
     const result = await tool.handler({

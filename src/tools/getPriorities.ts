@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { PrioritySchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getPrioritiesSchema = buildToolSchema((_t) => ({}));
 
 export const getPrioritiesTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getPrioritiesSchema>,
   (typeof PrioritySchema)['shape']

@@ -1,7 +1,7 @@
 import { getUserStarsCountTool } from './getUserStarsCount.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getUserStarsCountTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -10,10 +10,10 @@ describe('getUserStarsCountTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getUserStarsCountTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns star count', async () => {

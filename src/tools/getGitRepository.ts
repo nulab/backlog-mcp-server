@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { GitRepositorySchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
@@ -36,7 +36,7 @@ const getGitRepositorySchema = buildToolSchema((t) => ({
 
 export const getGitRepositoryTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getGitRepositorySchema>,
   (typeof GitRepositorySchema)['shape']

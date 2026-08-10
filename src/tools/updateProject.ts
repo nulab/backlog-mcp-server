@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { ProjectSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
@@ -70,7 +70,7 @@ const updateProjectSchema = buildToolSchema((t) => ({
 
 export const updateProjectTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof updateProjectSchema>,
   (typeof ProjectSchema)['shape']

@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
-import { createTranslationHelper } from './createTranslationHelper.js';
+import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 import { buildToolsetGroup, getToolset } from './utils/toolsetUtils.js';
@@ -27,10 +27,14 @@ describe('dynamic toolset enablement across servers from one factory', () => {
   };
 
   const buildFactory = () => {
-    const transHelper = createTranslationHelper();
+    const descriptionHelper = createDescriptionHelper();
     // One group, shared by every server the factory produces — the wiring
     // `src/index.ts` uses.
-    const sharedToolsetGroup = buildToolsetGroup(backlog, transHelper, []);
+    const sharedToolsetGroup = buildToolsetGroup(
+      backlog,
+      descriptionHelper,
+      []
+    );
 
     const createServer = () =>
       createBacklogMcpServer({
@@ -38,7 +42,7 @@ describe('dynamic toolset enablement across servers from one factory', () => {
         useFields: false,
         backlog,
         clientRegistry,
-        transHelper,
+        descriptionHelper,
         enabledToolsets: [],
         mcpOption,
         dynamicToolsets: true,
@@ -99,8 +103,10 @@ describe('dynamic toolset enablement across servers from one factory', () => {
   // them — a definition that grew keys per request would corrupt the schema
   // every client sees after the first one.
   it('does not mutate shared tool definitions when registering', () => {
-    const transHelper = createTranslationHelper();
-    const sharedToolsetGroup = buildToolsetGroup(backlog, transHelper, ['all']);
+    const descriptionHelper = createDescriptionHelper();
+    const sharedToolsetGroup = buildToolsetGroup(backlog, descriptionHelper, [
+      'all',
+    ]);
 
     const firstTool = () => sharedToolsetGroup.toolsets[0].tools[0];
     const shapeOfFirstTool = () =>
@@ -116,7 +122,7 @@ describe('dynamic toolset enablement across servers from one factory', () => {
         useFields: true, // would add `fields` on top of `organization`
         backlog,
         clientRegistry,
-        transHelper,
+        descriptionHelper,
         enabledToolsets: ['all'],
         mcpOption: { ...mcpOption, useFields: true },
         dynamicToolsets: false,

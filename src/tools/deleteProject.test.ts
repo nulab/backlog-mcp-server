@@ -1,7 +1,7 @@
 import { deleteProjectTool } from './deleteProject.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('deleteProjectTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -18,8 +18,8 @@ describe('deleteProjectTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = deleteProjectTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = deleteProjectTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns deleted project information', async () => {
     const result = await tool.handler({

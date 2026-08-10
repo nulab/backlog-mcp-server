@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog, Option } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { IssueSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 import { customFieldsToPayload } from '../backlog/customFields.js';
@@ -204,7 +204,7 @@ const clearEmptyArrayFields = <T extends Record<string, unknown>>(
 
 export const updateIssueTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof updateIssueSchema>,
   (typeof IssueSchema)['shape']

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { IssueSchema } from '../types/zod/backlogOutputDefinition.js';
 import { customFieldFiltersToPayload } from '../backlog/customFields.js';
 import { buildCustomFieldFilterSchema } from './shared/customFieldFiltersSchema.js';
@@ -144,7 +144,7 @@ const getIssuesSchema = buildToolSchema((t) => ({
 
 export const getIssuesTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getIssuesSchema>,
   (typeof IssueSchema)['shape']

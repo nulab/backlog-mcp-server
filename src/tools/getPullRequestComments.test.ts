@@ -1,7 +1,7 @@
 import { getPullRequestCommentsTool } from './getPullRequestComments.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getPullRequestCommentsTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -37,10 +37,10 @@ describe('getPullRequestCommentsTool', () => {
     ]),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getPullRequestCommentsTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns pull request comments', async () => {

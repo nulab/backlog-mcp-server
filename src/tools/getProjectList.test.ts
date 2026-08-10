@@ -1,7 +1,7 @@
 import { getProjectListTool } from './getProjectList.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog, Entity } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getProjectListTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -48,7 +48,7 @@ describe('getProjectListTool', () => {
         },
       ]),
   };
-  const { t, dump } = createTranslationHelper();
+  const { t, dump } = createDescriptionHelper();
 
   const tool = getProjectListTool(mockBacklog as Backlog, { t, dump });
 

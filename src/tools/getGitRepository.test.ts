@@ -1,7 +1,7 @@
 import { getGitRepositoryTool } from './getGitRepository.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('getGitRepositoryTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -30,10 +30,10 @@ describe('getGitRepositoryTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
   const tool = getGitRepositoryTool(
     mockBacklog as Backlog,
-    mockTranslationHelper
+    mockDescriptionHelper
   );
 
   it('returns git repository information as formatted JSON text', async () => {

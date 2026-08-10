@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { PullRequestSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
@@ -68,7 +68,7 @@ const addPullRequestSchema = buildToolSchema((t) => ({
 
 export const addPullRequestTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addPullRequestSchema>,
   (typeof PullRequestSchema)['shape']

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 const markNotificationAsReadSchema = buildToolSchema((t) => ({
   id: z
@@ -18,7 +18,7 @@ export const MarkNotificationAsReadResultSchema = z.object({
 
 export const markNotificationAsReadTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof markNotificationAsReadSchema>,
   (typeof MarkNotificationAsReadResultSchema)['shape']

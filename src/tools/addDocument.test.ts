@@ -8,7 +8,7 @@ import {
   type MockedFunction,
 } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('addDocumentTool', () => {
   let mockAddDocument: MockedFunction<() => Promise<any>>;
@@ -52,10 +52,10 @@ describe('addDocumentTool', () => {
     };
   });
 
-  const mockTranslationHelper = createTranslationHelper();
+  const mockDescriptionHelper = createDescriptionHelper();
 
   it('returns created document with all important fields', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     const result = await tool.handler({
       projectId: 100,
       title: 'Test Document',
@@ -75,7 +75,7 @@ describe('addDocumentTool', () => {
   });
 
   it('calls backlog.addDocument with correct basic params', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     await tool.handler({
       projectId: 100,
       title: 'Test Document',
@@ -90,7 +90,7 @@ describe('addDocumentTool', () => {
   });
 
   it('calls backlog.addDocument with all optional params', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     await tool.handler({
       projectId: 100,
       title: 'Document with options',
@@ -111,7 +111,7 @@ describe('addDocumentTool', () => {
   });
 
   it('calls backlog.addDocument with minimum required params only', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     await tool.handler({
       projectId: 100,
     });
@@ -122,7 +122,7 @@ describe('addDocumentTool', () => {
   });
 
   it('calls backlog.addDocument with emoji only', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     mockAddDocument.mockResolvedValueOnce({
       id: '2',
       projectId: 100,
@@ -172,7 +172,7 @@ describe('addDocumentTool', () => {
   });
 
   it('calls backlog.addDocument with parentId and addLast', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     await tool.handler({
       projectId: 100,
       title: 'Child Document',
@@ -189,7 +189,7 @@ describe('addDocumentTool', () => {
   });
 
   it('throws error when API fails', async () => {
-    const tool = addDocumentTool(mockBacklog as Backlog, mockTranslationHelper);
+    const tool = addDocumentTool(mockBacklog as Backlog, mockDescriptionHelper);
     const apiError = new Error('API Error: Project not found');
     mockAddDocument.mockRejectedValueOnce(apiError);
 

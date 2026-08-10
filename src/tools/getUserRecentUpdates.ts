@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import {
   ActivitySchema,
   ActivityTypeSchema,
@@ -59,7 +59,7 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
 
 export const getUserRecentUpdatesTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getUserRecentUpdatesSchema>,
   (typeof ActivitySchema)['shape']

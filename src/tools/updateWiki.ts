@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { WikiSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const updateWikiSchema = buildToolSchema((t) => ({
@@ -29,7 +29,7 @@ const updateWikiSchema = buildToolSchema((t) => ({
 
 export const updateWikiTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof updateWikiSchema>,
   (typeof WikiSchema)['shape']

@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
-import { TranslationHelper } from '../createTranslationHelper.js';
+import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { SpaceSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getSpaceSchema = buildToolSchema((_t) => ({}));
 
 export const getSpaceTool = (
   backlog: Backlog,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getSpaceSchema>,
   (typeof SpaceSchema)['shape']

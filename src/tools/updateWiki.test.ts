@@ -1,7 +1,7 @@
 import { updateWikiTool } from './updateWiki.js';
 import { vi, describe, it, expect } from 'vitest';
 import type { Backlog } from 'backlog-js';
-import { createTranslationHelper } from '../createTranslationHelper.js';
+import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
 describe('updateWikiTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -31,8 +31,8 @@ describe('updateWikiTool', () => {
     }),
   };
 
-  const mockTranslationHelper = createTranslationHelper();
-  const tool = updateWikiTool(mockBacklog as Backlog, mockTranslationHelper);
+  const mockDescriptionHelper = createDescriptionHelper();
+  const tool = updateWikiTool(mockBacklog as Backlog, mockDescriptionHelper);
 
   it('returns updated wiki as formatted JSON text', async () => {
     const result = await tool.handler({

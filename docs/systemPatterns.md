@@ -10,7 +10,7 @@ graph TD
     Transport <--> Server[Backlog MCP Server]
     Server <--> Auth[API key or OAuth token store]
     Server <--> BacklogAPI[Backlog API]
-    Server <--> Config[Translation config files]
+    Server <--> Config[Description override files]
 ```
 
 ## Main Components
@@ -36,11 +36,11 @@ graph TD
 - With `--dynamic-toolsets`, the tools `enable_toolset`, `list_available_toolsets`, and
   `get_toolset_tools` let the client turn toolsets on at runtime through a `ToolRegistrar`
 
-### 4. Translation System
+### 4. Description Override System
 
-- Translation helper for multi-language support
-- Loads translations from configuration files (cosmiconfig) or environment variables
-- Ensures descriptions are always displayed with fallback functionality
+- Description helper resolving the strings the model reads
+- Loads overrides from configuration files (cosmiconfig) or environment variables
+- Falls back to the built-in default so a description is always present
 
 ### 5. Backlog API Client
 
@@ -65,13 +65,13 @@ graph TD
 
 ### 1. Factory Pattern
 
-- The `allTools` function receives a Backlog client and translation helper, generating
+- The `allTools` function receives a Backlog client and description helper, generating
   a toolset group containing every tool instance
 - Each tool has its own definition and implementation while providing a unified interface
 
 ### 2. Dependency Injection
 
-- Backlog client and translation helper are injected into tools
+- Backlog client and description helper are injected into tools
 - Mock objects can be injected during testing for easier unit testing
 - Options for field picking and token limiting are injected into handlers
 
@@ -82,7 +82,7 @@ graph TD
 
 ### 4. Strategy Pattern
 
-- Translation system selects appropriate translations from different sources
+- The description helper selects the effective value from the available sources
   (environment variables, configuration files, default values)
 - Registration strategy differs between static tools (composed handler) and dynamic
   tools (raw handler), sharing the same `registerToolsets` loop
@@ -157,28 +157,28 @@ sequenceDiagram
     Server-->>Client: Tool response
 ```
 
-### Translation Resolution Flow
+### Description Resolution Flow
 
 ```mermaid
 sequenceDiagram
     participant Tool as Tool
-    participant Helper as TranslationHelper
+    participant Helper as DescriptionHelper
     participant Env as Environment Variables
     participant Config as Configuration File
 
     Tool->>Helper: t(key, fallback)
     Helper->>Env: Check environment variables
     alt Exists in environment variables
-        Env-->>Helper: Translation value
+        Env-->>Helper: Override value
     else Does not exist in environment variables
         Helper->>Config: Check configuration file
         alt Exists in configuration file
-            Config-->>Helper: Translation value
+            Config-->>Helper: Override value
         else Does not exist in configuration file
             Helper-->>Helper: Use fallback value
         end
     end
-    Helper-->>Tool: Resolved translation
+    Helper-->>Tool: Resolved description
 ```
 
 ### OAuth Request Flow (HTTP transport)
@@ -233,7 +233,7 @@ src/
 ├── createBacklogMcpServer.ts      # MCP server factory
 ├── httpMcpServer.ts               # Streamable HTTP transport (Hono)
 ├── registerTools.ts               # Tool registration logic
-├── createTranslationHelper.ts     # Translation helper
+├── createDescriptionHelper.ts     # Description helper
 ├── auth/                          # OAuth support for the HTTP transport
 │   ├── backlogAuthContext.ts      # Per-request access token context
 │   ├── backlogOAuthClient.ts      # Backlog OAuth client
@@ -283,4 +283,4 @@ src/
 - Create unit tests corresponding to each tool
 - Use mocks to eliminate external dependencies on the Backlog API
 - Focus on validating input parameters and output format
-- Use translation helper mocks to test translation functionality
+- Use description helper mocks to test description resolution

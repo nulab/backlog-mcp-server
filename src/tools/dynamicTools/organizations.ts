@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TranslationHelper } from '../../createTranslationHelper.js';
+import { DescriptionHelper } from '../../createDescriptionHelper.js';
 import {
   BacklogClientRegistry,
   BacklogOrganizationInfo,
@@ -9,7 +9,7 @@ import { DynamicToolsetGroup } from '../../types/toolsets.js';
 
 export function organizationTools(
   registry: BacklogClientRegistry,
-  { t }: TranslationHelper
+  { t }: DescriptionHelper
 ): DynamicToolsetGroup {
   return {
     toolsets: [
@@ -25,7 +25,7 @@ export function organizationTools(
 
 export function listOrganizationsTool(
   registry: BacklogClientRegistry,
-  t: TranslationHelper['t']
+  t: DescriptionHelper['t']
 ): DynamicToolDefinition<Record<string, never>> {
   return {
     name: 'list_organizations',
