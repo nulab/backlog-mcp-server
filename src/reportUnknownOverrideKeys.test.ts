@@ -74,14 +74,16 @@ describe('reportUnknownOverrideKeys', () => {
     });
   });
 
-  it('accepts keys from toolsets and dynamic tools the real server has disabled', () => {
-    // The probe enables everything on purpose: a key belonging to a disabled
-    // toolset is still a valid key, and reporting it would be a false alarm.
+  it('accepts keys the real server does not publish', () => {
+    // The probe enables every toolset and forces multi-organization on purpose:
+    // a key belonging to a toolset this process has disabled, or to
+    // list_organizations on a single-organization setup, is still a valid key,
+    // and reporting it would be a false alarm.
     reportUnknownOverrideKeys({
       ...args,
       overrides: {
-        TOOL_ENABLE_TOOLSET_DESCRIPTION: 'Custom',
         TOOL_GET_WIKI_DESCRIPTION: 'Custom',
+        TOOL_LIST_ORGANIZATIONS_DESCRIPTION: 'Custom',
       },
     });
 

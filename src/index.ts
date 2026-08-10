@@ -134,12 +134,6 @@ Available toolsets:
   - notifications: Tools for managing user notifications`,
     default: env.get('ENABLE_TOOLSETS').default('all').asArray(','),
   })
-  .option('dynamic-toolsets', {
-    type: 'boolean',
-    describe:
-      'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
-    default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
-  })
   .parseSync();
 
 // The alias resolves both spellings to the same argv key, so which one was typed
@@ -153,6 +147,32 @@ if (
 ) {
   process.stderr.write(
     '--export-translations is deprecated and will be removed in a future release. Use --export-descriptions.\n'
+  );
+}
+
+// Dynamic toolsets are gone. yargs ignores the unknown flag, so without this the
+// server would start with a quietly different tool list: the flag used to drop
+// `all` from the enabled toolsets, so a setup that passed only this one went from
+// no toolsets plus three meta-tools to every toolset enabled.
+//
+// Only worth saying to someone who had it switched on. A setting left at `false`
+// asked for what it now gets, so a notice claiming the tool list changed would be
+// wrong.
+const asksForDynamicToolsets = (value: string | undefined): boolean =>
+  value !== undefined &&
+  !['', '0', 'false', 'no'].includes(value.toLowerCase());
+
+const dynamicToolsetsFlag = hideBin(process.argv).find(
+  (arg) => arg.split('=')[0] === '--dynamic-toolsets'
+);
+
+if (
+  (dynamicToolsetsFlag !== undefined &&
+    asksForDynamicToolsets(dynamicToolsetsFlag.split('=')[1] ?? 'true')) ||
+  asksForDynamicToolsets(process.env.ENABLE_DYNAMIC_TOOLSETS)
+) {
+  process.stderr.write(
+    'Dynamic toolsets have been removed, and --dynamic-toolsets / ENABLE_DYNAMIC_TOOLSETS no longer do anything. Every toolset is enabled unless you narrow it with --enable-toolsets or ENABLE_TOOLSETS.\n'
   );
 }
 
@@ -175,9 +195,7 @@ const descriptionHelper = createDescriptionHelper(descriptionOverrides);
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
-const enabledToolsets = argv.dynamicToolsets
-  ? (argv.enableToolsets as string[]).filter((a) => a !== 'all')
-  : (argv.enableToolsets as string[]);
+const enabledToolsets = argv.enableToolsets as string[];
 
 const mcpOption = {
   useFields: useFields,
@@ -186,11 +204,9 @@ const mcpOption = {
   useOrganization: clientRegistry.isMultiOrganization,
 };
 
-// Built once and shared by every server the factory produces. `enable_toolset`
-// mutates this group, and the stateless HTTP model discards its server after
-// each request — so a per-server group would lose the enablement immediately.
-// Sharing it makes toolset state process-wide, which is the only scope left now
-// that the protocol has no sessions.
+// Built once and shared by every server the factory produces. Nothing mutates
+// it, so this is purely to avoid rebuilding the whole tool tree per request under
+// the stateless HTTP model.
 const sharedToolsetGroup = buildToolsetGroup(
   backlog,
   descriptionHelper,
@@ -216,7 +232,6 @@ const createServer = () =>
     descriptionHelper,
     enabledToolsets,
     mcpOption,
-    dynamicToolsets: argv.dynamicToolsets,
     toolsetGroup: sharedToolsetGroup,
   });
 
@@ -232,7 +247,6 @@ if (argv.exportDescriptions) {
     descriptionHelper,
     enabledToolsets: ['all'],
     mcpOption,
-    dynamicToolsets: true,
   });
   const data = descriptionHelper.dump();
   // eslint-disable-next-line no-console

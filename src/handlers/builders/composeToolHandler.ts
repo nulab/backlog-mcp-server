@@ -78,7 +78,7 @@ function extendSchema<I extends z.ZodRawShape>(
 ): z.ZodObject<
   I & {
     organization?: z.ZodOptional<z.ZodString>;
-    fields?: z.ZodString;
+    fields?: z.ZodOptional<z.ZodString>;
   }
 > {
   const extension: Record<string, z.ZodType> = {};
@@ -93,7 +93,11 @@ function extendSchema<I extends z.ZodRawShape>(
   }
 
   if (desc) {
-    extension.fields = z.string().describe(desc);
+    // Optional, as both the declared return type here and `wrapWithFieldPicking`
+    // have always assumed: it returns the whole result when `fields` is absent.
+    // Built without `.optional()`, every call under --optimize-response failed
+    // unless the caller supplied a selection.
+    extension.fields = z.string().optional().describe(desc);
   }
 
   // zod v4 reworked the ZodObject shape generics, so `extend()`'s result no
@@ -102,7 +106,7 @@ function extendSchema<I extends z.ZodRawShape>(
   return schema.extend(extension) as unknown as z.ZodObject<
     I & {
       organization?: z.ZodOptional<z.ZodString>;
-      fields?: z.ZodString;
+      fields?: z.ZodOptional<z.ZodString>;
     }
   >;
 }

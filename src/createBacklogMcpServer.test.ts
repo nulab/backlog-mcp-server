@@ -6,8 +6,6 @@ import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { registerDynamicTools, registerTools } from './registerTools.js';
 import { organizationTools } from './tools/dynamicTools/organizations.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
-import { createToolRegistrar } from './utils/toolRegistrar.js';
-import { dynamicTools } from './tools/dynamicTools/toolsets.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 
 vi.mock('@modelcontextprotocol/server', () => ({
@@ -25,13 +23,7 @@ vi.mock('./utils/toolsetUtils.js', () => ({
   buildToolsetGroup: vi.fn().mockReturnValue({ toolsets: [] }),
 }));
 
-vi.mock('./utils/toolRegistrar.js', () => ({
-  createToolRegistrar: vi.fn().mockReturnValue({}),
-}));
-
-vi.mock('./tools/dynamicTools/toolsets.js', () => ({
-  dynamicTools: vi.fn().mockReturnValue({}),
-}));
+vi.mock('./utils/toolRegistrar.js', () => ({}));
 
 vi.mock('./tools/dynamicTools/organizations.js', () => ({
   organizationTools: vi.fn().mockReturnValue({ toolsets: [] }),
@@ -56,7 +48,6 @@ describe('createBacklogMcpServer', () => {
     descriptionHelper: mockDescriptionHelper,
     enabledToolsets: ['all'],
     mcpOption,
-    dynamicToolsets: false,
   };
 
   beforeEach(() => {
@@ -77,9 +68,8 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
-  // Regression: under the stateless HTTP model the factory runs once per
-  // request, so a group built per server would throw away every
-  // `enable_toolset` mutation as soon as the request ended.
+  // Under the stateless HTTP model the factory runs once per request, so a
+  // caller that shares one group avoids rebuilding the whole tool tree each time.
   it('registers from a caller-supplied toolset group instead of building one', () => {
     const sharedToolsetGroup = { toolsets: [] } as any;
 
@@ -106,12 +96,8 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
-  it('does not register dynamic toolsets when dynamicToolsets is false', () => {
-    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: false });
-    expect(createToolRegistrar).not.toHaveBeenCalled();
-    expect(dynamicTools).not.toHaveBeenCalled();
-    // organizationTools are registered independently of dynamicToolsets, as
-    // long as more than one organization is configured
+  it('registers list_organizations when more than one organization is configured', () => {
+    createBacklogMcpServer(baseConfig);
     expect(organizationTools).toHaveBeenCalledWith(
       mockClientRegistry,
       mockDescriptionHelper
@@ -132,18 +118,9 @@ describe('createBacklogMcpServer', () => {
     expect(registerDynamicTools).not.toHaveBeenCalled();
   });
 
-  it('registers dynamic toolsets when dynamicToolsets is true', () => {
-    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
-    expect(createToolRegistrar).toHaveBeenCalled();
-    expect(dynamicTools).toHaveBeenCalled();
-    // organizationTools + dynamic toolsets = 2 calls
-    expect(registerDynamicTools).toHaveBeenCalledTimes(2);
-  });
-
   it('passes mcpOption.prefix to registerDynamicTools', () => {
     const configWithPrefix = {
       ...baseConfig,
-      dynamicToolsets: true,
       mcpOption: { ...mcpOption, prefix: 'backlog_' },
     };
 
@@ -195,31 +172,6 @@ describe('createBacklogMcpServer', () => {
           'tools/list': { ttlMs: 5 * 60 * 1000, cacheScope: 'public' },
         },
       })
-    );
-  });
-
-  it('omits the tools/list cache hint when dynamic toolsets can grow the list', () => {
-    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
-    expect(McpServer).toHaveBeenCalledWith(expect.anything(), undefined);
-  });
-
-  it('passes correct arguments to dynamicTools when dynamicToolsets is true', () => {
-    const mockToolsetGroup = { toolsets: [] };
-    const mockRegistrar = { register: vi.fn() };
-    vi.mocked(buildToolsetGroup).mockReturnValue(mockToolsetGroup as any);
-    vi.mocked(createToolRegistrar).mockReturnValue(mockRegistrar as any);
-
-    createBacklogMcpServer({ ...baseConfig, dynamicToolsets: true });
-
-    expect(createToolRegistrar).toHaveBeenCalledWith(
-      expect.anything(),
-      mockToolsetGroup,
-      mcpOption
-    );
-    expect(dynamicTools).toHaveBeenCalledWith(
-      mockRegistrar,
-      mockDescriptionHelper,
-      mockToolsetGroup
     );
   });
 });

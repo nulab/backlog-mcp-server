@@ -22,11 +22,7 @@ export { isErrorLike } from './types/result.js';
 
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
 export type { DescriptionHelper } from './createDescriptionHelper.js';
-export type {
-  ToolDefinition,
-  DynamicToolDefinition,
-  ToolRegistrar,
-} from './types/tool.js';
+export type { ToolDefinition, DynamicToolDefinition } from './types/tool.js';
 export type {
   Toolset,
   ToolsetGroup,
