@@ -205,9 +205,10 @@ pnpm test -- -t "getSpace"
 
 ## Description Overrides
 
-The strings resolved through `t()` are the tool and parameter descriptions the
-model reads when it picks a tool and fills in arguments. The server ships no
-translations to choose between; overriding is for steering tool selection.
+Almost all strings resolved through `t()` are the tool and parameter descriptions
+the model reads when it picks a tool and fills in arguments; a few are validation
+error messages. The server ships no translations to choose between, so overriding
+is for steering tool selection, not for changing the language of answers.
 
 - Overrides through environment variables (`BACKLOG_MCP_*`)
 - Overrides through configuration files (`.backlog-mcp-serverrc.json`, cosmiconfig)

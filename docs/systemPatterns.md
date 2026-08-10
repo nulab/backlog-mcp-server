@@ -233,7 +233,9 @@ src/
 ├── createBacklogMcpServer.ts      # MCP server factory
 ├── httpMcpServer.ts               # Streamable HTTP transport (Hono)
 ├── registerTools.ts               # Tool registration logic
-├── createDescriptionHelper.ts     # Description helper
+├── createDescriptionHelper.ts     # Description helper (resolves t())
+├── loadDescriptionOverrides.ts    # Reads .backlog-mcp-serverrc (Node-only)
+├── lib.ts                         # Library entry point
 ├── auth/                          # OAuth support for the HTTP transport
 │   ├── backlogAuthContext.ts      # Per-request access token context
 │   ├── backlogOAuthClient.ts      # Backlog OAuth client

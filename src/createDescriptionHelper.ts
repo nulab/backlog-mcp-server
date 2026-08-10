@@ -1,7 +1,9 @@
 /**
- * Resolves the schema strings every tool definition passes through `t()`: tool
- * descriptions and parameter descriptions. These are read by the model when it
- * picks a tool and fills in arguments; they never reach the end user.
+ * Resolves the strings every tool definition passes through `t()`. Almost all of
+ * them are tool and parameter descriptions, read by the model when it picks a
+ * tool and fills in arguments. A few are validation error messages — `deleteVersion`
+ * and `resolveIdOrField` throw them — which do surface, as the text of a failed
+ * tool result.
  *
  * This module intentionally imports nothing. Every tool in `src/tools/` depends on
  * it, so anything imported here is reachable from the tool layer — and the tool

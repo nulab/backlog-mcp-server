@@ -10,7 +10,7 @@ import os from 'os';
  * directory. The CLI calls this and hands the result to the helper.
  *
  * The file is user-authored, so its contents are unknown: anything that is not a
- * string is dropped here rather than passed on. Every override ends up in a tool
+ * string is dropped here rather than passed on. Most overrides end up in a tool
  * description, and a number or an array there would produce an invalid
  * `tools/list` payload.
  */
