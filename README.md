@@ -281,12 +281,12 @@ Enabling via CLI:
 Or via environment variable::
 
 ```
--e DYNAMIC_TOOLSETS=1 \
+-e ENABLE_DYNAMIC_TOOLSETS=1 \
 ```
 
 With dynamic toolsets enabled, the LLM will be able to list and activate toolsets on demand via tool interface.
 
-> **Scope over HTTP:** MCP `2026-07-28` has no protocol sessions, so an activated toolset is remembered per **server process**, not per client. On the HTTP transport every connected client shares one toolset state, and it resets when the process restarts. Tool _visibility_ is shared; authorization is not — every call is still authenticated with the caller's own credentials.
+> **stdio only.** `--dynamic-toolsets` with `--transport http` is refused at startup. `enable_toolset` promises the caller that a toolset stays enabled for them, and MCP `2026-07-28` has no protocol sessions to keep that in: the toolset state would belong to the **server process**, so one client's call would change the tool list for every other client, with no way to undo it. On stdio there is one client per process, so it holds. Over HTTP, choose the toolsets up front with `--enable-toolsets`.
 
 ## Available Tools
 
