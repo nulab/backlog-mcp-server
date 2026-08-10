@@ -137,6 +137,39 @@ describe('loadDescriptionOverrides', () => {
     });
   });
 
+  describe('the extensionless rc file', () => {
+    it('is read as YAML', () => {
+      writeConfig('.backlog-mcp-serverrc', 'HELLO: From extensionless\n');
+
+      expect(loadDescriptionOverrides({ searchDir })).toEqual({
+        HELLO: 'From extensionless',
+      });
+    });
+
+    it('accepts JSON contents, since YAML is a superset', () => {
+      writeConfig(
+        '.backlog-mcp-serverrc',
+        JSON.stringify({ HELLO: 'From extensionless json' })
+      );
+
+      expect(loadDescriptionOverrides({ searchDir })).toEqual({
+        HELLO: 'From extensionless json',
+      });
+    });
+
+    it('wins over the suffixed files', () => {
+      writeConfig('.backlog-mcp-serverrc', 'WHICH: extensionless\n');
+      writeConfig(
+        '.backlog-mcp-serverrc.json',
+        JSON.stringify({ WHICH: 'json' })
+      );
+
+      expect(loadDescriptionOverrides({ searchDir })).toEqual({
+        WHICH: 'extensionless',
+      });
+    });
+  });
+
   it('returns an empty object when the search directory does not exist', () => {
     expect(
       loadDescriptionOverrides({ searchDir: path.join(searchDir, 'nope') })

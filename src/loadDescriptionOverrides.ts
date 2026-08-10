@@ -5,8 +5,8 @@ import path from 'path';
 import { logger } from './utils/logger.js';
 
 /**
- * Reads description overrides from a `.backlog-mcp-serverrc` file (`.json`,
- * `.yaml` or `.yml`) in the user's home directory.
+ * Reads description overrides from a `.backlog-mcp-serverrc` file in the user's
+ * home directory.
  *
  * Node-only, and kept separate from `createDescriptionHelper` for that reason:
  * this reads the filesystem and needs a home directory. The CLI calls it and
@@ -24,7 +24,11 @@ import { logger } from './utils/logger.js';
  * pointing at the config file.
  */
 
-const EXTENSIONS = ['json', 'yaml', 'yml'] as const;
+/**
+ * Checked in this order; the first one that exists wins. The extensionless form
+ * is parsed as YAML, which also accepts JSON.
+ */
+const SUFFIXES = ['', '.json', '.yaml', '.yml'] as const;
 
 type ReadOutcome =
   | { status: 'found'; config: unknown }
@@ -32,7 +36,7 @@ type ReadOutcome =
   | { status: 'unreadable'; error: unknown };
 
 /**
- * A missing candidate is not a failure — there are three of them and at most one
+ * A missing candidate is not a failure — there are four of them and at most one
  * exists. A candidate that exists but does not parse is, and has to be
  * distinguished from the missing case so it can be reported rather than skipped.
  */
@@ -71,8 +75,8 @@ export function loadDescriptionOverrides(options?: {
   const configName = options?.configName ?? 'backlog-mcp-server';
   const searchDir = options?.searchDir ?? os.homedir();
 
-  for (const extension of EXTENSIONS) {
-    const filePath = path.join(searchDir, `.${configName}rc.${extension}`);
+  for (const suffix of SUFFIXES) {
+    const filePath = path.join(searchDir, `.${configName}rc${suffix}`);
     const outcome = readCandidate(filePath);
 
     if (outcome.status === 'absent') continue;
