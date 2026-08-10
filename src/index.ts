@@ -12,6 +12,7 @@ import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { loadDescriptionOverrides } from './loadDescriptionOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
+import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys.js';
 import {
   createBacklogClientRegistry,
   createOAuthBacklogClientRegistry,
@@ -169,7 +170,8 @@ if (tokenStore) {
 
 const useFields = argv.optimizeResponse;
 
-const descriptionHelper = createDescriptionHelper(loadDescriptionOverrides());
+const descriptionOverrides = loadDescriptionOverrides();
+const descriptionHelper = createDescriptionHelper(descriptionOverrides);
 
 const maxTokens = argv.maxTokens;
 const prefix = argv.prefix;
@@ -194,6 +196,14 @@ const sharedToolsetGroup = buildToolsetGroup(
   descriptionHelper,
   enabledToolsets
 );
+
+reportUnknownOverrideKeys({
+  overrides: descriptionOverrides,
+  version,
+  backlog,
+  clientRegistry,
+  mcpOption,
+});
 
 // Factory: creates a fresh MCP server with all tools registered.
 // Used once per stdio connection; one fresh instance per HTTP request.
