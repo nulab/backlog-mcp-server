@@ -1,8 +1,9 @@
 import { loadDescriptionOverrides } from './loadDescriptionOverrides';
+import { logger } from './utils/logger';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('loadDescriptionOverrides', () => {
   let searchDir: string;
@@ -77,5 +78,37 @@ describe('loadDescriptionOverrides', () => {
     expect(
       loadDescriptionOverrides({ searchDir, configName: 'other' })
     ).toEqual({ HELLO: 'From other' });
+  });
+
+  describe('when the config file cannot be parsed', () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('falls back to the defaults instead of throwing', () => {
+      writeConfig('.backlog-mcp-serverrc.json', '{ this is not valid json');
+
+      expect(() => loadDescriptionOverrides({ searchDir })).not.toThrow();
+      expect(loadDescriptionOverrides({ searchDir })).toEqual({});
+    });
+
+    it('reports the failure at a level the default logger emits', () => {
+      // The logger runs at level `error` unless NODE_ENV says otherwise, so a
+      // warning would be dropped for the users this message is meant for.
+      writeConfig('.backlog-mcp-serverrc.yaml', 'HELLO: [unclosed\n');
+
+      loadDescriptionOverrides({ searchDir });
+
+      expect(errorSpy).toHaveBeenCalledOnce();
+      expect(errorSpy.mock.calls[0]?.[0]).toMatchObject({
+        searchPath: searchDir,
+      });
+    });
   });
 });
