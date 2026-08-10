@@ -29,16 +29,58 @@ function oauthError(
   return { error: code, error_description: description };
 }
 
-function isValidRedirectUri(uri: string): boolean {
+function isLoopbackRedirectUri(uri: string): boolean {
   try {
     const parsed = new URL(uri);
-    if (parsed.protocol === 'https:') return true;
     return (
       parsed.protocol === 'http:' && LOCALHOST_HOSTS.includes(parsed.hostname)
     );
   } catch {
     return false;
   }
+}
+
+function isValidRedirectUri(uri: string): boolean {
+  try {
+    const parsed = new URL(uri);
+    if (parsed.protocol === 'https:') return true;
+    return isLoopbackRedirectUri(uri);
+  } catch {
+    return false;
+  }
+}
+
+/** RFC 7591 defines these two, and defaults to `web` when the field is absent. */
+const APPLICATION_TYPES = ['web', 'native'] as const;
+type ApplicationType = (typeof APPLICATION_TYPES)[number];
+
+/**
+ * Decides which application type a registration is held to.
+ *
+ * A loopback redirect URI is the standard way for an app on the user's machine
+ * to receive the authorization code (RFC 8252), and the wrong thing entirely for
+ * an app that has a domain of its own: nobody owns `http://localhost`, so
+ * whichever process is listening on that port receives the code.
+ *
+ * RFC 7591 defaults the field to `web`, which would reject every local MCP
+ * client that does not declare itself — and they do not, because nothing has
+ * ever checked. So an undeclared registration is judged by what it asks for: a
+ * set of redirect URIs that is entirely loopback can only be a native client,
+ * and is treated as one.
+ *
+ * The inference deliberately requires *all* of them. A registration mixing a
+ * remote https URI with a loopback one is the shape this check exists to stop:
+ * something that can serve a redirect on its own domain has no need to also
+ * collect codes on the user's machine. Mixing is only accepted from a client
+ * that declares `native` outright, which RFC 8252 does allow (a native app may
+ * claim an https URI as well as a loopback one).
+ */
+function resolveApplicationType(
+  declared: ApplicationType | undefined,
+  redirectUris: string[]
+): ApplicationType {
+  if (declared) return declared;
+  return redirectUris.every(isLoopbackRedirectUri) ? 'native' : 'web';
 }
 
 export function createOAuthRoutes(
@@ -108,6 +150,41 @@ export function createOAuthRoutes(
           oauthError(
             'invalid_client_metadata',
             `redirect_uri must use https or http://localhost: ${uri}`
+          ),
+          400
+        );
+      }
+    }
+
+    // `null` counts as not declared. Serialisers that emit null for an absent
+    // optional field are common, and rejecting it would break clients this
+    // change is meant to leave alone.
+    const declaredApplicationType = body.application_type ?? undefined;
+    if (
+      declaredApplicationType !== undefined &&
+      !APPLICATION_TYPES.includes(declaredApplicationType as ApplicationType)
+    ) {
+      return c.json(
+        oauthError(
+          'invalid_client_metadata',
+          `Unsupported application_type: ${String(declaredApplicationType)}. Supported: ${APPLICATION_TYPES.join(', ')}`
+        ),
+        400
+      );
+    }
+
+    const applicationType = resolveApplicationType(
+      declaredApplicationType as ApplicationType | undefined,
+      redirectUris as string[]
+    );
+
+    if (applicationType === 'web') {
+      const loopback = (redirectUris as string[]).filter(isLoopbackRedirectUri);
+      if (loopback.length > 0) {
+        return c.json(
+          oauthError(
+            'invalid_client_metadata',
+            `application_type "web" may not use a loopback redirect_uri: ${loopback.join(', ')}. Declare application_type "native" if this client runs on the user's machine.`
           ),
           400
         );
