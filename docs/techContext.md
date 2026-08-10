@@ -214,7 +214,7 @@ is for steering tool selection, not for changing the language of answers.
 - Overrides through configuration files (`.backlog-mcp-serverrc.json`, cosmiconfig)
 - Fallback to the built-in default when an override is empty or not a string
 - Resolved keys are tracked and dumpable via `--export-descriptions`
-  (deprecated alias `--export-translations`, removed in 0.16.0)
+  (deprecated alias `--export-translations`, to be removed in a future release)
 
 ## Response Optimization
 

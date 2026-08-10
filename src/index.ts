@@ -113,7 +113,7 @@ const argv = yargs(hideBin(process.argv))
   })
   .option('export-descriptions', {
     type: 'boolean',
-    // Deprecated alias, removed in 0.16.0. Kept because the old name is
+    // Deprecated alias, to be removed in a future release. Kept because the old name is
     // documented with docker and npx examples, and dropping it outright would
     // not fail loudly: yargs ignores unknown flags, so the process would fall
     // through to starting a server and the caller would see a hang.
@@ -151,7 +151,7 @@ if (
   )
 ) {
   process.stderr.write(
-    '--export-translations is deprecated and will be removed in 0.16.0. Use --export-descriptions.\n'
+    '--export-translations is deprecated and will be removed in a future release. Use --export-descriptions.\n'
   );
 }
 
