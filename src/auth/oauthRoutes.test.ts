@@ -124,6 +124,103 @@ describe('createOAuthRoutes', () => {
       expect(res.status).toBe(400);
     });
 
+    describe('application_type', () => {
+      const register = (body: Record<string, unknown>) =>
+        app.request('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+      it('lets a native client use a loopback redirect_uri', async () => {
+        const res = await register({
+          application_type: 'native',
+          redirect_uris: ['http://localhost:9999/callback'],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
+      it('lets a web client use an https redirect_uri', async () => {
+        const res = await register({
+          application_type: 'web',
+          redirect_uris: ['https://client.example.com/callback'],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
+      it('refuses a loopback redirect_uri from a web client', async () => {
+        const res = await register({
+          application_type: 'web',
+          redirect_uris: ['http://localhost:9999/callback'],
+        });
+
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error).toBe('invalid_client_metadata');
+        expect(body.error_description).toContain('loopback');
+      });
+
+      it('treats an all-loopback registration as native when undeclared', async () => {
+        // Local MCP clients do not send application_type. RFC 7591 would default
+        // them to `web` and reject them; a set of redirect URIs that is entirely
+        // loopback can only be a client on the user's machine.
+        const res = await register({
+          redirect_uris: [
+            'http://localhost:9999/callback',
+            'http://127.0.0.1:8888/callback',
+          ],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
+      it('refuses an undeclared registration that mixes https and loopback', async () => {
+        // The inference above must not become the way around the check: something
+        // that can serve a redirect on its own domain has no need to also collect
+        // codes on the user's machine.
+        const res = await register({
+          redirect_uris: [
+            'https://client.example.com/callback',
+            'http://localhost:9999/callback',
+          ],
+        });
+
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error).toBe('invalid_client_metadata');
+        expect(body.error_description).toContain(
+          'http://localhost:9999/callback'
+        );
+      });
+
+      it('still lets a declared native client claim an https redirect_uri too', async () => {
+        // RFC 8252 allows a native app a claimed https URI alongside loopback.
+        const res = await register({
+          application_type: 'native',
+          redirect_uris: [
+            'https://client.example.com/callback',
+            'http://localhost:9999/callback',
+          ],
+        });
+
+        expect(res.status).toBe(201);
+      });
+
+      it('rejects an application_type it does not define', async () => {
+        const res = await register({
+          application_type: 'browser',
+          redirect_uris: ['https://client.example.com/callback'],
+        });
+
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error).toBe('invalid_client_metadata');
+        expect(body.error_description).toContain('application_type');
+      });
+    });
+
     it('rejects unsupported token_endpoint_auth_method', async () => {
       const res = await app.request('/register', {
         method: 'POST',
