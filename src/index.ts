@@ -13,6 +13,7 @@ import { loadDescriptionOverrides } from './loadDescriptionOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
 import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys.js';
+import { validateTransportOptions } from './validateTransportOptions.js';
 import {
   createBacklogClientRegistry,
   createOAuthBacklogClientRegistry,
@@ -139,6 +140,18 @@ Available toolsets:
     describe:
       'Enable dynamic toolsets such as enable_toolset, list_available_toolsets, etc.',
     default: env.get('ENABLE_DYNAMIC_TOOLSETS').default('false').asBool(),
+  })
+  // Runs on the resolved values, so a combination set through the environment
+  // rather than the command line is caught too.
+  .check((parsed) => {
+    // yargs types argv loosely inside `check`, before the option types are
+    // resolved, so both values arrive as `unknown`.
+    const problem = validateTransportOptions({
+      transport: String(parsed.transport),
+      dynamicToolsets: Boolean(parsed.dynamicToolsets),
+    });
+    if (problem) throw new Error(problem);
+    return true;
   })
   .parseSync();
 
