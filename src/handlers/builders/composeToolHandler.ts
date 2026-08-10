@@ -51,8 +51,7 @@ export function composeToolHandler(
   const fieldDesc = useFields
     ? generateFieldsDescription(
         tool.outputSchema,
-        (tool.importantFields as string[]) ?? [],
-        tool.name
+        (tool.importantFields as string[]) ?? []
       )
     : undefined;
   const schema = extendSchema(tool.schema, fieldDesc, useOrganization);

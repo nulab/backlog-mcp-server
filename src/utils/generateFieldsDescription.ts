@@ -1,68 +1,42 @@
-import { z, ZodRawShape, ZodType } from 'zod';
+import { z, ZodRawShape } from 'zod';
 
 /**
- * Generate GraphQL like fields and type specs from Zod types
+ * Builds the description of the `fields` parameter that `--optimize-response`
+ * adds to every tool.
+ *
+ * This text is prompt: it is published on all ~62 tools in every `tools/list`,
+ * so its size is a fixed cost paid up front against a response saving that only
+ * materialises when the model actually selects fields. It is deliberately two
+ * short parts — an example query, and the full field list when the example is
+ * only a subset of it.
+ *
+ * It used to also emit a GraphQL type definition for the output. That was
+ * dropped: it repeated every field name a second line at a time, it was the
+ * larger half of the text, and its types were wrong for arrays —
+ * `mapZodTypeToGraphQLType` had no `ZodArray` branch, so `z.array(TagSchema)`
+ * was published as `String`. Field names are what a selection needs.
  */
 export function generateFieldsDescription(
   outputSchema: z.ZodObject<ZodRawShape>,
-  importantFields: string[] = [],
-  typeName = 'Output'
+  importantFields: string[] = []
 ): string {
   const allFields = Object.keys(outputSchema.shape);
-
-  // Generate Example Query
-  const exampleQueryFields =
+  const exampleFields =
     importantFields.length > 0 ? importantFields : allFields;
 
-  // Generate Output Schema
-  const gqlTypeDef = generateGraphQLType(typeName, outputSchema);
+  const lines = [
+    'Specify the fields to retrieve using GraphQL query syntax.',
+    'Example (query):',
+    '{',
+    ...exampleFields.map((field) => `  ${field}`),
+    '}',
+  ];
 
-  return `
-Specify the fields to retrieve using GraphQL query syntax.
-Example (query):
-{
-  ${exampleQueryFields.join('\n  ')}
-}
-Output schema (type definition):
-${gqlTypeDef}
-  `.trim();
-}
-
-function generateGraphQLType(
-  typeName: string,
-  schema: z.ZodObject<ZodRawShape>
-): string {
-  const lines: string[] = [`type ${typeName} {`];
-  for (const [key, value] of Object.entries(schema.shape)) {
-    lines.push(`  ${key}: ${mapZodTypeToGraphQLType(value as ZodType)}`);
+  // Only worth listing separately when the example does not already show them
+  // all, which is the case for the tools that declare importantFields.
+  if (exampleFields.length < allFields.length) {
+    lines.push(`All selectable fields: ${allFields.join(', ')}`);
   }
-  lines.push('}');
+
   return lines.join('\n');
-}
-
-/**
- * Zod to graphql
- */
-function mapZodTypeToGraphQLType(zodType: z.ZodType): string {
-  if (zodType instanceof z.ZodString) return 'String!';
-  if (zodType instanceof z.ZodNumber) return 'Int!';
-  if (zodType instanceof z.ZodBoolean) return 'Boolean!';
-  // zod v4 types `.unwrap()` as the core `$ZodType` rather than the classic
-  // `ZodType`, so the recursive call needs a cast. The runtime value is a
-  // classic schema either way - only the declared type narrowed.
-  if (zodType instanceof z.ZodNullable)
-    return mapZodTypeToGraphQLType(zodType.unwrap() as z.ZodType).replace(
-      /!$/,
-      ''
-    );
-  if (zodType instanceof z.ZodOptional)
-    return mapZodTypeToGraphQLType(zodType.unwrap() as z.ZodType).replace(
-      /!$/,
-      ''
-    );
-
-  // Spec: a nested part is JSON
-  if (zodType instanceof z.ZodObject) return 'JSON';
-
-  return 'String';
 }
