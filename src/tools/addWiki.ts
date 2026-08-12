@@ -32,6 +32,7 @@ export const addWikiTool = (
     name: 'add_wiki',
     description: t('TOOL_ADD_WIKI_DESCRIPTION', 'Creates a new wiki page'),
     schema: z.object(addWikiSchema(t)),
+    returnsList: false,
     outputSchema: WikiSchema,
     importantFields: ['id', 'name', 'content', 'createdUser'],
     handler: async ({ projectId, name, content, mailNotify }) =>

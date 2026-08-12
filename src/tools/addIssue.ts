@@ -127,6 +127,7 @@ export const addIssueTool = (
       'Creates a new issue in the specified project.'
     ),
     schema: z.object(addIssueSchema(t)),
+    returnsList: false,
     outputSchema: IssueSchema,
     importantFields: ['summary', 'issueKey', 'description', 'createdUser'],
     handler: async ({ customFields, ...params }) => {

@@ -41,6 +41,7 @@ export const updateWikiTool = (
       'Updates an existing wiki page'
     ),
     schema: z.object(updateWikiSchema(t)),
+    returnsList: false,
     outputSchema: WikiSchema,
     importantFields: ['id', 'name', 'content', 'updatedUser'],
     handler: async ({ wikiId, name, content, mailNotify }) => {

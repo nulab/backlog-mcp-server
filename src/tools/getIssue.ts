@@ -33,6 +33,7 @@ export const getIssueTool = (
       'TOOL_GET_ISSUE_DESCRIPTION',
       'Returns information about a specific issue'
     ),
+    returnsList: false,
     outputSchema: IssueSchema,
     schema: z.object(getIssueSchema(t)),
     handler: async ({ issueId, issueKey }) => {

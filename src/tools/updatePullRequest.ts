@@ -86,6 +86,7 @@ export const updatePullRequestTool = (
       'Updates an existing pull request'
     ),
     schema: z.object(updatePullRequestSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestSchema,
     handler: async ({
       projectId,

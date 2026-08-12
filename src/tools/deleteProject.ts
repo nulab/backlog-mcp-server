@@ -37,6 +37,7 @@ export const deleteProjectTool = (
     name: 'delete_project',
     description: t('TOOL_DELETE_PROJECT_DESCRIPTION', 'Deletes a project'),
     schema: z.object(deleteProjectSchema(t)),
+    returnsList: false,
     outputSchema: ProjectSchema,
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

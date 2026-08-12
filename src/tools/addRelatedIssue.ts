@@ -48,6 +48,7 @@ export const addRelatedIssueTool = (
       'Relates an issue to another issue'
     ),
     schema: z.object(addRelatedIssueSchema(t)),
+    returnsList: false,
     outputSchema: RelatedIssueSchema,
     handler: async ({ issueId, issueKey, targetIssueId }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);

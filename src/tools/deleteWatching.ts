@@ -24,6 +24,7 @@ export const deleteWatchingTool = (
       'Deletes a watch from an issue'
     ),
     schema: z.object(deleteWatchingSchema(t)),
+    returnsList: false,
     outputSchema: WatchingListItemSchema,
     handler: async ({ watchId }) => backlog.deletehWatchingListItem(watchId),
   };

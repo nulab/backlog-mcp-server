@@ -24,6 +24,7 @@ export const getWatchingListCountTool = (
       'Returns count of watching items for a user'
     ),
     schema: z.object(getWatchingListCountSchema(t)),
+    returnsList: false,
     outputSchema: WatchingListCountSchema,
     handler: async ({ userId }) => backlog.getWatchingListCount(userId),
   };

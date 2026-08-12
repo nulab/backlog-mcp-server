@@ -24,6 +24,7 @@ export const getDocumentTool = (
       'Gets information about a document.'
     ),
     schema: z.object(getDocumentSchema(t)),
+    returnsList: false,
     outputSchema: DocumentItemSchema,
     importantFields: ['id', 'title', 'createdUser'],
     handler: async ({ documentId }) => {

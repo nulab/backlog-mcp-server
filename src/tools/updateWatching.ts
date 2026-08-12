@@ -25,6 +25,7 @@ export const updateWatchingTool = (
       'Updates an existing watch note'
     ),
     schema: z.object(updateWatchingSchema(t)),
+    returnsList: false,
     outputSchema: WatchingListItemSchema,
     handler: async ({ watchId, note }) =>
       backlog.patchWatchingListItem(watchId, note),

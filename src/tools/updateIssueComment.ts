@@ -46,6 +46,7 @@ export const updateIssueCommentTool = (
       'Updates a comment on an issue'
     ),
     schema: z.object(updateIssueCommentSchema(t)),
+    returnsList: false,
     outputSchema: IssueCommentSchema,
     importantFields: ['id', 'content', 'createdUser', 'updated'],
     handler: async ({ issueId, issueKey, commentId, content }) => {

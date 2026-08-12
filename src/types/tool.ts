@@ -30,8 +30,11 @@ export type ToolDefinition<
    *
    * Verifiable: it is true exactly for the tools whose `backlog-js` method is
    * declared as `Promise<T[]>`.
+   *
+   * Required rather than optional so that a new tool has to answer the question.
+   * Left optional, forgetting it would silently mean "no field selection".
    */
-  returnsList?: boolean;
+  returnsList: boolean;
 };
 
 export const buildToolSchema = <T extends z.ZodRawShape>(

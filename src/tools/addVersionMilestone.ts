@@ -54,6 +54,7 @@ export const addVersionMilestoneTool = (
       'Creates a new version milestone'
     ),
     schema: z.object(addVersionMilestoneSchema(t)),
+    returnsList: false,
     outputSchema: VersionSchema,
     importantFields: [
       'id',

@@ -29,6 +29,7 @@ export const getDocumentTreeTool = (
       'Gets the document tree of a project.'
     ),
     schema: z.object(getDocumentTreeSchema(t)),
+    returnsList: false,
     outputSchema: DocumentTreeFullSchemaZ,
     importantFields: ['projectId', 'activeTree', 'trashTree'],
     handler: async ({ projectIdOrKey }) => {

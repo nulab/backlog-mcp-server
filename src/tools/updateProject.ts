@@ -82,6 +82,7 @@ export const updateProjectTool = (
       'Updates an existing project'
     ),
     schema: z.object(updateProjectSchema(t)),
+    returnsList: false,
     outputSchema: ProjectSchema,
     handler: async ({ projectId, projectKey, ...param }) => {
       const result = resolveIdOrKey(

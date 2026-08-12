@@ -127,6 +127,7 @@ export const countIssuesTool = (
     name: 'count_issues',
     description: t('TOOL_COUNT_ISSUES_DESCRIPTION', 'Returns count of issues'),
     schema: z.object(countIssuesSchema(t)),
+    returnsList: false,
     outputSchema: IssueCountSchema,
     handler: async ({ customFields, ...rest }) => {
       return backlog.getIssuesCount({

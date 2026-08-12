@@ -216,6 +216,7 @@ export const updateIssueTool = (
       'Updates an existing issue'
     ),
     schema: z.object(updateIssueSchema(t)),
+    returnsList: false,
     outputSchema: IssueSchema,
     handler: async ({ issueId, issueKey, customFields, ...params }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);

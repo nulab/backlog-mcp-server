@@ -80,6 +80,7 @@ export const addPullRequestTool = (
       'Creates a new pull request'
     ),
     schema: z.object(addPullRequestSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestSchema,
     handler: async ({ projectId, projectKey, repoId, repoName, ...params }) => {
       const result = resolveIdOrKey(

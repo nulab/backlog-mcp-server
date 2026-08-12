@@ -20,6 +20,7 @@ export const getSpaceTool = (
       'Returns information about the Backlog space'
     ),
     schema: z.object(getSpaceSchema(t)),
+    returnsList: false,
     outputSchema: SpaceSchema,
     importantFields: ['spaceKey', 'name', 'lang', 'timezone'],
     handler: async () => backlog.getSpace(),

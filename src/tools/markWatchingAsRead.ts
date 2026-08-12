@@ -30,6 +30,7 @@ export const markWatchingAsReadTool = (
       'Mark a watch as read'
     ),
     schema: z.object(markWatchingAsReadSchema(t)),
+    returnsList: false,
     outputSchema: MarkWatchingAsReadResultSchema,
     handler: async ({ watchId }) => {
       await backlog.resetWatchingListItemAsRead(watchId);

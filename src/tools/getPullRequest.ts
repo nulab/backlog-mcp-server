@@ -51,6 +51,7 @@ export const getPullRequestTool = (
       'Returns information about a specific pull request'
     ),
     schema: z.object(getPullRequestSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestSchema,
     handler: async ({ projectId, projectKey, repoId, repoName, number }) => {
       const result = resolveIdOrKey(

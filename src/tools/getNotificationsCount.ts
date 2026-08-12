@@ -37,6 +37,7 @@ export const getNotificationsCountTool = (
       'Returns count of notifications'
     ),
     schema: z.object(getNotificationsCountSchema(t)),
+    returnsList: false,
     outputSchema: NotificationCountSchema,
     handler: async (params) => backlog.getNotificationsCount(params),
   };

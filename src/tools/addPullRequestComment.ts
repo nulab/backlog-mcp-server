@@ -60,6 +60,7 @@ export const addPullRequestCommentTool = (
       'Adds a comment to a pull request'
     ),
     schema: z.object(addPullRequestCommentSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestCommentSchema,
     importantFields: ['id', 'content', 'createdUser'],
     handler: async ({

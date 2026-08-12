@@ -48,6 +48,7 @@ export const removeRelatedIssueTool = (
       'Removes the relation between an issue and a related issue'
     ),
     schema: z.object(removeRelatedIssueSchema(t)),
+    returnsList: false,
     outputSchema: RelatedIssueSchema,
     handler: async ({ issueId, issueKey, relatedIssueId }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);

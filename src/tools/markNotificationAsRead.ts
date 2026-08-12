@@ -30,6 +30,7 @@ export const markNotificationAsReadTool = (
       'Mark a notification as read'
     ),
     schema: z.object(markNotificationAsReadSchema(t)),
+    returnsList: false,
     outputSchema: MarkNotificationAsReadResultSchema,
     handler: async ({ id }) => {
       await backlog.markAsReadNotification(id);
