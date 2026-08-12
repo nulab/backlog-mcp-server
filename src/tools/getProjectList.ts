@@ -39,6 +39,7 @@ export const getProjectListTool = (
       'Returns list of projects'
     ),
     schema: z.object(getProjectListSchema(t)),
+    returnsList: true,
     outputSchema: ProjectSchema,
     importantFields: ['id', 'projectKey', 'name'],
     handler: async ({ archived, all }) =>

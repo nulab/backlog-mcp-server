@@ -41,6 +41,7 @@ export const getCategoriesTool = (
     ),
     schema: z.object(getCategoriesSchema(t)),
     importantFields: ['id', 'projectId', 'name'],
+    returnsList: true,
     outputSchema: CategorySchema,
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

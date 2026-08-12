@@ -71,6 +71,7 @@ export const getUserRecentUpdatesTool = (
       'Returns recent updates (activities) for a specific user'
     ),
     schema: z.object(getUserRecentUpdatesSchema(t)),
+    returnsList: true,
     outputSchema: ActivitySchema,
     importantFields: ['id', 'type', 'content', 'created'],
     handler: async ({ userId, activityTypeId, minId, maxId, count, order }) =>

@@ -20,6 +20,7 @@ export const getUsersTool = (
       'Returns list of users in the Backlog space'
     ),
     schema: z.object(getUsersSchema(t)),
+    returnsList: true,
     outputSchema: UserSchema,
     importantFields: ['userId', 'name', 'roleType', 'lang'],
     handler: async () => backlog.getUsers(),

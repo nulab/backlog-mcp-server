@@ -31,6 +31,7 @@ export const getDocumentsTool = (
       'Gets a list of documents in a project.'
     ),
     schema: z.object(getDocumentsSchema(t)),
+    returnsList: true,
     outputSchema: DocumentItemSchema,
     importantFields: ['id', 'projectId', 'title', 'plain'],
     handler: async ({ projectIds, offset }) => {

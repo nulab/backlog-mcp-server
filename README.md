@@ -549,9 +549,11 @@ Or environment variable:
 OPTIMIZE_RESPONSE=1
 ```
 
-Every tool then takes an optional `fields` parameter: a list of top-level field
-names from that tool's own result, published as an enum so a name the tool does
-not have is rejected rather than ignored.
+Tools that return a **list** then take an optional `fields` parameter: a list of
+top-level field names from that tool's own result, published as an enum so a name
+the tool does not have is rejected rather than ignored. Tools that return a single
+record do not get it — the parameter costs schema on every session, and one record
+has almost nothing to trim.
 
 ```
 get_project(projectIdOrKey: "PROJECT-KEY", fields: ["name", "key", "description"])

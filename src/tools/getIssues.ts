@@ -161,6 +161,7 @@ export const getIssuesTool = (
       'description',
       'issueType',
     ],
+    returnsList: true,
     outputSchema: IssueSchema,
     handler: async ({ customFields, ...rest }) => {
       return backlog.getIssues({

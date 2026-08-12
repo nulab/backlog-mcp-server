@@ -47,13 +47,18 @@ export function composeToolHandler(
     useOrganization = false,
   } = options;
 
-  // Step 1: Add `fields` to schema if needed
-  const fields = useFields
-    ? fieldSelectionSchema(
-        tool.outputSchema,
-        (tool.importantFields as string[]) ?? []
-      )
-    : undefined;
+  // Step 1: Add `fields` to schema if needed.
+  //
+  // Only on tools that return a list. That is where a response grows without
+  // bound and trimming it pays for the schema every client downloads; a tool
+  // returning one record saves a few hundred bytes at best.
+  const fields =
+    useFields && tool.returnsList
+      ? fieldSelectionSchema(
+          tool.outputSchema,
+          (tool.importantFields as string[]) ?? []
+        )
+      : undefined;
   const schema = extendSchema(tool.schema, fields, useOrganization);
 
   // Step 2: Compose

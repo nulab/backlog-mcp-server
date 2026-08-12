@@ -29,6 +29,13 @@ describe('composeToolHandler', () => {
     outputSchema,
     handler: async () => ({ id: 1, name: 'Sample' }),
     importantFields: ['id', 'name'],
+    // `fields` is only published on tools that return a list
+    returnsList: true,
+  };
+
+  const singleRecordTool: ToolDefinition<any, any> = {
+    ...tool,
+    returnsList: false,
   };
 
   it("leaves 'fields' optional so a call without a selection still works", async () => {
@@ -50,6 +57,17 @@ describe('composeToolHandler', () => {
       expect(content.text).toContain('id');
       expect(content.text).toContain('name');
     }
+  });
+
+  it("does not add 'fields' to a tool that returns one record", () => {
+    // The parameter is a fixed cost on every session; a single record has almost
+    // nothing to trim.
+    const { schema } = composeToolHandler(singleRecordTool, {
+      useFields: true,
+      maxTokens: 500,
+    });
+
+    expect(schema.shape).not.toHaveProperty('fields');
   });
 
   it("adds 'fields' when useFields is true", async () => {

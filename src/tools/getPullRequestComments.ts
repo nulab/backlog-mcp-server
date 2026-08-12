@@ -78,6 +78,7 @@ export const getPullRequestCommentsTool = (
       'Returns list of comments for a pull request'
     ),
     schema: z.object(getPullRequestCommentsSchema(t)),
+    returnsList: true,
     outputSchema: PullRequestCommentSchema,
     handler: async ({
       projectId,

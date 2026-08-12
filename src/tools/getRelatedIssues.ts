@@ -41,6 +41,7 @@ export const getRelatedIssuesTool = (
     ),
     schema: z.object(getRelatedIssuesSchema(t)),
     importantFields: ['issueKey', 'summary', 'status', 'type'],
+    returnsList: true,
     outputSchema: RelatedIssueSchema,
     handler: async ({ issueId, issueKey }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);
