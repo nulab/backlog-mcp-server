@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { Backlog, Option } from 'backlog-js';
+import type { Entity } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { IssueSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 import { customFieldsToPayload } from '../backlog/customFields.js';
 
@@ -205,10 +206,7 @@ const clearEmptyArrayFields = <T extends Record<string, unknown>>(
 export const updateIssueTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<
-  ReturnType<typeof updateIssueSchema>,
-  (typeof IssueSchema)['shape']
-> => {
+): ToolDefinition<ReturnType<typeof updateIssueSchema>, Entity.Issue.Issue> => {
   return {
     name: 'update_issue',
     description: t(
@@ -217,7 +215,36 @@ export const updateIssueTool = (
     ),
     schema: z.object(updateIssueSchema(t)),
     returnsList: false,
-    outputSchema: IssueSchema,
+    outputFields: outputFields<Entity.Issue.Issue>()([
+      'id',
+      'projectId',
+      'issueKey',
+      'keyId',
+      'issueType',
+      'summary',
+      'description',
+      'resolution',
+      'priority',
+      'status',
+      'assignee',
+      'category',
+      'versions',
+      'milestone',
+      'startDate',
+      'dueDate',
+      'estimatedHours',
+      'actualHours',
+      'parentIssueId',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+      'customFields',
+      'attachments',
+      'sharedFiles',
+      'stars',
+      'childIssueSummary',
+    ]),
     handler: async ({ issueId, issueKey, customFields, ...params }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);
       if (!result.ok) {

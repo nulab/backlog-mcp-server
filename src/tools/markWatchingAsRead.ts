@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
+
+/** This tool reports its own outcome; the Backlog call returns nothing. */
+type MarkWatchingAsReadResult = { success: boolean; message: string };
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 const markWatchingAsReadSchema = buildToolSchema((t) => ({
@@ -21,7 +25,7 @@ export const markWatchingAsReadTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof markWatchingAsReadSchema>,
-  (typeof MarkWatchingAsReadResultSchema)['shape']
+  MarkWatchingAsReadResult
 > => {
   return {
     name: 'mark_watching_as_read',
@@ -31,7 +35,10 @@ export const markWatchingAsReadTool = (
     ),
     schema: z.object(markWatchingAsReadSchema(t)),
     returnsList: false,
-    outputSchema: MarkWatchingAsReadResultSchema,
+    outputFields: outputFields<MarkWatchingAsReadResult>()([
+      'success',
+      'message',
+    ]),
     handler: async ({ watchId }) => {
       await backlog.resetWatchingListItemAsRead(watchId);
       return {

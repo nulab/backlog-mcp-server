@@ -1,8 +1,9 @@
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { DocumentItemSchema } from '../types/zod/backlogOutputDefinition.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 
 const getDocumentsSchema = buildToolSchema((t) => ({
   projectIds: z
@@ -22,7 +23,7 @@ export const getDocumentsTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getDocumentsSchema>,
-  (typeof DocumentItemSchema)['shape']
+  Entity.Document.Document
 > => {
   return {
     name: 'get_documents',
@@ -32,7 +33,21 @@ export const getDocumentsTool = (
     ),
     schema: z.object(getDocumentsSchema(t)),
     returnsList: true,
-    outputSchema: DocumentItemSchema,
+    outputFields: outputFields<Entity.Document.Document>()([
+      'id',
+      'projectId',
+      'title',
+      'plain',
+      'json',
+      'statusId',
+      'emoji',
+      'attachments',
+      'tags',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+    ]),
     importantFields: ['id', 'projectId', 'title', 'plain'],
     handler: async ({ projectIds, offset }) => {
       return backlog.getDocuments({ projectId: projectIds, offset });

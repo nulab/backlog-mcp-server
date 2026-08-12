@@ -1,4 +1,4 @@
-import { z, ZodRawShape } from 'zod';
+import { z } from 'zod';
 
 /**
  * Describes the `fields` parameter that `--optimize-response` adds to a tool.
@@ -16,10 +16,10 @@ import { z, ZodRawShape } from 'zod';
  * array field returned `{}` and lost the data.
  */
 export function fieldSelection(
-  outputSchema: z.ZodObject<ZodRawShape>,
+  outputFields: readonly string[],
   importantFields: string[] = []
 ): { names: string[]; description: string } | undefined {
-  const names = Object.keys(outputSchema.shape);
+  const names = [...outputFields];
   // `z.enum([])` is not constructible, and a tool with no known output fields has
   // nothing to select from anyway.
   if (names.length === 0) return undefined;
@@ -35,10 +35,10 @@ export function fieldSelection(
 
 /** The `fields` parameter itself, or undefined when the tool has nothing to offer. */
 export function fieldSelectionSchema(
-  outputSchema: z.ZodObject<ZodRawShape>,
+  outputFields: readonly string[],
   importantFields: string[] = []
 ): z.ZodOptional<z.ZodArray<z.ZodEnum<Record<string, string>>>> | undefined {
-  const selection = fieldSelection(outputSchema, importantFields);
+  const selection = fieldSelection(outputFields, importantFields);
   if (!selection) return undefined;
 
   return z

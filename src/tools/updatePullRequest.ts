@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { PullRequestSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const updatePullRequestSchema = buildToolSchema((t) => ({
@@ -77,7 +78,7 @@ export const updatePullRequestTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof updatePullRequestSchema>,
-  (typeof PullRequestSchema)['shape']
+  Entity.PullRequest.PullRequest
 > => {
   return {
     name: 'update_pull_request',
@@ -87,7 +88,30 @@ export const updatePullRequestTool = (
     ),
     schema: z.object(updatePullRequestSchema(t)),
     returnsList: false,
-    outputSchema: PullRequestSchema,
+    outputFields: outputFields<Entity.PullRequest.PullRequest>()([
+      'id',
+      'projectId',
+      'repositoryId',
+      'number',
+      'summary',
+      'description',
+      'base',
+      'branch',
+      'status',
+      'assignee',
+      'issue',
+      'baseCommit',
+      'branchCommit',
+      'mergeCommit',
+      'closeAt',
+      'mergeAt',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+      'attachments',
+      'stars',
+    ]),
     handler: async ({
       projectId,
       projectKey,

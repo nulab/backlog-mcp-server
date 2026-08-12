@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { IssueSchema } from '../types/zod/backlogOutputDefinition.js';
 import { customFieldFiltersToPayload } from '../backlog/customFields.js';
 import { buildCustomFieldFilterSchema } from './shared/customFieldFiltersSchema.js';
 
@@ -145,10 +146,7 @@ const getIssuesSchema = buildToolSchema((t) => ({
 export const getIssuesTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<
-  ReturnType<typeof getIssuesSchema>,
-  (typeof IssueSchema)['shape']
-> => {
+): ToolDefinition<ReturnType<typeof getIssuesSchema>, Entity.Issue.Issue> => {
   return {
     name: 'get_issues',
     description: t('TOOL_GET_ISSUES_DESCRIPTION', 'Returns list of issues'),
@@ -162,7 +160,36 @@ export const getIssuesTool = (
       'issueType',
     ],
     returnsList: true,
-    outputSchema: IssueSchema,
+    outputFields: outputFields<Entity.Issue.Issue>()([
+      'id',
+      'projectId',
+      'issueKey',
+      'keyId',
+      'issueType',
+      'summary',
+      'description',
+      'resolution',
+      'priority',
+      'status',
+      'assignee',
+      'category',
+      'versions',
+      'milestone',
+      'startDate',
+      'dueDate',
+      'estimatedHours',
+      'actualHours',
+      'parentIssueId',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+      'customFields',
+      'attachments',
+      'sharedFiles',
+      'stars',
+      'childIssueSummary',
+    ]),
     handler: async ({ customFields, ...rest }) => {
       return backlog.getIssues({
         ...rest,

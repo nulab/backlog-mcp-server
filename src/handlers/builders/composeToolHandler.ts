@@ -55,7 +55,7 @@ export function composeToolHandler(
   const fields =
     useFields && tool.returnsList
       ? fieldSelectionSchema(
-          tool.outputSchema,
+          tool.outputFields as string[],
           (tool.importantFields as string[]) ?? []
         )
       : undefined;

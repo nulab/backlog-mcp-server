@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { GitRepositorySchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
 const getGitRepositorySchema = buildToolSchema((t) => ({
@@ -39,7 +40,7 @@ export const getGitRepositoryTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getGitRepositorySchema>,
-  (typeof GitRepositorySchema)['shape']
+  Entity.Git.GitRepository
 > => {
   return {
     name: 'get_git_repository',
@@ -49,7 +50,21 @@ export const getGitRepositoryTool = (
     ),
     schema: z.object(getGitRepositorySchema(t)),
     returnsList: false,
-    outputSchema: GitRepositorySchema,
+    outputFields: outputFields<Entity.Git.GitRepository>()([
+      'id',
+      'projectId',
+      'name',
+      'description',
+      'hookUrl',
+      'httpUrl',
+      'sshUrl',
+      'displayOrder',
+      'pushedAt',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+    ]),
     handler: async ({ projectId, projectKey, repoId, repoName }) => {
       const result = resolveIdOrKey(
         'project',

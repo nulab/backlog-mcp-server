@@ -1,11 +1,9 @@
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import {
-  DocumentTreeFullSchema,
-  DocumentTreeFullSchemaZ,
-} from '../types/zod/backlogOutputDefinition.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 
 const getDocumentTreeSchema = buildToolSchema((t) => ({
   projectIdOrKey: z
@@ -20,7 +18,7 @@ export const getDocumentTreeTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getDocumentTreeSchema>,
-  typeof DocumentTreeFullSchema
+  Entity.Document.DocumentTree
 > => {
   return {
     name: 'get_document_tree',
@@ -30,7 +28,11 @@ export const getDocumentTreeTool = (
     ),
     schema: z.object(getDocumentTreeSchema(t)),
     returnsList: false,
-    outputSchema: DocumentTreeFullSchemaZ,
+    outputFields: outputFields<Entity.Document.DocumentTree>()([
+      'projectId',
+      'activeTree',
+      'trashTree',
+    ]),
     importantFields: ['projectId', 'activeTree', 'trashTree'],
     handler: async ({ projectIdOrKey }) => {
       return backlog.getDocumentTree(projectIdOrKey);

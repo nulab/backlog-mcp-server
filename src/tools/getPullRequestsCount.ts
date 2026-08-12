@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { PullRequestCountSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
 const getPullRequestsCountSchema = buildToolSchema((t) => ({
@@ -59,7 +60,7 @@ export const getPullRequestsCountTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getPullRequestsCountSchema>,
-  (typeof PullRequestCountSchema)['shape']
+  Entity.PullRequest.PullRequestCount
 > => {
   return {
     name: 'get_pull_requests_count',
@@ -69,7 +70,9 @@ export const getPullRequestsCountTool = (
     ),
     schema: z.object(getPullRequestsCountSchema(t)),
     returnsList: false,
-    outputSchema: PullRequestCountSchema,
+    outputFields: outputFields<Entity.PullRequest.PullRequestCount>()([
+      'count',
+    ]),
     handler: async ({ projectId, projectKey, repoId, repoName, ...params }) => {
       const result = resolveIdOrKey(
         'project',

@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { WikiCountSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getWikisCountSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getWikisCountTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getWikisCountSchema>,
-  (typeof WikiCountSchema)['shape']
+  Entity.Wiki.WikiCount
 > => {
   return {
     name: 'get_wikis_count',
@@ -41,7 +42,7 @@ export const getWikisCountTool = (
     ),
     schema: z.object(getWikisCountSchema(t)),
     returnsList: false,
-    outputSchema: WikiCountSchema,
+    outputFields: outputFields<Entity.Wiki.WikiCount>()(['count']),
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(
         'project',

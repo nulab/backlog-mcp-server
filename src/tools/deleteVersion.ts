@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { VersionSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const deleteVersionSchema = buildToolSchema((t) => ({
@@ -39,7 +40,7 @@ export const deleteVersionTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof deleteVersionSchema>,
-  (typeof VersionSchema)['shape']
+  Entity.Project.Version
 > => {
   return {
     name: 'delete_version',
@@ -49,7 +50,16 @@ export const deleteVersionTool = (
     ),
     schema: z.object(deleteVersionSchema(t)),
     returnsList: false,
-    outputSchema: VersionSchema,
+    outputFields: outputFields<Entity.Project.Version>()([
+      'id',
+      'projectId',
+      'name',
+      'description',
+      'startDate',
+      'releaseDueDate',
+      'archived',
+      'displayOrder',
+    ]),
     handler: async ({ projectId, projectKey, id }) => {
       const result = resolveIdOrKey(
         'project',

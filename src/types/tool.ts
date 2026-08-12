@@ -2,23 +2,18 @@ import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { CallToolResult } from '@modelcontextprotocol/server';
 
-export type ToolDefinition<
-  Shape extends z.ZodRawShape,
-  OutputShape extends z.ZodRawShape,
-> = {
+export type ToolDefinition<Shape extends z.ZodRawShape, Result> = {
   name: string;
   description: string;
   schema: z.ZodObject<Shape>;
-  outputSchema: z.ZodObject<OutputShape>;
+  outputFields: readonly (keyof Result)[];
   handler: (
     input: z.infer<z.ZodObject<Shape>> & {
-      fields?: string;
+      fields?: string[];
       organization?: string;
     }
-  ) => Promise<
-    z.infer<z.ZodObject<OutputShape>> | z.infer<z.ZodObject<OutputShape>>[]
-  >;
-  importantFields?: (keyof z.infer<z.ZodObject<OutputShape>>)[];
+  ) => Promise<Result | Result[]>;
+  importantFields?: (keyof Result)[];
   /**
    * Whether the Backlog call behind this tool returns a list.
    *

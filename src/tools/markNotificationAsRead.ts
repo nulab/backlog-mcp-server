@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
+
+/** This tool reports its own outcome; the Backlog call returns nothing. */
+type MarkNotificationAsReadResult = { success: boolean; message: string };
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 const markNotificationAsReadSchema = buildToolSchema((t) => ({
@@ -21,7 +25,7 @@ export const markNotificationAsReadTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof markNotificationAsReadSchema>,
-  (typeof MarkNotificationAsReadResultSchema)['shape']
+  MarkNotificationAsReadResult
 > => {
   return {
     name: 'mark_notification_as_read',
@@ -31,7 +35,10 @@ export const markNotificationAsReadTool = (
     ),
     schema: z.object(markNotificationAsReadSchema(t)),
     returnsList: false,
-    outputSchema: MarkNotificationAsReadResultSchema,
+    outputFields: outputFields<MarkNotificationAsReadResult>()([
+      'success',
+      'message',
+    ]),
     handler: async ({ id }) => {
       await backlog.markAsReadNotification(id);
       return {

@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { IssueTypeSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getIssueTypesSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getIssueTypesTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getIssueTypesSchema>,
-  (typeof IssueTypeSchema)['shape']
+  Entity.Issue.IssueType
 > => {
   return {
     name: 'get_issue_types',
@@ -41,7 +42,15 @@ export const getIssueTypesTool = (
     ),
     schema: z.object(getIssueTypesSchema(t)),
     returnsList: true,
-    outputSchema: IssueTypeSchema,
+    outputFields: outputFields<Entity.Issue.IssueType>()([
+      'id',
+      'projectId',
+      'name',
+      'color',
+      'displayOrder',
+      'templateSummary',
+      'templateDescription',
+    ]),
     importantFields: ['id', 'name'],
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

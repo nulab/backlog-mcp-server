@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { PullRequestCommentSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey, resolveIdOrName } from '../utils/resolveIdOrKey.js';
 
 const getPullRequestCommentsSchema = buildToolSchema((t) => ({
@@ -69,7 +70,7 @@ export const getPullRequestCommentsTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getPullRequestCommentsSchema>,
-  (typeof PullRequestCommentSchema)['shape']
+  Entity.PullRequest.Comment
 > => {
   return {
     name: 'get_pull_request_comments',
@@ -79,7 +80,16 @@ export const getPullRequestCommentsTool = (
     ),
     schema: z.object(getPullRequestCommentsSchema(t)),
     returnsList: true,
-    outputSchema: PullRequestCommentSchema,
+    outputFields: outputFields<Entity.PullRequest.Comment>()([
+      'id',
+      'content',
+      'changeLog',
+      'createdUser',
+      'created',
+      'updated',
+      'stars',
+      'notifications',
+    ]),
     handler: async ({
       projectId,
       projectKey,

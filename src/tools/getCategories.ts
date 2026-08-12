@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { CategorySchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getCategoriesSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getCategoriesTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getCategoriesSchema>,
-  (typeof CategorySchema)['shape']
+  Entity.Project.Category
 > => {
   return {
     name: 'get_categories',
@@ -42,7 +43,12 @@ export const getCategoriesTool = (
     schema: z.object(getCategoriesSchema(t)),
     importantFields: ['id', 'projectId', 'name'],
     returnsList: true,
-    outputSchema: CategorySchema,
+    outputFields: outputFields<Entity.Project.Category>()([
+      'id',
+      'projectId',
+      'name',
+      'displayOrder',
+    ]),
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(
         'project',

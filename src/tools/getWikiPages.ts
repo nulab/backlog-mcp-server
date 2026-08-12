@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { WikiListItemSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getWikiPagesSchema = buildToolSchema((t) => ({
@@ -37,7 +38,7 @@ export const getWikiPagesTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getWikiPagesSchema>,
-  (typeof WikiListItemSchema)['shape']
+  Entity.Wiki.WikiListItem
 > => {
   return {
     name: 'get_wiki_pages',
@@ -47,7 +48,16 @@ export const getWikiPagesTool = (
     ),
     schema: z.object(getWikiPagesSchema(t)),
     returnsList: true,
-    outputSchema: WikiListItemSchema,
+    outputFields: outputFields<Entity.Wiki.WikiListItem>()([
+      'id',
+      'projectId',
+      'name',
+      'tags',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+    ]),
     importantFields: ['projectId', 'name', 'tags'],
     handler: async ({ projectId, projectKey, keyword }) => {
       const result = resolveIdOrKey(

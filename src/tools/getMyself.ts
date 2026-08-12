@@ -1,18 +1,16 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { UserSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getMyselfSchema = buildToolSchema((_t) => ({}));
 
 export const getMyselfTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<
-  ReturnType<typeof getMyselfSchema>,
-  (typeof UserSchema)['shape']
-> => {
+): ToolDefinition<ReturnType<typeof getMyselfSchema>, Entity.User.User> => {
   return {
     name: 'get_myself',
     description: t(
@@ -21,7 +19,15 @@ export const getMyselfTool = (
     ),
     schema: z.object(getMyselfSchema(t)),
     returnsList: false,
-    outputSchema: UserSchema,
+    outputFields: outputFields<Entity.User.User>()([
+      'id',
+      'userId',
+      'name',
+      'roleType',
+      'lang',
+      'mailAddress',
+      'lastLoginTime',
+    ]),
     importantFields: ['id', 'userId', 'name', 'roleType'],
     handler: async () => backlog.getMyself(),
   };

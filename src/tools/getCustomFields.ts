@@ -1,8 +1,9 @@
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { ToolDefinition, buildToolSchema } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { CustomFieldSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getCustomFieldsInputSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getCustomFieldsTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getCustomFieldsInputSchema>, // Shape for input schema
-  (typeof CustomFieldSchema)['shape'] // Shape for output schema (single item)
+  Entity.Project.CustomField
 > => {
   const inputSchemaObject = z.object(getCustomFieldsInputSchema(t)); // Create the ZodObject for input
 
@@ -43,7 +44,26 @@ export const getCustomFieldsTool = (
     ),
     schema: inputSchemaObject,
     returnsList: true,
-    outputSchema: CustomFieldSchema,
+    outputFields: outputFields<Entity.Project.CustomField>()([
+      'id',
+      'projectId',
+      'typeId',
+      'name',
+      'description',
+      'required',
+      'useIssueType',
+      'applicableIssueTypes',
+      'displayOrder',
+      'version',
+      'min',
+      'max',
+      'initialValue',
+      'unit',
+      'initialDate',
+      'items',
+      'allowAddItem',
+      'allowInput',
+    ]),
     importantFields: [
       'id',
       'name',
