@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { ProjectSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getProjectListSchema = buildToolSchema((t) => ({
   archived: z
@@ -30,7 +31,7 @@ export const getProjectListTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getProjectListSchema>,
-  (typeof ProjectSchema)['shape']
+  Entity.Project.Project
 > => {
   return {
     name: 'get_project_list',
@@ -40,7 +41,26 @@ export const getProjectListTool = (
     ),
     schema: z.object(getProjectListSchema(t)),
     returnsList: true,
-    outputSchema: ProjectSchema,
+    outputFields: outputFields<Entity.Project.Project>()([
+      'id',
+      'projectKey',
+      'name',
+      'chartEnabled',
+      'useResolvedForChart',
+      'subtaskingEnabled',
+      'projectLeaderCanEditProjectLeader',
+      'useWiki',
+      'useFileSharing',
+      'useWikiTreeView',
+      'useOriginalImageSizeAtWiki',
+      'useSubversion',
+      'useGit',
+      'textFormattingRule',
+      'archived',
+      'displayOrder',
+      'useDevAttributes',
+      'grandchildIssueEnabled',
+    ]),
     importantFields: ['id', 'projectKey', 'name'],
     handler: async ({ archived, all }) =>
       backlog.getProjects({ archived, all }),

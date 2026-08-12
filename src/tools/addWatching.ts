@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { WatchingListItemSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const addWatchingSchema = buildToolSchema((t) => ({
   issueIdOrKey: z
@@ -25,7 +26,7 @@ export const addWatchingTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addWatchingSchema>,
-  (typeof WatchingListItemSchema)['shape']
+  Entity.WatchingList.WatchingListItem
 > => {
   return {
     name: 'add_watching',
@@ -35,7 +36,16 @@ export const addWatchingTool = (
     ),
     schema: z.object(addWatchingSchema(t)),
     returnsList: false,
-    outputSchema: WatchingListItemSchema,
+    outputFields: outputFields<Entity.WatchingList.WatchingListItem>()([
+      'id',
+      'resourceAlreadyRead',
+      'note',
+      'type',
+      'issue',
+      'lastContentUpdated',
+      'created',
+      'updated',
+    ]),
     handler: async ({ issueIdOrKey, note }) =>
       backlog.postWatchingListItem({
         issueIdOrKey,

@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { UserSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getProjectUsersSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getProjectUsersTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getProjectUsersSchema>,
-  (typeof UserSchema)['shape']
+  Entity.User.User
 > => {
   return {
     name: 'get_project_users',
@@ -41,7 +42,15 @@ export const getProjectUsersTool = (
     ),
     schema: z.object(getProjectUsersSchema(t)),
     returnsList: true,
-    outputSchema: UserSchema,
+    outputFields: outputFields<Entity.User.User>()([
+      'id',
+      'userId',
+      'name',
+      'roleType',
+      'lang',
+      'mailAddress',
+      'lastLoginTime',
+    ]),
     importantFields: ['userId', 'name', 'roleType', 'lang'],
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

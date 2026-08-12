@@ -1,14 +1,8 @@
-import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
 import { fieldSelection, fieldSelectionSchema } from './fieldSelection';
 
 describe('fieldSelection', () => {
-  const schema = z.object({
-    id: z.number(),
-    name: z.string(),
-    active: z.boolean(),
-    tags: z.array(z.object({ label: z.string() })),
-  });
+  const schema = ['id', 'name', 'active', 'tags'] as const;
 
   it('offers every field of the output schema', () => {
     expect(fieldSelection(schema)?.names).toEqual([
@@ -35,8 +29,8 @@ describe('fieldSelection', () => {
 
   it('offers nothing for a schema with no fields', () => {
     // z.enum([]) cannot be constructed, and there would be nothing to pick
-    expect(fieldSelection(z.object({}))).toBeUndefined();
-    expect(fieldSelectionSchema(z.object({}))).toBeUndefined();
+    expect(fieldSelection([])).toBeUndefined();
+    expect(fieldSelectionSchema([])).toBeUndefined();
   });
 
   it('claims no types, so it cannot claim a wrong one', () => {
@@ -51,7 +45,7 @@ describe('fieldSelection', () => {
 });
 
 describe('fieldSelectionSchema', () => {
-  const schema = z.object({ id: z.number(), name: z.string() });
+  const schema = ['id', 'name'] as const;
   const fields = fieldSelectionSchema(schema)!;
 
   it('accepts a list of known field names', () => {

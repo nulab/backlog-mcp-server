@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { NotificationSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const getNotificationsSchema = buildToolSchema((t) => ({
   minId: z
@@ -30,7 +31,7 @@ export const getNotificationsTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getNotificationsSchema>,
-  (typeof NotificationSchema)['shape']
+  Entity.Notification.Notification
 > => {
   return {
     name: 'get_notifications',
@@ -40,7 +41,19 @@ export const getNotificationsTool = (
     ),
     schema: z.object(getNotificationsSchema(t)),
     returnsList: true,
-    outputSchema: NotificationSchema,
+    outputFields: outputFields<Entity.Notification.Notification>()([
+      'id',
+      'alreadyRead',
+      'reason',
+      'resourceAlreadyRead',
+      'project',
+      'issue',
+      'comment',
+      'pullRequest',
+      'pullRequestComment',
+      'sender',
+      'created',
+    ]),
     handler: async ({ minId, maxId, count, order }) =>
       backlog.getNotifications({
         minId,

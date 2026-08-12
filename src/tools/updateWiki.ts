@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { WikiSchema } from '../types/zod/backlogOutputDefinition.js';
 
 const updateWikiSchema = buildToolSchema((t) => ({
   wikiId: z
@@ -30,10 +31,7 @@ const updateWikiSchema = buildToolSchema((t) => ({
 export const updateWikiTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<
-  ReturnType<typeof updateWikiSchema>,
-  (typeof WikiSchema)['shape']
-> => {
+): ToolDefinition<ReturnType<typeof updateWikiSchema>, Entity.Wiki.Wiki> => {
   return {
     name: 'update_wiki',
     description: t(
@@ -42,7 +40,20 @@ export const updateWikiTool = (
     ),
     schema: z.object(updateWikiSchema(t)),
     returnsList: false,
-    outputSchema: WikiSchema,
+    outputFields: outputFields<Entity.Wiki.Wiki>()([
+      'id',
+      'projectId',
+      'name',
+      'content',
+      'tags',
+      'attachments',
+      'sharedFiles',
+      'stars',
+      'createdUser',
+      'created',
+      'updatedUser',
+      'updated',
+    ]),
     importantFields: ['id', 'name', 'content', 'updatedUser'],
     handler: async ({ wikiId, name, content, mailNotify }) => {
       const wikiIdNumber =

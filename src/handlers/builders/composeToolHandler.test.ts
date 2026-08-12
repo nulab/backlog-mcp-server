@@ -17,16 +17,11 @@ describe('composeToolHandler', () => {
     name: z.string(),
   });
 
-  const outputSchema = z.object({
-    id: z.number(),
-    name: z.string(),
-  });
-
   const tool: ToolDefinition<any, any> = {
     name: 'get_sample',
     description: 'Returns sample',
     schema: baseSchema,
-    outputSchema,
+    outputFields: ['id', 'name'],
     handler: async () => ({ id: 1, name: 'Sample' }),
     importantFields: ['id', 'name'],
     // `fields` is only published on tools that return a list

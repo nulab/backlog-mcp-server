@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { Entity } from 'backlog-js';
 import { Backlog } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
+import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { VersionSchema } from '../types/zod/backlogOutputDefinition.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const getVersionMilestoneListSchema = buildToolSchema((t) => ({
@@ -31,7 +32,7 @@ export const getVersionMilestoneListTool = (
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getVersionMilestoneListSchema>,
-  (typeof VersionSchema)['shape']
+  Entity.Project.Version
 > => {
   return {
     name: 'get_version_milestone_list',
@@ -41,7 +42,16 @@ export const getVersionMilestoneListTool = (
     ),
     schema: z.object(getVersionMilestoneListSchema(t)),
     returnsList: true,
-    outputSchema: VersionSchema,
+    outputFields: outputFields<Entity.Project.Version>()([
+      'id',
+      'projectId',
+      'name',
+      'description',
+      'startDate',
+      'releaseDueDate',
+      'archived',
+      'displayOrder',
+    ]),
     importantFields: [
       'id',
       'name',
