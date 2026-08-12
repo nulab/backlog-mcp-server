@@ -105,7 +105,7 @@ export function customFieldFiltersToPayload(
       default: {
         const exhaustiveCheck: never = field;
         throw new Error(
-          `Unsupported custom field filter type: ${exhaustiveCheck}`
+          `Unsupported custom field filter type: ${JSON.stringify(exhaustiveCheck)}`
         );
       }
     }
