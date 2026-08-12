@@ -167,7 +167,7 @@ export function createOAuthRoutes(
       return c.json(
         oauthError(
           'invalid_client_metadata',
-          `Unsupported application_type: ${String(declaredApplicationType)}. Supported: ${APPLICATION_TYPES.join(', ')}`
+          `Unsupported application_type: ${JSON.stringify(declaredApplicationType)}. Supported: ${APPLICATION_TYPES.join(', ')}`
         ),
         400
       );

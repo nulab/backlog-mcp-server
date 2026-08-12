@@ -13,7 +13,12 @@
   "overrides": [
     {
       "files": ["**/*.test.ts"],
-      "rules": { "typescript/no-explicit-any": "off" }
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        // A vi.fn() on a plain object literal is not a class method, so passing
+        // it to expect() cannot lose `this`. The rule cannot tell the difference.
+        "typescript/unbound-method": "off"
+      }
     }
   ]
 }

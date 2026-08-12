@@ -29,14 +29,11 @@ jobs:
       - name: 📦 Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: 🔍 Lint
+      - name: 🔍 Lint and type check
         run: pnpm run lint
 
       - name: 🎨 Format check (oxfmt)
         run: pnpm run format
-
-      - name: ✅ Type check
-        run: pnpm run typecheck:all
 
       - name: 🧪 Run tests
         run: pnpm test
