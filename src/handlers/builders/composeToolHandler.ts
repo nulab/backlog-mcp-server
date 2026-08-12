@@ -54,10 +54,7 @@ export function composeToolHandler(
   // returning one record saves a few hundred bytes at best.
   const fields =
     useFields && tool.returnsList
-      ? fieldSelectionSchema(
-          tool.outputFields as string[],
-          (tool.importantFields as string[]) ?? []
-        )
+      ? fieldSelectionSchema(tool.outputFields, tool.importantFields ?? [])
       : undefined;
   const schema = extendSchema(tool.schema, fields, useOrganization);
 
