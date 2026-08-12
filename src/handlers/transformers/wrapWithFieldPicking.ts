@@ -1,73 +1,57 @@
-import { parse, SelectionSetNode } from 'graphql';
 import { isErrorLike, SafeResult } from '../../types/result.js';
 
-export function wrapWithFieldPicking<I extends { fields?: string }, O>(
+/**
+ * Narrows a successful result to the fields the caller asked for.
+ *
+ * `fields` is a list of top-level names, validated against the tool's own enum
+ * before it reaches here, so an unknown name is rejected by the protocol rather
+ * than dropped in silence. A missing or empty list returns everything.
+ *
+ * One level deep on purpose. This used to accept a GraphQL selection set and
+ * parse it with the `graphql` package: ~1 MB for a single `parse` call, a grammar
+ * that accepted aliases, fragments, arguments and directives and then honoured
+ * none of them, and a descent into an array field that returned `{}` and lost the
+ * data outright.
+ */
+export function wrapWithFieldPicking<I extends { fields?: string[] }, O>(
   fn: (input: I) => Promise<SafeResult<O>>
 ): (input: I) => Promise<SafeResult<O>> {
   return async (input: I) => {
     const { fields, ...rest } = input;
     const result = await fn(rest as I);
 
-    if (!fields || isErrorLike(result)) {
+    if (!fields || fields.length === 0 || isErrorLike(result)) {
       return result;
     }
 
-    const selectionSet = parseFieldsSelection(fields);
-    const resultData = result.data;
+    const data = result.data;
 
-    if (Array.isArray(resultData)) {
+    if (Array.isArray(data)) {
       return {
         kind: 'ok',
-        data: resultData.map((item) =>
-          pickFieldsFromData(item, selectionSet)
-        ) as unknown as O,
+        data: data.map((item) => pick(item, fields)) as unknown as O,
       };
-    } else if (typeof result === 'object' && result !== null) {
-      return {
-        kind: 'ok',
-        data: pickFieldsFromData(
-          resultData as Record<string, unknown>,
-          selectionSet
-        ) as O,
-      };
-    } else {
-      return result;
     }
+
+    if (typeof data === 'object' && data !== null) {
+      return {
+        kind: 'ok',
+        data: pick(data as Record<string, unknown>, fields) as O,
+      };
+    }
+
+    // A scalar has no fields to narrow.
+    return result;
   };
 }
 
-function parseFieldsSelection(fieldsString: string): SelectionSetNode {
-  const query = `query Dummy ${fieldsString}`;
-  const ast = parse(query);
-  const opDef = ast.definitions[0];
-  if (opDef.kind !== 'OperationDefinition' || !opDef.selectionSet) {
-    throw new Error('Invalid GraphQL fields');
+function pick(value: unknown, fields: string[]): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+
+  const source = value as Record<string, unknown>;
+  const picked: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field in source) picked[field] = source[field];
   }
-  return opDef.selectionSet;
-}
-
-function pickFieldsFromData(
-  data: Record<string, unknown> | null | undefined,
-  selectionSet: SelectionSetNode
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const selection of selectionSet.selections) {
-    if (selection.kind === 'Field') {
-      const key = selection.name.value;
-      if (data != null && key in data) {
-        const value = data[key];
-        if (selection.selectionSet && value != null) {
-          result[key] = pickFieldsFromData(
-            data[key] as Record<string, unknown>,
-            selection.selectionSet
-          );
-        } else {
-          result[key] = data[key];
-        }
-      }
-    }
-  }
-
-  return result;
+  return picked;
 }

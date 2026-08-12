@@ -29,6 +29,13 @@ describe('composeToolHandler', () => {
     outputSchema,
     handler: async () => ({ id: 1, name: 'Sample' }),
     importantFields: ['id', 'name'],
+    // `fields` is only published on tools that return a list
+    returnsList: true,
+  };
+
+  const singleRecordTool: ToolDefinition<any, any> = {
+    ...tool,
+    returnsList: false,
   };
 
   it("leaves 'fields' optional so a call without a selection still works", async () => {
@@ -52,6 +59,17 @@ describe('composeToolHandler', () => {
     }
   });
 
+  it("does not add 'fields' to a tool that returns one record", () => {
+    // The parameter is a fixed cost on every session; a single record has almost
+    // nothing to trim.
+    const { schema } = composeToolHandler(singleRecordTool, {
+      useFields: true,
+      maxTokens: 500,
+    });
+
+    expect(schema.shape).not.toHaveProperty('fields');
+  });
+
   it("adds 'fields' when useFields is true", async () => {
     const { schema, handler: composed } = composeToolHandler(tool, {
       useFields: true,
@@ -60,7 +78,7 @@ describe('composeToolHandler', () => {
 
     expect(schema.shape).toHaveProperty('fields');
 
-    const result = await composed({ id: 123, fields: '{ id }' }, dummyExtra);
+    const result = await composed({ id: 123, fields: ['id'] }, dummyExtra);
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
@@ -105,7 +123,7 @@ describe('composeToolHandler', () => {
       maxTokens: 100,
     });
 
-    const input = { name: 'test', fields: '{ id name }' };
+    const input = { name: 'test', fields: ['id', 'name'] };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('content');
     const content = result.content[0];
@@ -227,7 +245,7 @@ describe('composeToolHandler', () => {
       maxTokens: 100,
     });
 
-    const input = { name: 'test', fields: '{ id name }' };
+    const input = { name: 'test', fields: ['id', 'name'] };
     const result = await composed(input, {} as any);
     expect(result).toHaveProperty('isError', true);
     const content = result.content[0];

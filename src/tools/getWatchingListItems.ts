@@ -24,6 +24,7 @@ export const getWatchingListItemsTool = (
       'Returns list of watching items for a user'
     ),
     schema: z.object(getWatchingListItemsSchema(t)),
+    returnsList: true,
     outputSchema: WatchingListItemSchema,
     handler: async ({ userId }) => backlog.getWatchingListItems(userId),
   };

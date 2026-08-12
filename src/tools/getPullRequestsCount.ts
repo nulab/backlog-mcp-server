@@ -68,6 +68,7 @@ export const getPullRequestsCountTool = (
       'Returns count of pull requests for a repository'
     ),
     schema: z.object(getPullRequestsCountSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestCountSchema,
     handler: async ({ projectId, projectKey, repoId, repoName, ...params }) => {
       const result = resolveIdOrKey(

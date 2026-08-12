@@ -40,6 +40,7 @@ export const getProjectUsersTool = (
       'Returns list of users in a specific project'
     ),
     schema: z.object(getProjectUsersSchema(t)),
+    returnsList: true,
     outputSchema: UserSchema,
     importantFields: ['userId', 'name', 'roleType', 'lang'],
     handler: async ({ projectId, projectKey }) => {

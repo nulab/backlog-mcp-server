@@ -42,6 +42,7 @@ export const getUserStarsCountTool = (
       'Returns the count of stars received by a user'
     ),
     schema: z.object(getUserStarsCountSchema(t)),
+    returnsList: false,
     outputSchema: StarCountSchema,
     handler: async ({ userId, since, until }) =>
       backlog.getUserStarsCount(userId, { since, until }),

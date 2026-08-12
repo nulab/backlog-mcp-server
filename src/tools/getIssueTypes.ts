@@ -40,6 +40,7 @@ export const getIssueTypesTool = (
       'Returns list of issue types for a project'
     ),
     schema: z.object(getIssueTypesSchema(t)),
+    returnsList: true,
     outputSchema: IssueTypeSchema,
     importantFields: ['id', 'name'],
     handler: async ({ projectId, projectKey }) => {

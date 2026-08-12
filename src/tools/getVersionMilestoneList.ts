@@ -40,6 +40,7 @@ export const getVersionMilestoneListTool = (
       'Returns list of versions/milestones in the Backlog space'
     ),
     schema: z.object(getVersionMilestoneListSchema(t)),
+    returnsList: true,
     outputSchema: VersionSchema,
     importantFields: [
       'id',

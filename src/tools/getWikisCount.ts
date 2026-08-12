@@ -40,6 +40,7 @@ export const getWikisCountTool = (
       'Returns count of wiki pages in a project'
     ),
     schema: z.object(getWikisCountSchema(t)),
+    returnsList: false,
     outputSchema: WikiCountSchema,
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

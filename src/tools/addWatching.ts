@@ -34,6 +34,7 @@ export const addWatchingTool = (
       'Adds a new watch to an issue'
     ),
     schema: z.object(addWatchingSchema(t)),
+    returnsList: false,
     outputSchema: WatchingListItemSchema,
     handler: async ({ issueIdOrKey, note }) =>
       backlog.postWatchingListItem({

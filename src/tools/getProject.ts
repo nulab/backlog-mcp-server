@@ -40,6 +40,7 @@ export const getProjectTool = (
       'Returns information about a specific project'
     ),
     schema: z.object(getProjectSchema(t)),
+    returnsList: false,
     outputSchema: ProjectSchema,
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

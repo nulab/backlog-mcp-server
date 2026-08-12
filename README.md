@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server for interacting with the Backlog API. This
 - Wiki page support
 - Git repository and pull request tools
 - Notification tools
-- GraphQL-style field selection for optimized responses
+- Field selection for optimized responses
 - Token limiting for large responses
 
 ## Getting Started
@@ -537,7 +537,7 @@ This is especially useful if you're using multiple MCP servers or tools in the s
 
 ### Response Optimization & Token Limits
 
-#### Field Selection (GraphQL-style)
+#### Field Selection
 
 ```
 --optimize-response
@@ -549,17 +549,18 @@ Or environment variable:
 OPTIMIZE_RESPONSE=1
 ```
 
-Then, request only specific fields:
+Tools that return a **list** then take an optional `fields` parameter: a list of
+top-level field names from that tool's own result, published as an enum so a name
+the tool does not have is rejected rather than ignored. Tools that return a single
+record do not get it — the parameter costs schema on every session, and one record
+has almost nothing to trim.
 
 ```
-get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
+get_project(projectIdOrKey: "PROJECT-KEY", fields: ["name", "key", "description"])
 ```
 
-The AI will use field selection to optimize the response:
-
-```
-get_project(projectIdOrKey: "PROJECT-KEY", fields: "{ name key description }")
-```
+Omitting `fields` returns the whole result. Selection is one level deep: naming an
+object or array field returns it whole.
 
 Benefits:
 
@@ -650,7 +651,7 @@ The server supports several command line options:
 - `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--http-allowed-origins`: Comma-separated allowed `Origin` hostnames for browser-based clients. Defaults to the localhost set on a bare loopback bind, and to no `Origin` check otherwise.
 - `--export-descriptions`: Export the description keys and values resolved when building the tool list. Was named `--export-translations`; that spelling still works as a deprecated alias and will be removed in a future release
-- `--optimize-response`: Enable GraphQL-style field selection
+- `--optimize-response`: Add a `fields` parameter to each tool for selecting which result fields to return
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
 - `--prefix=STRING`: Optional string prefix to prepend to all tool names (default: "")
 - `--enable-toolsets <toolsets...>`: Specify which toolsets to enable (comma-separated or multiple arguments). Defaults to "all".

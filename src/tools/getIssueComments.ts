@@ -58,6 +58,7 @@ export const getIssueCommentsTool = (
       'Returns list of comments for an issue'
     ),
     schema: z.object(getIssueCommentsSchema(t)),
+    returnsList: true,
     outputSchema: IssueCommentSchema,
     handler: async ({ issueId, issueKey, ...params }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);

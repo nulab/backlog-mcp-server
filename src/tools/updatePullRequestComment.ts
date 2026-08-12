@@ -61,6 +61,7 @@ export const updatePullRequestCommentTool = (
       'Updates a comment on a pull request'
     ),
     schema: z.object(updatePullRequestCommentSchema(t)),
+    returnsList: false,
     outputSchema: PullRequestCommentSchema,
     importantFields: ['id', 'content', 'createdUser', 'updated'],
     handler: async ({

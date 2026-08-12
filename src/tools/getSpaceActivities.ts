@@ -50,6 +50,7 @@ export const getSpaceActivitiesTool = (
       'Returns list of space activities'
     ),
     schema: z.object(getSpaceActivitiesSchema(t)),
+    returnsList: true,
     outputSchema: ActivitySchema,
     handler: async ({ activityTypeId, minId, maxId, count, order }) =>
       backlog.getSpaceActivities({

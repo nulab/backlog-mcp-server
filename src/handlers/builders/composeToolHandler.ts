@@ -5,7 +5,7 @@ import { wrapWithOrganizationContext } from '../transformers/wrapWithOrganizatio
 import { wrapWithTokenLimit } from '../transformers/wrapWithTokenLimit.js';
 import { wrapWithToolResult } from '../transformers/wrapWithToolResult.js';
 import { z } from 'zod';
-import { generateFieldsDescription } from '../../utils/generateFieldsDescription.js';
+import { fieldSelectionSchema } from '../../utils/fieldSelection.js';
 import { ErrorLike, SafeResult } from '../../types/result.js';
 import { ToolDefinition } from '../../types/tool.js';
 
@@ -22,7 +22,7 @@ export interface ComposeOptions {
 }
 
 type ComposedInput = {
-  fields?: string;
+  fields?: string[];
   organization?: string;
 } & Record<string, unknown>;
 
@@ -47,15 +47,19 @@ export function composeToolHandler(
     useOrganization = false,
   } = options;
 
-  // Step 1: Add `fields` to schema if needed
-  const fieldDesc = useFields
-    ? generateFieldsDescription(
-        tool.outputSchema,
-        (tool.importantFields as string[]) ?? [],
-        tool.name
-      )
-    : undefined;
-  const schema = extendSchema(tool.schema, fieldDesc, useOrganization);
+  // Step 1: Add `fields` to schema if needed.
+  //
+  // Only on tools that return a list. That is where a response grows without
+  // bound and trimming it pays for the schema every client downloads; a tool
+  // returning one record saves a few hundred bytes at best.
+  const fields =
+    useFields && tool.returnsList
+      ? fieldSelectionSchema(
+          tool.outputSchema,
+          (tool.importantFields as string[]) ?? []
+        )
+      : undefined;
+  const schema = extendSchema(tool.schema, fields, useOrganization);
 
   // Step 2: Compose
   const baseHandler: ComposedHandler = wrapWithErrorHandling(
@@ -63,7 +67,8 @@ export function composeToolHandler(
     errorHandler
   );
 
-  const composed = useFields ? wrapWithFieldPicking(baseHandler) : baseHandler;
+  const composed =
+    useFields && fields ? wrapWithFieldPicking(baseHandler) : baseHandler;
 
   return {
     schema,
@@ -73,14 +78,9 @@ export function composeToolHandler(
 
 function extendSchema<I extends z.ZodRawShape>(
   schema: z.ZodObject<I>,
-  desc?: string,
+  fields?: z.ZodType,
   withOrganization = false
-): z.ZodObject<
-  I & {
-    organization?: z.ZodOptional<z.ZodString>;
-    fields?: z.ZodOptional<z.ZodString>;
-  }
-> {
+): z.ZodObject<I & { organization?: z.ZodType; fields?: z.ZodType }> {
   const extension: Record<string, z.ZodType> = {};
 
   if (withOrganization) {
@@ -92,21 +92,16 @@ function extendSchema<I extends z.ZodRawShape>(
       );
   }
 
-  if (desc) {
-    // Optional, as both the declared return type here and `wrapWithFieldPicking`
-    // have always assumed: it returns the whole result when `fields` is absent.
-    // Built without `.optional()`, every call under --optimize-response failed
-    // unless the caller supplied a selection.
-    extension.fields = z.string().optional().describe(desc);
+  // Optional, as `wrapWithFieldPicking` assumes: it returns the whole result
+  // when `fields` is absent.
+  if (fields) {
+    extension.fields = fields;
   }
 
   // zod v4 reworked the ZodObject shape generics, so `extend()`'s result no
   // longer overlaps the declared return type enough for a direct cast. The
   // shape is correct at runtime; route through `unknown` to keep the assertion.
   return schema.extend(extension) as unknown as z.ZodObject<
-    I & {
-      organization?: z.ZodOptional<z.ZodString>;
-      fields?: z.ZodOptional<z.ZodString>;
-    }
+    I & { organization?: z.ZodType; fields?: z.ZodType }
   >;
 }

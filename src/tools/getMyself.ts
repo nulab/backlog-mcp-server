@@ -20,6 +20,7 @@ export const getMyselfTool = (
       'Returns information about the authenticated user'
     ),
     schema: z.object(getMyselfSchema(t)),
+    returnsList: false,
     outputSchema: UserSchema,
     importantFields: ['id', 'userId', 'name', 'roleType'],
     handler: async () => backlog.getMyself(),

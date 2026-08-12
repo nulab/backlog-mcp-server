@@ -39,6 +39,7 @@ export const getNotificationsTool = (
       'Returns list of notifications'
     ),
     schema: z.object(getNotificationsSchema(t)),
+    returnsList: true,
     outputSchema: NotificationSchema,
     handler: async ({ minId, maxId, count, order }) =>
       backlog.getNotifications({

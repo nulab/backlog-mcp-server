@@ -56,6 +56,7 @@ export const addProjectTool = (
     name: 'add_project',
     description: t('TOOL_ADD_PROJECT_DESCRIPTION', 'Creates a new project'),
     schema: z.object(addProjectSchema(t)),
+    returnsList: false,
     outputSchema: ProjectSchema,
     handler: async ({
       name,

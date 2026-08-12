@@ -46,6 +46,7 @@ export const getWikiPagesTool = (
       'Returns list of Wiki pages'
     ),
     schema: z.object(getWikiPagesSchema(t)),
+    returnsList: true,
     outputSchema: WikiListItemSchema,
     importantFields: ['projectId', 'name', 'tags'],
     handler: async ({ projectId, projectKey, keyword }) => {

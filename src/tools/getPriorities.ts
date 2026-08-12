@@ -20,6 +20,7 @@ export const getPrioritiesTool = (
       'Returns list of priorities'
     ),
     schema: z.object(getPrioritiesSchema(t)),
+    returnsList: true,
     outputSchema: PrioritySchema,
     handler: async () => backlog.getPriorities(),
   };

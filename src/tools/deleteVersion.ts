@@ -48,6 +48,7 @@ export const deleteVersionTool = (
       'Deletes a version from a project'
     ),
     schema: z.object(deleteVersionSchema(t)),
+    returnsList: false,
     outputSchema: VersionSchema,
     handler: async ({ projectId, projectKey, id }) => {
       const result = resolveIdOrKey(

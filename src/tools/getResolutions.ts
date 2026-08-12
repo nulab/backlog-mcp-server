@@ -20,6 +20,7 @@ export const getResolutionsTool = (
       'Returns list of issue resolutions'
     ),
     schema: z.object(getResolutionsSchema(t)),
+    returnsList: true,
     outputSchema: ResolutionSchema,
     handler: async () => backlog.getResolutions(),
   };

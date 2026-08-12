@@ -42,6 +42,7 @@ export const getCustomFieldsTool = (
       'Returns list of custom fields for a project'
     ),
     schema: inputSchemaObject,
+    returnsList: true,
     outputSchema: CustomFieldSchema,
     importantFields: [
       'id',

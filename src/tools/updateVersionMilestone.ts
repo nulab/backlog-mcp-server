@@ -69,6 +69,7 @@ export const updateVersionMilestoneTool = (
       'Updates an existing version milestone'
     ),
     schema: z.object(updateVersionMilestoneSchema(t)),
+    returnsList: false,
     outputSchema: VersionSchema,
     importantFields: [
       'id',

@@ -44,6 +44,7 @@ export const addDocumentTool = (
       'Adds a new document to the specified project.'
     ),
     schema: z.object(addDocumentSchema(t)),
+    returnsList: false,
     outputSchema: DocumentItemSchema,
     importantFields: ['id', 'projectId', 'title', 'plain', 'createdUser'],
     handler: async (params) => {

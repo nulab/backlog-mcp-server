@@ -34,6 +34,7 @@ export const deleteIssueTool = (
     name: 'delete_issue',
     description: t('TOOL_DELETE_ISSUE_DESCRIPTION', 'Deletes an issue'),
     schema: z.object(deleteIssueSchema(t)),
+    returnsList: false,
     outputSchema: IssueSchema,
     handler: async ({ issueId, issueKey }) => {
       const result = resolveIdOrKey('issue', { id: issueId, key: issueKey }, t);

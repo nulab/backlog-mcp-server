@@ -40,6 +40,7 @@ export const getGitRepositoriesTool = (
       'Returns list of Git repositories for a project'
     ),
     schema: z.object(getGitRepositoriesSchema(t)),
+    returnsList: true,
     outputSchema: GitRepositorySchema,
     handler: async ({ projectId, projectKey }) => {
       const result = resolveIdOrKey(

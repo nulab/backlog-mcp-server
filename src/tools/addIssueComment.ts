@@ -50,6 +50,7 @@ export const addIssueCommentTool = (
       'Adds a comment to an issue'
     ),
     schema: z.object(addIssueCommentSchema(t)),
+    returnsList: false,
     outputSchema: IssueCommentSchema,
     handler: async ({
       issueId,

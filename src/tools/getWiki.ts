@@ -24,6 +24,7 @@ export const getWikiTool = (
       'Returns information about a specific wiki page'
     ),
     schema: z.object(getWikiSchema(t)),
+    returnsList: false,
     outputSchema: WikiSchema,
     importantFields: ['id', 'projectId', 'name', 'content'],
     handler: async ({ wikiId }) => {

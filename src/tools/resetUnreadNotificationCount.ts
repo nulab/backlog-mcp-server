@@ -20,6 +20,7 @@ export const resetUnreadNotificationCountTool = (
       'Reset unread notification count'
     ),
     schema: z.object(resetUnreadNotificationCountSchema(t)),
+    returnsList: false,
     outputSchema: NotificationCountSchema,
     handler: async () => backlog.resetNotificationsMarkAsRead(),
   };
