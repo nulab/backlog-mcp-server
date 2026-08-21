@@ -39,7 +39,7 @@ export const addDocumentTool = (
   Entity.Document.Document
 > => {
   return {
-    name: 'addDocument',
+    name: 'add_document',
     description: t(
       'TOOL_ADD_DOCUMENT_DESCRIPTION',
       'Adds a new document to the specified project.'
