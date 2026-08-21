@@ -586,6 +586,22 @@ If a response exceeds the limit, it will be truncated with a warning.
 
 > Note: This is a best-effort mitigation, not a guaranteed enforcement.
 
+#### Logging
+
+The server logs as JSON on stderr, at `error` by default. Set `LOG_LEVEL` to one
+of `trace`, `debug`, `info`, `warn`, `error`, `fatal` or `silent` to change it:
+
+```
+LOG_LEVEL=debug
+```
+
+stdout carries the JSON-RPC stream on the stdio transport, so nothing is ever
+logged there. To read the logs while developing, format stderr on its way past:
+
+```
+pnpm dev 2> >(npx pino-pretty)
+```
+
 ### Full Custom Configuration Example
 
 This section demonstrates advanced configuration using multiple environment variables. These are experimental features and may not be supported across all MCP clients. This is not part of the MCP standard specification and should be used with caution.
