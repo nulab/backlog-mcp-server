@@ -37,14 +37,19 @@ type RawResponse = { status: number; body: string };
  */
 const send = (
   port: number,
-  options: { method?: string; headers?: Record<string, string>; body?: string }
+  options: {
+    method?: string;
+    path?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  }
 ): Promise<RawResponse> =>
   new Promise((resolve, reject) => {
     const req = httpRequest(
       {
         host: '127.0.0.1',
         port,
-        path: '/mcp',
+        path: options.path ?? '/mcp',
         method: options.method ?? 'POST',
         headers: {
           'content-type': 'application/json',
@@ -164,6 +169,44 @@ describe('runHttpMcpServer', () => {
       const port = await start({ allowedHosts: ['mcp.example.com'] });
       const res = await send(port, {
         headers: { host: '127.0.0.1', 'mcp-method': 'tools/list' },
+        body: modernToolsList,
+      });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('/health', () => {
+    // A load balancer health check addresses the target directly, so its `Host`
+    // is the target's own address and can never be on the allow list. Guarding
+    // /health would make the check permanently unhealthy.
+    it('answers a Host outside the allow list', async () => {
+      const port = await start({ allowedHosts: ['mcp.example.com'] });
+      const res = await send(port, {
+        method: 'GET',
+        path: '/health',
+        headers: { host: '10.0.0.1:3333' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body).status).toBe('healthy');
+    });
+
+    it('answers a foreign Host on a loopback bind', async () => {
+      const port = await start();
+      const res = await send(port, {
+        method: 'GET',
+        path: '/health',
+        headers: { host: 'evil.example.com' },
+      });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('does not exempt /mcp', async () => {
+      const port = await start({ allowedHosts: ['mcp.example.com'] });
+      const res = await send(port, {
+        headers: { host: '10.0.0.1:3333', 'mcp-method': 'tools/list' },
         body: modernToolsList,
       });
 

@@ -66,6 +66,17 @@ export const runHttpMcpServer = async (
   const isLocalhostBind = LOCALHOST_BINDS.includes(host);
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
+  // Registered before the Host and Origin guards so that it stays reachable
+  // under an allow list. A load balancer health check addresses the target
+  // directly and puts its address in `Host` — AWS ALB gives no way to override
+  // it — so a guarded `/health` can only ever answer 403, leaving an operator
+  // to choose between dropping the allow list and treating 403 as healthy.
+  // Exempting it costs nothing: the response is constant and reaches no state,
+  // so there is nothing here for a rebinding page to reach either.
+  app.get('/health', (c) =>
+    c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
+  );
+
   // DNS rebinding protection. `Host` is the actual defense: a rebinding page
   // reaches us carrying its own hostname, which the allow list rejects.
   if (allowedHosts?.length) {
@@ -85,10 +96,6 @@ export const runHttpMcpServer = async (
   } else if (isLocalhostBind && !allowedHosts?.length) {
     app.use('*', localhostOriginValidation());
   }
-
-  app.get('/health', (c) =>
-    c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
-  );
 
   if (oauthEnabled) {
     const { createOAuthRoutes } = await import('./auth/oauthRoutes.js');
