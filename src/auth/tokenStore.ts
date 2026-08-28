@@ -154,6 +154,20 @@ export function createTokenStore() {
       return entry;
     },
 
+    /**
+     * Drops an MCP access token and its cached verification, so the next
+     * request on it is rejected by the bearer middleware.
+     *
+     * The refresh token is deliberately left in place: a Backlog 401 says the
+     * access token is spent, not that the grant is gone, so a client should be
+     * able to recover through the refresh grant before falling back to a full
+     * re-authorization.
+     */
+    revokeMcpToken(mcpToken: string): void {
+      mcpAccessTokens.delete(mcpToken);
+      verificationCache.delete(mcpToken);
+    },
+
     storeMcpRefreshToken(
       mcpRefreshToken: string,
       entry: McpRefreshEntry

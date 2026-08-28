@@ -13,7 +13,6 @@ import {
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import { Hono } from 'hono';
-import { runWithAccessToken } from './auth/backlogAuthContext.js';
 import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
 import type { TokenStore } from './auth/tokenStore.js';
 import { logger } from './utils/logger.js';
@@ -111,15 +110,13 @@ export const runHttpMcpServer = async (
     onerror: (err) => logger.error({ err }, 'MCP handler error'),
   });
 
+  // The bearer middleware owns the OAuth request context: it scopes the access
+  // token around this dispatch and converts a Backlog rejection into a 401.
   app.all(mcpPath, async (c) => {
     const authInfo = oauthEnabled ? c.get('authInfo') : undefined;
-    const accessToken = authInfo?.token;
 
     try {
-      const dispatch = () => mcpHandler.fetch(c.req.raw, { authInfo });
-      return accessToken
-        ? await runWithAccessToken(accessToken, dispatch)
-        : await dispatch();
+      return await mcpHandler.fetch(c.req.raw, { authInfo });
     } catch (error) {
       logger.error({ err: error }, 'Error handling MCP request');
       return c.json(
