@@ -586,6 +586,20 @@ If a response exceeds the limit, it will be truncated with a warning.
 
 > Note: This is a best-effort mitigation, not a guaranteed enforcement.
 
+### Logging
+
+The server logs to **stderr** (stdout carries the JSON-RPC stream on the stdio transport).
+
+| Variable    | Description                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent`. Defaults to `error` when `NODE_ENV` is `production` — which is also the default when `NODE_ENV` is unset — and to `debug` otherwise. An unrecognised value is reported and the default is used. |
+
+`NODE_ENV` still selects the output *format*: any value other than `production` switches to human-readable `pino-pretty` output when that package is available. Use `LOG_LEVEL`, not `NODE_ENV`, to change how much is logged, so that a deployment keeps structured JSON:
+
+```
+LOG_LEVEL=info node build/index.js --transport http
+```
+
 ### Full Custom Configuration Example
 
 This section demonstrates advanced configuration using multiple environment variables. These are experimental features and may not be supported across all MCP clients. This is not part of the MCP standard specification and should be used with caution.
