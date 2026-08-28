@@ -7,7 +7,9 @@ import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { getBacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import { loadTokenStoreModule } from './auth/loadTokenStoreModule.js';
 import { createTokenStore } from './auth/tokenStore.js';
+import type { TokenStore } from './auth/tokenStore.js';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { loadDescriptionOverrides } from './loadDescriptionOverrides.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
@@ -96,6 +98,12 @@ const argv = yargs(hideBin(process.argv))
       'Comma-separated allowed Origin header hostnames for browser-based clients. Defaults to the localhost set on a loopback bind, and to no Origin check otherwise',
     default: env.get('MCP_HTTP_ALLOWED_ORIGINS').default('').asString(),
   })
+  .option('token-store-module', {
+    type: 'string',
+    describe:
+      'Path or package name of a module whose default export builds the OAuth TokenStore. Defaults to an in-memory store, which is lost on restart and not shared between instances',
+    default: env.get('MCP_TOKEN_STORE_MODULE').default('').asString(),
+  })
   .option('max-tokens', {
     type: 'number',
     describe: 'Maximum number of tokens allowed in the response',
@@ -181,12 +189,36 @@ const clientRegistry = oauthConfig
   : createBacklogClientRegistry();
 const backlog = clientRegistry.createScopedClient();
 
-const tokenStore = oauthConfig ? createTokenStore() : undefined;
 let cleanupTimer: ReturnType<typeof setInterval> | undefined;
-if (tokenStore) {
-  cleanupTimer = setInterval(() => tokenStore.cleanup(), 5 * 60 * 1000);
+
+// Loading an external store needs `await import`, so the store is built inside
+// `main()` rather than at module scope. Without `--token-store-module` this is
+// the same in-memory store as before, built at the same point in the startup
+// sequence relative to everything that reads it.
+const createConfiguredTokenStore = async (): Promise<
+  TokenStore | undefined
+> => {
+  if (!oauthConfig) return undefined;
+
+  const specifier = argv.tokenStoreModule.trim();
+  const store = specifier
+    ? await loadTokenStoreModule(specifier)
+    : createTokenStore();
+
+  // An external store's cleanup can reject, and an unhandled rejection would
+  // take the process down through the handler installed above.
+  cleanupTimer = setInterval(
+    () => {
+      void Promise.resolve(store.cleanup()).catch((err) =>
+        logger.error({ err }, 'Token store cleanup failed')
+      );
+    },
+    5 * 60 * 1000
+  );
   cleanupTimer.unref();
-}
+
+  return store;
+};
 
 const useFields = argv.optimizeResponse;
 
@@ -262,6 +294,8 @@ function normalizeHttpPath(p: string): string {
 }
 
 async function main() {
+  const tokenStore = await createConfiguredTokenStore();
+
   if (oauthConfig && argv.transport === 'stdio') {
     logger.warn(
       'OAuth is configured but transport is stdio. OAuth is only available with HTTP transport.'

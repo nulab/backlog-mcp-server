@@ -186,6 +186,7 @@ The server implements the [MCP Third-Party Authorization Flow](https://modelcont
 | `BACKLOG_OAUTH_CLIENT_ID`     | OAuth Client ID from your Backlog application                   |
 | `BACKLOG_OAUTH_CLIENT_SECRET` | OAuth Client Secret from your Backlog application               |
 | `MCP_SERVER_BASE_URL`         | Public URL of your MCP server (e.g., `https://mcp.example.com`) |
+| `MCP_TOKEN_STORE_MODULE`      | Optional. Module supplying an external token store (see below)  |
 
 > **Note:** `BACKLOG_API_KEY` is **not required** when OAuth is enabled — each user authenticates with their own Backlog account.
 
@@ -223,10 +224,54 @@ absent, from one whose redirect URIs are _all_ loopback. A client declaring
 `"application_type": "web"`, or mixing a remote `https:` URI with a loopback one
 without declaring itself, is rejected with `invalid_client_metadata`.
 
+#### Token storage
+
+Client registrations and the tokens this server issues are held in memory by
+default. That is the right default for a desktop or single-instance server, and
+it has two consequences for anything larger: every restart costs every user a
+re-authorization, and a second instance cannot serve a session the first one
+started. Load-balancer stickiness does not help — `/authorize` and `/callback`
+arrive from the user's browser while `/token` and `/mcp` arrive from the MCP
+client, so no cookie can land them on the same process.
+
+`--token-store-module` (or `MCP_TOKEN_STORE_MODULE`) names a module whose
+default export builds a replacement. The module may be a path or a package name,
+and its factory may be `async`; every method of the store may return a value or
+a Promise, so a store backed by Redis, DynamoDB or a Durable Object satisfies
+the same contract as the in-memory one:
+
+```js
+// token-store.mjs
+export default async () => ({
+  async storePendingAuth(state, pending) { /* ... */ },
+  async consumePendingAuth(state) { /* ... */ },
+  // ...and the rest of TokenStore
+});
+```
+
+```bash
+backlog-mcp-server --transport http --token-store-module ./token-store.mjs
+```
+
+The `TokenStore` type is exported from the package for implementations written
+in TypeScript:
+
+```ts
+import type { TokenStore, TokenStoreFactory } from 'backlog-mcp-server';
+```
+
+Two obligations the type cannot express. `consumePendingAuth`, `consumeAuthCode`
+and `consumeMcpRefreshToken` must read and delete atomically — they are
+single-use by design, and an authorization code replayed against two instances
+would otherwise mint two token pairs. And an expired entry must never be served;
+every entry carries its own deadline, so a native TTL may enforce it instead.
+
+The module is imported and executed by the server process, so it is as trusted
+as the command line it was named on.
+
 > **Limitations:**
 >
 > - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
-> - Client registrations and tokens are stored in memory and will be lost on server restart.
 
 ## Tool Configuration
 
@@ -650,6 +695,7 @@ The server supports several command line options:
 - `--http-json-response`: Prefer JSON responses over SSE. Applies to `2026-07-28` clients only; the backward-compatible `2025-11-25` path is served with the SDK's default response shaping.
 - `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--http-allowed-origins`: Comma-separated allowed `Origin` hostnames for browser-based clients. Defaults to the localhost set on a bare loopback bind, and to no `Origin` check otherwise.
+- `--token-store-module`: Path or package name of a module whose default export builds the OAuth token store. Defaults to an in-memory store, which is lost on restart and not shared between instances.
 - `--export-descriptions`: Export the description keys and values resolved when building the tool list. Was named `--export-translations`; that spelling still works as a deprecated alias and will be removed in a future release
 - `--optimize-response`: Add a `fields` parameter to each tool for selecting which result fields to return
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
