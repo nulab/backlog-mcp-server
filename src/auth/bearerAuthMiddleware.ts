@@ -57,12 +57,12 @@ export function createBearerAuthMiddleware(
       );
     }
 
-    const tokenEntry = store.getMcpToken(mcpToken);
+    const tokenEntry = await store.getMcpToken(mcpToken);
     if (!tokenEntry) {
       return unauthorized('Unknown or expired token');
     }
 
-    let authInfo = store.getCachedVerification(mcpToken);
+    let authInfo = await store.getCachedVerification(mcpToken);
 
     if (!authInfo) {
       try {
@@ -76,7 +76,7 @@ export function createBearerAuthMiddleware(
           scopes: [],
           expiresAt: Math.floor(Date.now() / 1000) + CACHE_TTL_MS / 1000,
         } satisfies AuthInfo;
-        store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
+        await store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       } catch (err) {
         logger.warn({ err }, 'Bearer token verification failed');
         return unauthorized('Token verification failed');
@@ -93,12 +93,29 @@ export function createBearerAuthMiddleware(
     // Invalidation happens the moment the failure is reported rather than after
     // `next()` settles, because a response that upgraded to SSE resolves before
     // its handler has run.
+    //
+    // `reportBacklogAuthError` calls this synchronously from inside a tool
+    // handler, so an asynchronous store cannot be awaited here. The promise is
+    // captured instead and awaited once the request is decided: starting the
+    // revocation at the moment of detection is what the timing above is about,
+    // and finishing it before the response leaves is what keeps a rejected
+    // token from surviving into the next request. Catching is not optional —
+    // an unhandled rejection from a network-backed store would take the process
+    // down through the handler in `src/index.ts`.
+    let revocation: Promise<void> | undefined;
     const onAuthError = () => {
       logger.warn(
         { clientId: tokenEntry.clientId },
         'Backlog rejected the stored access token; revoking the MCP token'
       );
-      store.revokeMcpToken(mcpToken);
+      revocation = Promise.resolve(store.revokeMcpToken(mcpToken)).catch(
+        (err: unknown) => {
+          logger.error(
+            { err, clientId: tokenEntry.clientId },
+            'Failed to revoke the MCP token after a Backlog authentication error'
+          );
+        }
+      );
     };
 
     await runWithAccessToken(
@@ -113,5 +130,7 @@ export function createBearerAuthMiddleware(
       },
       onAuthError
     );
+
+    await revocation;
   };
 }

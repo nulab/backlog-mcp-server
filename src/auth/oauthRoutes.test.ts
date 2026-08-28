@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createOAuthRoutes } from './oauthRoutes.js';
-import { createTokenStore, type TokenStore } from './tokenStore.js';
+import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
 vi.mock('./backlogOAuthClient.js', () => ({
@@ -34,7 +34,7 @@ const config: BacklogOAuthConfig = {
 };
 
 describe('createOAuthRoutes', () => {
-  let store: TokenStore;
+  let store: ReturnType<typeof createTokenStore>;
   let app: ReturnType<typeof createOAuthRoutes>;
 
   beforeEach(() => {
