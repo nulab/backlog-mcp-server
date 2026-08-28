@@ -3,7 +3,10 @@ FROM node:26 AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# Node stopped bundling Corepack after Node 24 and the official node images do not
+# install it, so `corepack enable` is `not found` on node:26. `packageManager` in
+# package.json still decides which pnpm is used, hash included.
+RUN npm install -g corepack@latest && corepack enable
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
