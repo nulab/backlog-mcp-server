@@ -68,7 +68,7 @@ describe('countIssuesTool', () => {
     });
 
     expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
-      'customField_11111[]': [7, 8],
+      customField_11111: [7, 8],
     });
   });
 

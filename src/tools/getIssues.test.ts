@@ -133,7 +133,7 @@ describe('getIssuesTool', () => {
     });
 
     expect(mockBacklog.getIssues).toHaveBeenCalledWith({
-      'customField_11111[]': [1, 2, 3],
+      customField_11111: [1, 2, 3],
     });
   });
 

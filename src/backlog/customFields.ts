@@ -95,7 +95,12 @@ export function customFieldFiltersToPayload(
         if (Array.isArray(field.value)) {
           const values = field.value.filter((value) => Number.isFinite(value));
           if (values.length > 0) {
-            result[`${baseKey}[]`] = values;
+            // Deliberately no `[]` suffix. `Request.toQueryString` already
+            // expands an array under a `customField_` key into indexed
+            // parameters (`customField_1[0]=…`); adding the suffix here makes
+            // it emit `customField_1[][0]=…`, which Backlog does not match, so
+            // the filter is silently ignored and every issue comes back.
+            result[baseKey] = values;
           }
         } else if (Number.isFinite(field.value)) {
           result[baseKey] = field.value;
