@@ -12,7 +12,9 @@ describe('allTools', () => {
   const toolNames = allTools(
     {} as Backlog,
     createDescriptionHelper()
-  ).toolsets.flatMap((toolset) => toolset.tools.map((tool) => tool.name));
+  ).toolsets.flatMap((toolset) =>
+    [...toolset.tools, ...(toolset.dynamicTools ?? [])].map((tool) => tool.name)
+  );
 
   it('names every tool in snake_case', () => {
     const offenders = toolNames.filter(
