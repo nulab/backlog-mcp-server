@@ -1,4 +1,5 @@
 import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
+import { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
 import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 import { MCPOptions } from './types/mcp.js';
 import { DynamicToolDefinition, ToolDefinition } from './types/tool.js';
@@ -46,6 +47,27 @@ export function registerTools(
         maxTokens,
         useOrganization,
       }),
+  });
+
+  // Tools that build their own result, registered from the same toolsets so
+  // that `--enable-toolsets` and the prefix cover them too.
+  registerToolsets({
+    server,
+    toolsetGroup: {
+      toolsets: toolsetGroup.toolsets.map((toolset) => ({
+        name: toolset.name,
+        description: toolset.description,
+        enabled: toolset.enabled,
+        tools: toolset.dynamicTools ?? [],
+      })),
+    },
+    prefix,
+    prepareTool: (tool) =>
+      composeDynamicToolHandler(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tool as DynamicToolDefinition<any>,
+        { errorHandler: backlogErrorHandler, useOrganization }
+      ),
   });
 }
 
