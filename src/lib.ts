@@ -15,12 +15,14 @@
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
+export { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
 export { createDescriptionHelper } from './createDescriptionHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
 
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
+export type { ComposeDynamicOptions } from './handlers/builders/composeDynamicToolHandler.js';
 export type { DescriptionHelper } from './createDescriptionHelper.js';
 export type { ToolDefinition, DynamicToolDefinition } from './types/tool.js';
 export type {

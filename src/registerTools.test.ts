@@ -88,7 +88,10 @@ describe('registerTools', () => {
     });
 
     expect(mockServer.registerTool).toHaveBeenCalledTimes(
-      toolsetGroup.toolsets.flatMap((a) => a.tools).length
+      toolsetGroup.toolsets.flatMap((a) => [
+        ...a.tools,
+        ...(a.dynamicTools ?? []),
+      ]).length
     );
   });
 });
