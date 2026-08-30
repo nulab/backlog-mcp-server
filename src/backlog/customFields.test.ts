@@ -135,21 +135,24 @@ describe('customFieldFiltersToPayload', () => {
       { id: 400, type: 'list', value: 1 },
       { id: 401, type: 'list', value: [2, 3] },
     ];
+    // A single value is wrapped, not passed through: Backlog matches a list
+    // custom field only on the indexed parameters an array produces.
     expect(customFieldFiltersToPayload(filters)).toEqual({
-      customField_400: 1,
+      customField_400: [1],
       customField_401: [2, 3],
     });
   });
 
-  it('does not suffix multi-value list filter keys with []', () => {
+  it('does not suffix list filter keys with []', () => {
     const filters: CustomFieldFilterInput[] = [
+      { id: 400, type: 'list', value: 1 },
       { id: 401, type: 'list', value: [2, 3] },
     ];
     // `Request.toQueryString` appends the index itself for `customField_` keys,
     // so a `[]` suffix here produces `customField_401[][0]=…` on the wire.
-    expect(customFieldFiltersToPayload(filters)).not.toHaveProperty(
-      'customField_401[]'
-    );
+    const payload = customFieldFiltersToPayload(filters);
+    expect(payload).not.toHaveProperty('customField_400[]');
+    expect(payload).not.toHaveProperty('customField_401[]');
   });
 });
 
@@ -193,13 +196,16 @@ describe('list custom field filters on the wire', () => {
     expect(requestUrl).not.toContain('customField_401[][0]');
   });
 
-  it('sends a bare parameter for a single value', async () => {
+  it('sends an indexed parameter for a single value too', async () => {
     const params = customFieldFiltersToPayload([
       { id: 400, type: 'list', value: 1 },
     ]);
 
     const requestUrl = await captureRequestUrl(params);
 
-    expect(requestUrl).toContain('customField_400=1');
+    // `customField_400=1` is what a bare value produces, and Backlog does not
+    // match it — it returns every issue rather than rejecting the request.
+    expect(requestUrl).toContain('customField_400[0]=1');
+    expect(requestUrl).not.toContain('customField_400=1');
   });
 });
