@@ -123,7 +123,7 @@ describe('getIssuesTool', () => {
       customField_67890_min: 10,
       customField_67890_max: 20,
       customField_13579_min: '2024-01-01',
-      customField_24680: 5,
+      customField_24680: [5],
     });
   });
 
@@ -133,7 +133,7 @@ describe('getIssuesTool', () => {
     });
 
     expect(mockBacklog.getIssues).toHaveBeenCalledWith({
-      'customField_11111[]': [1, 2, 3],
+      customField_11111: [1, 2, 3],
     });
   });
 

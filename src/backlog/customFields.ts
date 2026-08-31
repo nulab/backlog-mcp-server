@@ -92,13 +92,19 @@ export function customFieldFiltersToPayload(
         break;
       }
       case 'list': {
-        if (Array.isArray(field.value)) {
-          const values = field.value.filter((value) => Number.isFinite(value));
-          if (values.length > 0) {
-            result[`${baseKey}[]`] = values;
-          }
-        } else if (Number.isFinite(field.value)) {
-          result[baseKey] = field.value;
+        // Always an array, single value included. Backlog matches a list custom
+        // field only on the indexed parameters `customField_1[0]=…`, which
+        // `Request.toQueryString` produces from an array under a `customField_`
+        // key. A bare `customField_1=…` is not matched, and neither is the
+        // `customField_1[][0]=…` that a `[]` suffix on this key would produce.
+        // Neither is rejected either — the filter is silently ignored and every
+        // issue comes back, so the caller cannot tell a filtered query from an
+        // unfiltered one.
+        const values = (
+          Array.isArray(field.value) ? field.value : [field.value]
+        ).filter((value) => Number.isFinite(value));
+        if (values.length > 0) {
+          result[baseKey] = values;
         }
         break;
       }
