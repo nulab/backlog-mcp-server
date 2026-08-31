@@ -83,8 +83,8 @@ export function loadDescriptionOverrides(options?: {
 
     if (outcome.status === 'unreadable') {
       // `logger.error`, not `warn`: the logger runs at level `error` unless
-      // NODE_ENV says otherwise, so a warning here would never reach the user
-      // this message exists for.
+      // LOG_LEVEL or NODE_ENV says otherwise, so a warning here would never
+      // reach the user this message exists for.
       logger.error(
         { err: outcome.error, filePath },
         'Could not read the description override file; continuing with the built-in defaults'
