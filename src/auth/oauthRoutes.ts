@@ -224,7 +224,7 @@ export function createOAuthRoutes(
       response_types: ['code'],
     };
 
-    if (!store.registerClient(client)) {
+    if (!(await store.registerClient(client))) {
       return c.json(
         oauthError(
           'server_error',
@@ -258,7 +258,7 @@ export function createOAuthRoutes(
       return c.json(oauthError('invalid_request', 'Missing client_id'), 400);
     }
 
-    const client = store.getClient(clientId);
+    const client = await store.getClient(clientId);
     if (!client) {
       return c.json(oauthError('invalid_client', 'Unknown client_id'), 400);
     }
@@ -324,7 +324,7 @@ export function createOAuthRoutes(
 
     // Store pending authorization and redirect to Backlog
     const backlogState = randomUUID();
-    store.storePendingAuth(backlogState, {
+    await store.storePendingAuth(backlogState, {
       mcpClientId: clientId,
       codeChallenge,
       redirectUri: effectiveRedirectUri,
@@ -355,7 +355,7 @@ export function createOAuthRoutes(
     }
 
     if (backlogError || !backlogCode) {
-      const pending = store.consumePendingAuth(backlogState);
+      const pending = await store.consumePendingAuth(backlogState);
       if (!pending) {
         return c.text(
           'Unknown or expired authorization state. Please start the authorization flow again.',
@@ -374,7 +374,7 @@ export function createOAuthRoutes(
       return c.redirect(errorUrl.href, 302);
     }
 
-    const pending = store.consumePendingAuth(backlogState);
+    const pending = await store.consumePendingAuth(backlogState);
     if (!pending) {
       return c.text(
         'Unknown or expired authorization state. Please start the authorization flow again.',
@@ -403,7 +403,7 @@ export function createOAuthRoutes(
     }
 
     const mcpCode = randomUUID();
-    store.storeAuthCode(mcpCode, {
+    await store.storeAuthCode(mcpCode, {
       mcpClientId: pending.mcpClientId,
       backlogTokens,
       codeChallenge: pending.codeChallenge,
@@ -433,7 +433,7 @@ export function createOAuthRoutes(
       return c.json(oauthError('invalid_request', 'Missing client_id'), 400);
     }
 
-    const client = store.getClient(clientId);
+    const client = await store.getClient(clientId);
     if (!client) {
       return c.json(oauthError('invalid_client', 'Unknown client_id'), 401);
     }
@@ -452,7 +452,7 @@ export function createOAuthRoutes(
         return c.json(oauthError('invalid_request', 'Missing code'), 400);
       }
 
-      const entry = store.consumeAuthCode(code);
+      const entry = await store.consumeAuthCode(code);
       if (!entry) {
         return c.json(
           oauthError('invalid_grant', 'Invalid or expired authorization code'),
@@ -494,12 +494,12 @@ export function createOAuthRoutes(
       const mcpAccessToken = randomBytes(32).toString('hex');
       const mcpRefreshToken = randomBytes(32).toString('hex');
 
-      store.storeMcpToken(mcpAccessToken, {
+      await store.storeMcpToken(mcpAccessToken, {
         backlogAccessToken: entry.backlogTokens.access_token,
         clientId,
         expiresAt: Date.now() + entry.backlogTokens.expires_in * 1000,
       });
-      store.storeMcpRefreshToken(mcpRefreshToken, {
+      await store.storeMcpRefreshToken(mcpRefreshToken, {
         backlogRefreshToken: entry.backlogTokens.refresh_token,
         clientId,
         expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
@@ -522,7 +522,7 @@ export function createOAuthRoutes(
         );
       }
 
-      const refreshEntry = store.consumeMcpRefreshToken(refreshToken);
+      const refreshEntry = await store.consumeMcpRefreshToken(refreshToken);
       if (!refreshEntry) {
         return c.json(
           oauthError('invalid_grant', 'Invalid or expired refresh token'),
@@ -549,12 +549,12 @@ export function createOAuthRoutes(
         const mcpAccessToken = randomBytes(32).toString('hex');
         const mcpRefreshToken = randomBytes(32).toString('hex');
 
-        store.storeMcpToken(mcpAccessToken, {
+        await store.storeMcpToken(mcpAccessToken, {
           backlogAccessToken: tokens.access_token,
           clientId,
           expiresAt: Date.now() + tokens.expires_in * 1000,
         });
-        store.storeMcpRefreshToken(mcpRefreshToken, {
+        await store.storeMcpRefreshToken(mcpRefreshToken, {
           backlogRefreshToken: tokens.refresh_token,
           clientId,
           expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
@@ -568,7 +568,7 @@ export function createOAuthRoutes(
         });
       } catch (err) {
         logger.error({ err }, 'Failed to refresh Backlog token');
-        store.storeMcpRefreshToken(refreshToken, refreshEntry);
+        await store.storeMcpRefreshToken(refreshToken, refreshEntry);
         return c.json(
           oauthError('server_error', 'Failed to refresh upstream token'),
           503

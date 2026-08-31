@@ -159,6 +159,7 @@ MCPサーバーをネットワーク経由で公開する場合、OAuth 2.0認�
 | `BACKLOG_OAUTH_CLIENT_ID`     | Backlogアプリケーションの OAuth Client ID             |
 | `BACKLOG_OAUTH_CLIENT_SECRET` | Backlogアプリケーションの OAuth Client Secret         |
 | `MCP_SERVER_BASE_URL`         | MCPサーバーの公開URL（例：`https://mcp.example.com`） |
+| `MCP_TOKEN_STORE_MODULE`      | 任意。外部トークンストアを供給するモジュール（後述） |
 
 > **注意:** OAuth有効時は `BACKLOG_API_KEY` は**不要**です。各ユーザーが自分のBacklogアカウントで認証します。
 
@@ -196,10 +197,51 @@ MCP認可仕様に対応するMCPクライアントは、これらのエンド�
 宣言なしでリモートの `https:` URI とループバック URI を混在させた登録は
 `invalid_client_metadata` で拒否されます。
 
+#### トークンの保存先
+
+クライアント登録とこのサーバーが発行するトークンは、既定ではメモリ内に保持されます。
+デスクトップ用途や単一インスタンスの構成にはこれが適切な既定値ですが、それ以上の規模では
+2 つの帰結があります。再起動のたびに全ユーザーの再認可が必要になること、そして 1 台目が
+開始したセッションを 2 台目が引き継げないことです。ロードバランサのスティッキーセッションでは
+解決しません。`/authorize` と `/callback` はユーザーのブラウザから、`/token` と `/mcp` は
+MCP クライアントから届くため、どのような Cookie でも同一プロセスに寄せられないからです。
+
+`--token-store-module`（または `MCP_TOKEN_STORE_MODULE`）は、既定のストアを置き換える
+モジュールを指定します。値はパスでもパッケージ名でもよく、default export の factory は
+`async` でも構いません。ストアの各メソッドは値と Promise のどちらを返してもよいため、
+Redis / DynamoDB / Durable Object を裏に持つストアも、インメモリ実装と同じ契約を満たせます。
+
+```js
+// token-store.mjs
+export default async () => ({
+  async storePendingAuth(state, pending) { /* ... */ },
+  async consumePendingAuth(state) { /* ... */ },
+  // ...残りの TokenStore のメソッド
+});
+```
+
+```bash
+backlog-mcp-server --transport http --token-store-module ./token-store.mjs
+```
+
+TypeScript で実装する場合、`TokenStore` 型をパッケージから import できます。
+
+```ts
+import type { TokenStore, TokenStoreFactory } from 'backlog-mcp-server';
+```
+
+型では表現できない約束が 2 つあります。`consumePendingAuth` / `consumeAuthCode` /
+`consumeMcpRefreshToken` は取得と削除をアトミックに行う必要があります（これらは設計上
+1 回限りで、認可コードが 2 インスタンスに対して再生されるとトークンが二重に発行される
+ため）。また、期限切れのエントリを返してはいけません。各エントリは自身の期限を保持して
+いるので、ネイティブの TTL に任せても構いません。
+
+指定したモジュールはサーバープロセスが import して実行します。そのため、モジュールは
+コマンドラインと同じ信頼レベルで扱われます。
+
 > **制約事項:**
 >
 > - OAuthモードは現在、単一のBacklog組織のみをサポートしています。複数組織設定との併用はできません。
-> - クライアント登録やトークンはメモリ内に保持されるため、サーバー再起動時に失われます。
 
 ## ツール設定
 
@@ -530,6 +572,7 @@ pnpm test
 
 - `--export-descriptions`: ツール一覧の構築時に解決される説明キーと値をエクスポート。旧名は `--export-translations` で、非推奨エイリアスとして当面動作しますが、将来のリリースで削除されます
 - `--optimize-response`: 各ツールに、返す結果フィールドを選ぶ `fields` パラメータを追加する
+- `--token-store-module`: OAuth トークンストアを構築するモジュールのパスまたはパッケージ名。既定はインメモリのストアで、再起動で失われ、インスタンス間で共有されません。
 - `--max-tokens=NUMBER`: レスポンスの最大トークン制限を設定
 - `--prefix=STRING`: すべてのツール名に付加するオプションの文字列プレフィックス（デフォルト：""）
 - `--enable-toolsets <toolsets...>`: 有効にするツールセットを指定します（カンマ区切りまたは複数の引数）。デフォルトは "all" です。

@@ -47,7 +47,7 @@ export function createBearerAuthMiddleware(
       );
     }
 
-    const tokenEntry = store.getMcpToken(mcpToken);
+    const tokenEntry = await store.getMcpToken(mcpToken);
     if (!tokenEntry) {
       c.header(
         'WWW-Authenticate',
@@ -62,7 +62,7 @@ export function createBearerAuthMiddleware(
       );
     }
 
-    const cached = store.getCachedVerification(mcpToken);
+    const cached = await store.getCachedVerification(mcpToken);
     if (cached) {
       c.set('authInfo', cached);
       await next();
@@ -80,7 +80,7 @@ export function createBearerAuthMiddleware(
         scopes: [],
         expiresAt: Math.floor(Date.now() / 1000) + CACHE_TTL_MS / 1000,
       };
-      store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
+      await store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       c.set('authInfo', authInfo);
       await next();
     } catch (err) {

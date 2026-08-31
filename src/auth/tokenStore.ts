@@ -22,7 +22,7 @@ export type OAuthClientInfo = {
   response_types?: string[];
 };
 
-type PendingAuthorization = {
+export type PendingAuthorization = {
   mcpClientId: string;
   codeChallenge: string;
   redirectUri: string;
@@ -32,7 +32,7 @@ type PendingAuthorization = {
   createdAt: number;
 };
 
-type AuthCodeEntry = {
+export type AuthCodeEntry = {
   mcpClientId: string;
   backlogTokens: BacklogTokenData;
   codeChallenge: string;
@@ -52,7 +52,7 @@ export type McpTokenEntry = {
   expiresAt: number;
 };
 
-type McpRefreshEntry = {
+export type McpRefreshEntry = {
   backlogRefreshToken: string;
   clientId: string;
   expiresAt: number;
@@ -62,7 +62,67 @@ const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
 const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
 const MAX_CLIENTS = 1000;
 
-export type TokenStore = ReturnType<typeof createTokenStore>;
+/**
+ * A value a store may return directly or after a round trip.
+ *
+ * The default store is in-memory and answers synchronously; anything backed by
+ * a network — Redis, DynamoDB, a Durable Object — cannot. Widening the contract
+ * rather than the implementation keeps the default free of a Promise it has no
+ * use for, while letting an external one satisfy the same type.
+ */
+type Awaitable<T> = T | Promise<T>;
+
+/**
+ * The OAuth state this server owns: dynamic client registrations, in-flight
+ * authorizations, and the tokens it issues. The MCP SDK ships the
+ * resource-server side, so none of this is state it can hold on our behalf.
+ *
+ * Two obligations an implementation must honour, neither of which the type can
+ * express:
+ *
+ * - `consumePendingAuth`, `consumeAuthCode` and `consumeMcpRefreshToken` must
+ *   read and delete atomically. They are single-use by design — an
+ *   authorization code replayed against two instances would mint two token
+ *   pairs — so a backing store shared across processes needs a delete that
+ *   reports whether it won, not a read followed by a delete.
+ * - Expiry is the store's to enforce. Every entry carries its own deadline and
+ *   the accessors above drop what has passed, so an implementation may lean on
+ *   a native TTL instead, but it may not serve an expired entry.
+ */
+export type TokenStore = {
+  storePendingAuth(
+    backlogState: string,
+    pending: PendingAuthorization
+  ): Awaitable<void>;
+  consumePendingAuth(
+    backlogState: string
+  ): Awaitable<PendingAuthorization | undefined>;
+  storeAuthCode(code: string, entry: AuthCodeEntry): Awaitable<void>;
+  consumeAuthCode(code: string): Awaitable<AuthCodeEntry | undefined>;
+  getClient(clientId: string): Awaitable<OAuthClientInfo | undefined>;
+  registerClient(client: OAuthClientInfo): Awaitable<boolean>;
+  getCachedVerification(token: string): Awaitable<AuthInfo | undefined>;
+  cacheVerification(
+    token: string,
+    authInfo: AuthInfo,
+    ttlMs: number
+  ): Awaitable<void>;
+  storeMcpToken(mcpToken: string, entry: McpTokenEntry): Awaitable<void>;
+  getMcpToken(mcpToken: string): Awaitable<McpTokenEntry | undefined>;
+  storeMcpRefreshToken(
+    mcpRefreshToken: string,
+    entry: McpRefreshEntry
+  ): Awaitable<void>;
+  consumeMcpRefreshToken(
+    mcpRefreshToken: string
+  ): Awaitable<McpRefreshEntry | undefined>;
+  cleanup(): Awaitable<void>;
+};
+
+/**
+ * What a module named by `--token-store-module` must export as its default.
+ */
+export type TokenStoreFactory = () => Awaitable<TokenStore>;
 
 export function createTokenStore() {
   const pendingAuthorizations = new Map<string, PendingAuthorization>();
@@ -195,5 +255,5 @@ export function createTokenStore() {
           clients.delete(key);
       }
     },
-  };
+  } satisfies TokenStore;
 }

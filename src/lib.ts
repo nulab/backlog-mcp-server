@@ -30,3 +30,20 @@ export type {
   DynamicToolsetGroup,
 } from './types/toolsets.js';
 export type { ErrorLike, SafeResult } from './types/result.js';
+
+/**
+ * The OAuth state contract, so a deployment can back client registrations and
+ * tokens with something that outlives a restart and is shared between
+ * instances. Types only: the server that consumes one is the CLI, which loads
+ * an implementation named by `--token-store-module`.
+ */
+export type {
+  TokenStore,
+  TokenStoreFactory,
+  OAuthClientInfo,
+  PendingAuthorization,
+  AuthCodeEntry,
+  McpTokenEntry,
+  McpRefreshEntry,
+  BacklogTokenData,
+} from './auth/tokenStore.js';
