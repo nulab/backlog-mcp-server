@@ -99,8 +99,9 @@ describe('loadDescriptionOverrides', () => {
     });
 
     it('reports the failure at a level the default logger emits', () => {
-      // The logger runs at level `error` unless NODE_ENV says otherwise, so a
-      // warning would be dropped for the users this message is meant for.
+      // The logger runs at level `error` unless LOG_LEVEL or NODE_ENV says
+      // otherwise, so a warning would be dropped for the users this message is
+      // meant for.
       writeConfig('.backlog-mcp-serverrc.yaml', 'HELLO: [unclosed\n');
 
       loadDescriptionOverrides({ searchDir });
