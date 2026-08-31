@@ -479,6 +479,8 @@ MAX_TOKENS=10000
 
 出力**フォーマット**は引き続き `NODE_ENV` が決めます（`production` 以外では `pino-pretty` が利用可能なら人間向けの整形出力に切り替わります）。ログ量を変えたいときは `NODE_ENV` ではなく `LOG_LEVEL` を設定してください。デプロイ先で構造化 JSON のまま保てます。
 
+`pino-pretty` は開発用の依存なので、公開されている npm パッケージにもコンテナイメージにも含まれていません。そのため、これらでは `NODE_ENV` の値に関わらず常に構造化 JSON が出力され、出力を変えられるのは `LOG_LEVEL` だけです。
+
 ```
 LOG_LEVEL=info node build/index.js --transport http
 ```

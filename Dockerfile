@@ -18,6 +18,13 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
+# The runtime needs the production dependencies only. The install above had to
+# pull in the dev toolchain so `pnpm run build` could run, and none of it —
+# typescript, vitest, oxlint, tsx — belongs in a published image. Pruning here
+# rather than reinstalling in the runner keeps pnpm and corepack out of the
+# runtime stage entirely.
+RUN pnpm prune --prod
+
 # Runtime stage
 FROM node:26-slim AS runner
 

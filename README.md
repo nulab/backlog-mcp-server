@@ -596,6 +596,8 @@ The server logs to **stderr** (stdout carries the JSON-RPC stream on the stdio t
 
 `NODE_ENV` still selects the output *format*: any value other than `production` switches to human-readable `pino-pretty` output when that package is available. Use `LOG_LEVEL`, not `NODE_ENV`, to change how much is logged, so that a deployment keeps structured JSON:
 
+`pino-pretty` is a development dependency, so neither the published npm package nor the container image carries a copy. In those, logs are structured JSON whatever `NODE_ENV` says, and `LOG_LEVEL` is the only setting that changes the output.
+
 ```
 LOG_LEVEL=info node build/index.js --transport http
 ```
