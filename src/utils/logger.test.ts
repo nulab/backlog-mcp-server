@@ -4,13 +4,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // module graph with the environment already in place.
 const loadLogger = async (env: Record<string, string | undefined>) => {
   vi.resetModules();
+  // `vi.stubEnv` deletes the variable when handed `undefined`.
   for (const [key, value] of Object.entries(env)) {
-    if (value === undefined) {
-      vi.stubEnv(key, undefined as unknown as string);
-      delete process.env[key];
-    } else {
-      vi.stubEnv(key, value);
-    }
+    vi.stubEnv(key, value);
   }
   const { logger } = await import('./logger.js');
   return logger;
