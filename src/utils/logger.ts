@@ -4,7 +4,12 @@ if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'production';
 }
 
-const isProd = process.env.NODE_ENV === 'production';
+// Normalised the same way LOG_LEVEL is below. A strict `=== 'production'` makes
+// `Production`, or a stray space picked up from a shell or a container runtime,
+// silently mean "not production" — and that flips the default level *and* the
+// output format, with nothing logged to say so. A typo here is worth less
+// tolerance than a typo in LOG_LEVEL, not more.
+const isProd = process.env.NODE_ENV?.trim().toLowerCase() === 'production';
 
 // pino's levels plus `silent`. Listed here so an unusable LOG_LEVEL is caught
 // while the fallback is still available, rather than by pino throwing during

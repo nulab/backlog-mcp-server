@@ -68,6 +68,14 @@ describe('logger', () => {
       expect(logger.level).toBe('error');
     });
 
+    it('treats NODE_ENV as production regardless of case or padding', async () => {
+      const logger = await loadLogger({
+        NODE_ENV: '  Production  ',
+        LOG_LEVEL: undefined,
+      });
+      expect(logger.level).toBe('error');
+    });
+
     it('logs debug outside production', async () => {
       const logger = await loadLogger({
         NODE_ENV: 'development',
