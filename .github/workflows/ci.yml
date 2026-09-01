@@ -40,3 +40,32 @@ jobs:
 
       - name: 🛠 Build
         run: pnpm run build
+
+  docker:
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    name: 🐳 Docker build
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      # release.yml is otherwise the only workflow that builds the image, so a
+      # broken Dockerfile stayed invisible until a release ran — twice now:
+      # corepack disappearing on node:26, and `pnpm prune` aborting without a
+      # TTY. Build it here instead. One native platform is enough to catch that
+      # class of break; the release still builds amd64 and arm64.
+      - name: 🐳 Build image
+        run: docker build --build-arg VERSION=ci -t backlog-mcp-server:ci .
+
+      # Building the image proves it compiles; running it proves the prune left
+      # every production dependency behind. `--export-descriptions` writes the
+      # tool descriptions and exits without reaching Backlog, so a placeholder
+      # domain and key are enough — but the entrypoint does require them.
+      - name: 🚦 Smoke test the image
+        env:
+          BACKLOG_DOMAIN: example.backlog.com
+          BACKLOG_API_KEY: dummy
+        run: |
+          docker run --rm -e BACKLOG_DOMAIN -e BACKLOG_API_KEY \
+            backlog-mcp-server:ci node build/index.js --export-descriptions > /dev/null
