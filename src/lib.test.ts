@@ -4,8 +4,6 @@ import type { z } from 'zod';
 import type {
   ComposeOptions,
   DynamicToolDefinition,
-  DynamicToolset,
-  DynamicToolsetGroup,
   ErrorLike,
   SafeResult,
   ToolDefinition,
@@ -45,8 +43,6 @@ describe('library entry point', () => {
     const types: [
       ComposeOptions?,
       DynamicToolDefinition<z.ZodRawShape>?,
-      DynamicToolset?,
-      DynamicToolsetGroup?,
       ErrorLike?,
       SafeResult<unknown>?,
       ToolDefinition<z.ZodRawShape, z.ZodRawShape>?,

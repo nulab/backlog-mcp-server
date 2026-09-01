@@ -25,10 +25,5 @@ export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
 export type { ComposeDynamicOptions } from './handlers/builders/composeDynamicToolHandler.js';
 export type { DescriptionHelper } from './createDescriptionHelper.js';
 export type { ToolDefinition, DynamicToolDefinition } from './types/tool.js';
-export type {
-  Toolset,
-  ToolsetGroup,
-  DynamicToolset,
-  DynamicToolsetGroup,
-} from './types/toolsets.js';
+export type { Toolset, ToolsetGroup } from './types/toolsets.js';
 export type { ErrorLike, SafeResult } from './types/result.js';

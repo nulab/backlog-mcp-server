@@ -4,8 +4,8 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import type { Backlog } from 'backlog-js';
 import type { DescriptionHelper } from './createDescriptionHelper.js';
-import { registerDynamicTools, registerTools } from './registerTools.js';
-import { organizationTools } from './tools/dynamicTools/organizations.js';
+import { registerTools } from './registerTools.js';
+import { organizationTools } from './tools/organizations.js';
 import type { MCPOptions } from './types/mcp.js';
 import type { ToolsetGroup } from './types/toolsets.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
@@ -72,10 +72,13 @@ export function createBacklogMcpServer({
   // is configured; the `organization` parameter its description points at is
   // published under the same condition.
   if (mcpOption.useOrganization) {
-    registerDynamicTools(
+    registerTools(
       server,
       organizationTools(clientRegistry, descriptionHelper),
-      mcpOption.prefix
+      // `useOrganization: false` regardless of the flag that got us here.
+      // `list_organizations` is what a caller reads to learn what may go in
+      // `organization`; scoping the answer to one organization is circular.
+      { ...mcpOption, useOrganization: false }
     );
   }
 
