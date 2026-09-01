@@ -301,6 +301,23 @@ function isExpectedImage(bytes: Uint8Array, contentType: string): boolean {
   }
 }
 
+/**
+ * The raster type the bytes actually are, if it is one this tool inlines.
+ *
+ * A file saved under the wrong extension — a PNG named `.jpg` is the common
+ * one — is served happily by Backlog. Trusting the name and giving up would
+ * turn it into an opaque blob no client draws, when the bytes needed to
+ * identify it are already in hand.
+ */
+function sniffImageType(bytes: Uint8Array): string | undefined {
+  for (const type of INLINE_IMAGE_TYPES) {
+    if (isExpectedImage(bytes, type)) {
+      return type;
+    }
+  }
+  return undefined;
+}
+
 function getSpaceNamespace(sourceUrl: string): string {
   try {
     return new URL(sourceUrl).host || 'unknown-space';
@@ -367,12 +384,16 @@ export const getIssueAttachmentTool = (
         maxBytes ?? DEFAULT_MAX_BYTES
       );
 
+      // What the bytes are beats what the name claims. Only when nothing
+      // matches and the name promised a raster does the type become opaque:
+      // saying `image/png` for something that is not one makes a client draw a
+      // broken image with no explanation.
       const declaredType = getContentType(filename);
       const contentType =
-        INLINE_IMAGE_TYPES.has(declaredType) &&
-        !isExpectedImage(bytes, declaredType)
+        sniffImageType(bytes) ??
+        (INLINE_IMAGE_TYPES.has(declaredType)
           ? 'application/octet-stream'
-          : declaredType;
+          : declaredType);
       const data = toBase64(bytes);
 
       if (format === 'base64') {

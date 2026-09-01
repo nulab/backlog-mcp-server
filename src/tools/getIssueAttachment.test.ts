@@ -69,6 +69,26 @@ describe('getIssueAttachmentTool', () => {
     });
   });
 
+  it('inlines a raster whose extension is wrong, under the type it really is', async () => {
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([PNG_MAGIC]),
+      filename: 'shot.jpg',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/12',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 12,
+    });
+
+    // A PNG saved as `.jpg` is served by Backlog and has to stay renderable.
+    expect(JSON.parse(textOf(result.content[0])).contentType).toBe('image/png');
+    expect(result.content[1]).toMatchObject({
+      type: 'image',
+      mimeType: 'image/png',
+    });
+  });
+
   // Not every raster is inlinable: a client that rejects an unsupported media
   // type rejects the whole result, so BMP goes down the resource path.
   it('returns a valid BMP as a resource, not as image content', async () => {
