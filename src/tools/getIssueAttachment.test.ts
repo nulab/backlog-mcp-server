@@ -275,6 +275,42 @@ describe('getIssueAttachmentTool', () => {
     expect(streamed.releaseLock).toHaveBeenCalled();
   });
 
+  it('cancels the response when a chunk is not binary either', async () => {
+    const streamed = streamOf([]);
+    streamed.body.getReader = () => ({
+      read: async () => ({ done: false, value: 'not bytes' as never }),
+      cancel: streamed.cancel,
+      releaseLock: streamed.releaseLock,
+    });
+    getIssueAttachment.mockResolvedValue({
+      ...streamed,
+      filename: 'odd.bin',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/16',
+    });
+
+    await expect(
+      tool.handler({ issueKey: 'PROJ-1', attachmentId: 16 })
+    ).rejects.toThrow('non-binary attachment chunk');
+    // Every way out of the read loop has to leave the response cancelled, not
+    // just the size limit.
+    expect(streamed.cancel).toHaveBeenCalled();
+    expect(streamed.releaseLock).toHaveBeenCalled();
+  });
+
+  it('does not cancel a response that was read to the end', async () => {
+    const streamed = streamOf([[0x01, 0x02]]);
+    getIssueAttachment.mockResolvedValue({
+      ...streamed,
+      filename: 'small.bin',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/17',
+    });
+
+    await tool.handler({ issueKey: 'PROJ-1', attachmentId: 17 });
+
+    expect(streamed.cancel).not.toHaveBeenCalled();
+    expect(streamed.releaseLock).toHaveBeenCalled();
+  });
+
   it('reports a missing issue identifier without calling Backlog', async () => {
     const result = await tool.handler({ attachmentId: 14 });
 

@@ -177,11 +177,13 @@ async function readBody(
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
+  let finished = false;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
+        finished = true;
         break;
       }
       if (!(value instanceof Uint8Array)) {
@@ -190,11 +192,6 @@ async function readBody(
 
       size += value.byteLength;
       if (size > maxBytes) {
-        try {
-          await reader.cancel();
-        } catch {
-          // Preserve the size-limit error if cancelling the response also fails.
-        }
         throw new Error(
           `Attachment exceeds the ${maxBytes}-byte response limit. Raise maxBytes (up to ${MAX_ATTACHMENT_BYTES}) if the file really is this large.`
         );
@@ -202,6 +199,18 @@ async function readBody(
       chunks.push(value);
     }
   } finally {
+    // Leaving the loop before the stream ends leaves the response in flight —
+    // `releaseLock` detaches the reader, it does not abort what is arriving.
+    // Cancelling here rather than at each `throw` covers every way out,
+    // including a `read()` that rejects, and cannot be forgotten by the next
+    // early return added above.
+    if (!finished) {
+      try {
+        await reader.cancel();
+      } catch {
+        // Best effort: keep whatever error got us here.
+      }
+    }
     reader.releaseLock();
   }
 
