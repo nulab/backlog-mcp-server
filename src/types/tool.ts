@@ -45,7 +45,7 @@ export const buildToolSchema = <T extends z.ZodRawShape>(
  * pipeline cannot express or would corrupt — `wrapWithToolResult` ends a tool at
  * exactly one text block, so `image` and `resource` content is unreachable
  * through it, and `wrapWithTokenLimit` would cut a base64 payload mid-string and
- * return it as `kind: \'ok\'`, a corrupt file reported as a success.
+ * return it as `kind: 'ok'`, a corrupt file reported as a success.
  *
  * The name is the content, not the tool: these produce MCP content types
  * natively rather than being reshaped into one. What they give up is everything
