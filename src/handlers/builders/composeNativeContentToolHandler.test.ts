@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { composeDynamicToolHandler } from './composeDynamicToolHandler.js';
+import { composeNativeContentToolHandler } from './composeNativeContentToolHandler.js';
 import { getCurrentOrganization } from '../../utils/backlogOrganizationContext.js';
-import { DynamicToolDefinition } from '../../types/tool.js';
+import { NativeContentToolDefinition } from '../../types/tool.js';
 
 function toolReturning(
-  handler: DynamicToolDefinition<{ id: z.ZodNumber }>['handler']
-): DynamicToolDefinition<{ id: z.ZodNumber }> {
+  handler: NativeContentToolDefinition<{ id: z.ZodNumber }>['handler']
+): NativeContentToolDefinition<{ id: z.ZodNumber }> {
   return {
     name: 'dummy',
     description: 'dummy',
@@ -15,10 +15,10 @@ function toolReturning(
   };
 }
 
-describe('composeDynamicToolHandler', () => {
+describe('composeNativeContentToolHandler', () => {
   it('passes the result through untouched', async () => {
     const result = { content: [{ type: 'image', data: 'AA==' }] };
-    const { handler } = composeDynamicToolHandler(
+    const { handler } = composeNativeContentToolHandler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       toolReturning(async () => result as any)
     );
@@ -28,7 +28,7 @@ describe('composeDynamicToolHandler', () => {
 
   it('runs the handler inside the organization context', async () => {
     const seen = vi.fn();
-    const { handler } = composeDynamicToolHandler(
+    const { handler } = composeNativeContentToolHandler(
       toolReturning(async () => {
         seen(getCurrentOrganization());
         return { content: [] };
@@ -43,12 +43,13 @@ describe('composeDynamicToolHandler', () => {
   it('advertises `organization` only when asked to', () => {
     const tool = toolReturning(async () => ({ content: [] }));
 
-    expect(Object.keys(composeDynamicToolHandler(tool).schema.shape)).toEqual([
-      'id',
-    ]);
+    expect(
+      Object.keys(composeNativeContentToolHandler(tool).schema.shape)
+    ).toEqual(['id']);
     expect(
       Object.keys(
-        composeDynamicToolHandler(tool, { useOrganization: true }).schema.shape
+        composeNativeContentToolHandler(tool, { useOrganization: true }).schema
+          .shape
       )
     ).toEqual(['id', 'organization']);
   });
@@ -56,7 +57,7 @@ describe('composeDynamicToolHandler', () => {
   it('leaves the tool definition unmutated', () => {
     const tool = toolReturning(async () => ({ content: [] }));
 
-    composeDynamicToolHandler(tool, { useOrganization: true });
+    composeNativeContentToolHandler(tool, { useOrganization: true });
 
     expect(Object.keys(tool.schema.shape)).toEqual(['id']);
   });
@@ -66,7 +67,7 @@ describe('composeDynamicToolHandler', () => {
       kind: 'error' as const,
       message: 'handled',
     }));
-    const { handler } = composeDynamicToolHandler(
+    const { handler } = composeNativeContentToolHandler(
       toolReturning(async () => {
         throw new Error('boom');
       }),
@@ -85,9 +86,9 @@ describe('composeDynamicToolHandler', () => {
 
     // One toolset group is shared across per-request servers, so a caller that
     // extended what it got back would be extending every request's copy.
-    expect(composeDynamicToolHandler(tool).schema).not.toBe(tool.schema);
+    expect(composeNativeContentToolHandler(tool).schema).not.toBe(tool.schema);
     expect(
-      composeDynamicToolHandler(tool, { useOrganization: true }).schema
+      composeNativeContentToolHandler(tool, { useOrganization: true }).schema
     ).not.toBe(tool.schema);
   });
 });

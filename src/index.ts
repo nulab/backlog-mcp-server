@@ -150,32 +150,6 @@ if (
   );
 }
 
-// Dynamic toolsets are gone. yargs ignores the unknown flag, so without this the
-// server would start with a quietly different tool list: the flag used to drop
-// `all` from the enabled toolsets, so a setup that passed only this one went from
-// no toolsets plus three meta-tools to every toolset enabled.
-//
-// Only worth saying to someone who had it switched on. A setting left at `false`
-// asked for what it now gets, so a notice claiming the tool list changed would be
-// wrong.
-const asksForDynamicToolsets = (value: string | undefined): boolean =>
-  value !== undefined &&
-  !['', '0', 'false', 'no'].includes(value.toLowerCase());
-
-const dynamicToolsetsFlag = hideBin(process.argv).find(
-  (arg) => arg.split('=')[0] === '--dynamic-toolsets'
-);
-
-if (
-  (dynamicToolsetsFlag !== undefined &&
-    asksForDynamicToolsets(dynamicToolsetsFlag.split('=')[1] ?? 'true')) ||
-  asksForDynamicToolsets(process.env.ENABLE_DYNAMIC_TOOLSETS)
-) {
-  process.stderr.write(
-    'Dynamic toolsets have been removed, and --dynamic-toolsets / ENABLE_DYNAMIC_TOOLSETS no longer do anything. Every toolset is enabled unless you narrow it with --enable-toolsets or ENABLE_TOOLSETS.\n'
-  );
-}
-
 const clientRegistry = oauthConfig
   ? createOAuthBacklogClientRegistry(oauthConfig.backlogDomain)
   : createBacklogClientRegistry();

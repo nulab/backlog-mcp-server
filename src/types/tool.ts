@@ -36,7 +36,25 @@ export const buildToolSchema = <T extends z.ZodRawShape>(
   fn: (t: DescriptionHelper['t']) => T
 ) => fn;
 
-export type DynamicToolDefinition<Shape extends z.ZodRawShape> = {
+/**
+ * A tool that assembles its own `CallToolResult`.
+ *
+ * The exception, not a second way of writing a tool: a `ToolDefinition` returns
+ * a plain value and the handler pipeline turns it into a result, which is what
+ * almost every tool wants. This type exists for the few whose result the
+ * pipeline cannot express or would corrupt — `wrapWithToolResult` ends a tool at
+ * exactly one text block, so `image` and `resource` content is unreachable
+ * through it, and `wrapWithTokenLimit` would cut a base64 payload mid-string and
+ * return it as `kind: 'ok'`, a corrupt file reported as a success.
+ *
+ * The name is the content, not the tool: these produce MCP content types
+ * natively rather than being reshaped into one. What they give up is everything
+ * the pipeline does — field picking, the token limit, JSON serialisation — so
+ * reach for it only when the result shape actually requires it.
+ * `composeNativeContentToolHandler` puts back the two steps that are not about
+ * reshaping, the organization context and error handling.
+ */
+export type NativeContentToolDefinition<Shape extends z.ZodRawShape> = {
   name: string;
   description: string;
   schema: z.ZodObject<Shape>;

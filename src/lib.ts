@@ -15,20 +15,18 @@
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
-export { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
+export { composeNativeContentToolHandler } from './handlers/builders/composeNativeContentToolHandler.js';
 export { createDescriptionHelper } from './createDescriptionHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
 
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
-export type { ComposeDynamicOptions } from './handlers/builders/composeDynamicToolHandler.js';
+export type { ComposeNativeContentOptions } from './handlers/builders/composeNativeContentToolHandler.js';
 export type { DescriptionHelper } from './createDescriptionHelper.js';
-export type { ToolDefinition, DynamicToolDefinition } from './types/tool.js';
 export type {
-  Toolset,
-  ToolsetGroup,
-  DynamicToolset,
-  DynamicToolsetGroup,
-} from './types/toolsets.js';
+  ToolDefinition,
+  NativeContentToolDefinition,
+} from './types/tool.js';
+export type { Toolset, ToolsetGroup } from './types/toolsets.js';
 export type { ErrorLike, SafeResult } from './types/result.js';

@@ -3,8 +3,8 @@ import type { Backlog } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
-import { registerDynamicTools, registerTools } from './registerTools.js';
-import { organizationTools } from './tools/dynamicTools/organizations.js';
+import { registerTools } from './registerTools.js';
+import { organizationTools } from './tools/organizations.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry.js';
 
@@ -16,7 +16,6 @@ vi.mock('@modelcontextprotocol/server', () => ({
 
 vi.mock('./registerTools.js', () => ({
   registerTools: vi.fn(),
-  registerDynamicTools: vi.fn(),
 }));
 
 vi.mock('./utils/toolsetUtils.js', () => ({
@@ -25,7 +24,7 @@ vi.mock('./utils/toolsetUtils.js', () => ({
 
 vi.mock('./utils/toolRegistrar.js', () => ({}));
 
-vi.mock('./tools/dynamicTools/organizations.js', () => ({
+vi.mock('./tools/organizations.js', () => ({
   organizationTools: vi.fn().mockReturnValue({ toolsets: [] }),
 }));
 
@@ -102,7 +101,19 @@ describe('createBacklogMcpServer', () => {
       mockClientRegistry,
       mockDescriptionHelper
     );
-    expect(registerDynamicTools).toHaveBeenCalledTimes(1);
+    expect(registerTools).toHaveBeenCalledTimes(2);
+  });
+
+  // `list_organizations` is what a caller reads to learn what may go in
+  // `organization`, so it must not itself ask for one.
+  it('does not advertise organization on list_organizations', () => {
+    createBacklogMcpServer(baseConfig);
+
+    expect(registerTools).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ useOrganization: false })
+    );
   });
 
   // A single Backlog space leaves `list_organizations` nothing to report, and
@@ -115,10 +126,10 @@ describe('createBacklogMcpServer', () => {
     });
 
     expect(organizationTools).not.toHaveBeenCalled();
-    expect(registerDynamicTools).not.toHaveBeenCalled();
+    expect(registerTools).toHaveBeenCalledTimes(1);
   });
 
-  it('passes mcpOption.prefix to registerDynamicTools', () => {
+  it('passes mcpOption.prefix to the list_organizations registration', () => {
     const configWithPrefix = {
       ...baseConfig,
       mcpOption: { ...mcpOption, prefix: 'backlog_' },
@@ -126,10 +137,10 @@ describe('createBacklogMcpServer', () => {
 
     createBacklogMcpServer(configWithPrefix);
 
-    expect(registerDynamicTools).toHaveBeenCalledWith(
+    expect(registerTools).toHaveBeenLastCalledWith(
       expect.anything(),
       expect.anything(),
-      'backlog_'
+      expect.objectContaining({ prefix: 'backlog_' })
     );
   });
 

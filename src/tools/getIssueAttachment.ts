@@ -1,7 +1,7 @@
 import { Backlog } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
-import { buildToolSchema, DynamicToolDefinition } from '../types/tool.js';
+import { buildToolSchema, NativeContentToolDefinition } from '../types/tool.js';
 import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const MEBIBYTE = 1024 * 1024;
@@ -357,7 +357,7 @@ function errorResult(message: string) {
 export const getIssueAttachmentTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): DynamicToolDefinition<ReturnType<typeof getIssueAttachmentSchema>> => {
+): NativeContentToolDefinition<ReturnType<typeof getIssueAttachmentSchema>> => {
   return {
     name: 'get_issue_attachment',
     description: t(

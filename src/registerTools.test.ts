@@ -7,7 +7,7 @@ import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import type { Toolset } from './types/toolsets.js';
-import { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
+import { composeNativeContentToolHandler } from './handlers/builders/composeNativeContentToolHandler.js';
 
 vi.mock('./handlers/builders/composeToolHandler', () => ({
   composeToolHandler: vi.fn((tool) => ({
@@ -16,8 +16,8 @@ vi.mock('./handlers/builders/composeToolHandler', () => ({
   })),
 }));
 
-vi.mock('./handlers/builders/composeDynamicToolHandler', () => ({
-  composeDynamicToolHandler: vi.fn((tool) => ({
+vi.mock('./handlers/builders/composeNativeContentToolHandler', () => ({
+  composeNativeContentToolHandler: vi.fn((tool) => ({
     schema: tool.schema,
     handler: vi.fn(),
   })),
@@ -107,7 +107,9 @@ describe('registerTools', () => {
     );
     expect(calledToolNames).toEqual(
       expect.arrayContaining(
-        (issueToolSet.dynamicTools ?? []).map((tool) => `backlog.${tool.name}`)
+        (issueToolSet.nativeContentTools ?? []).map(
+          (tool) => `backlog.${tool.name}`
+        )
       )
     );
   });
@@ -127,7 +129,7 @@ describe('registerTools', () => {
     expect(mockServer.registerTool).toHaveBeenCalledTimes(
       toolsetGroup.toolsets.flatMap((a) => [
         ...a.tools,
-        ...(a.dynamicTools ?? []),
+        ...(a.nativeContentTools ?? []),
       ]).length
     );
   });
@@ -150,10 +152,10 @@ describe('registerTools', () => {
     );
     expect(calledToolNames).toEqual(
       expect.arrayContaining(
-        (issueToolSet.dynamicTools ?? []).map((tool) => tool.name)
+        (issueToolSet.nativeContentTools ?? []).map((tool) => tool.name)
       )
     );
-    expect(composeDynamicToolHandler).toHaveBeenCalledWith(
+    expect(composeNativeContentToolHandler).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'get_issue_attachment' }),
       expect.objectContaining({ useOrganization: false })
     );
@@ -172,7 +174,7 @@ describe('registerTools', () => {
       useOrganization: true,
     });
 
-    expect(composeDynamicToolHandler).toHaveBeenCalledWith(
+    expect(composeNativeContentToolHandler).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'get_issue_attachment' }),
       expect.objectContaining({ useOrganization: true })
     );
