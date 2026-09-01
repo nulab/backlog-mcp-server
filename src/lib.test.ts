@@ -26,6 +26,7 @@ describe('library entry point', () => {
       'allTools',
       'backlogErrorHandler',
       'buildToolSchema',
+      'composeDynamicToolHandler',
       'composeToolHandler',
       'createDescriptionHelper',
       'isErrorLike',

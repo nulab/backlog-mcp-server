@@ -47,6 +47,7 @@ export const getDocumentsTool = (
       'created',
       'updatedUser',
       'updated',
+      'childDocumentIds',
     ]),
     importantFields: ['id', 'projectId', 'title', 'plain'],
     handler: async ({ projectIds, offset }) => {

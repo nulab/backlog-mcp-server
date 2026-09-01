@@ -60,6 +60,7 @@ export const addDocumentTool = (
       'created',
       'updatedUser',
       'updated',
+      'childDocumentIds',
     ]),
     importantFields: ['id', 'projectId', 'title', 'plain', 'createdUser'],
     handler: async (params) => {

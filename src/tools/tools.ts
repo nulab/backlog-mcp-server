@@ -16,6 +16,7 @@ import { getCustomFieldsTool } from './getCustomFields.js';
 import { getGitRepositoriesTool } from './getGitRepositories.js';
 import { getGitRepositoryTool } from './getGitRepository.js';
 import { getIssueTool } from './getIssue.js';
+import { getIssueAttachmentTool } from './getIssueAttachment.js';
 import { getIssueCommentsTool } from './getIssueComments.js';
 import { getIssuesTool } from './getIssues.js';
 import { getRelatedIssuesTool } from './getRelatedIssues.js';
@@ -102,6 +103,7 @@ export const allTools = (
         name: 'issue',
         description: 'Tools for managing issues and their comments.',
         enabled: false,
+        dynamicTools: [getIssueAttachmentTool(backlog, helper)],
         tools: [
           getIssueTool(backlog, helper),
           getIssuesTool(backlog, helper),
