@@ -136,6 +136,49 @@ describe('getIssueAttachmentTool', () => {
     expect(result.content[1]).not.toHaveProperty('resource.blob');
   });
 
+  // `File.FileData.contentType` is the raw header, parameters and all, and
+  // every branch below it is an exact MIME lookup.
+  it('reads the type out of a Content-Type that carries parameters', async () => {
+    const csv = 'id,name\n1,foo\n';
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([bytesOf(csv)]),
+      filename: 'data.csv',
+      contentType: 'Text/CSV; charset=UTF-8',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/18',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 18,
+    });
+
+    expect(JSON.parse(textOf(result.content[0])).contentType).toBe('text/csv');
+    expect(result.content[1]).toMatchObject({
+      type: 'resource',
+      resource: { mimeType: 'text/csv', text: csv },
+    });
+  });
+
+  it('goes opaque for a parameterised raster type the bytes contradict', async () => {
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([[0x25, 0x50, 0x44, 0x46]]),
+      filename: 'not-really.png',
+      contentType: 'image/png; charset=binary',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/19',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 19,
+    });
+
+    // Reporting `image/png` for something that is not one makes a client draw
+    // a broken image with no explanation.
+    expect(JSON.parse(textOf(result.content[0])).contentType).toBe(
+      'application/octet-stream'
+    );
+  });
+
   it('falls back to a blob when a text-typed attachment is not UTF-8', async () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([[0xff, 0xfe, 0x00, 0x01]]),

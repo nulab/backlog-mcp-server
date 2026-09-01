@@ -240,6 +240,20 @@ function normalizeFilename(rawName: string | undefined, attachmentId: number) {
     : cleaned;
 }
 
+/**
+ * The bare MIME type of a raw `Content-Type` header.
+ *
+ * `File.FileData.contentType` is the header verbatim — `backlog-js` reads it
+ * with `response.headers.get('Content-Type')` and hands it over unparsed — so
+ * it may carry parameters and any casing. Every decision below is an exact
+ * lookup in `INLINE_IMAGE_TYPES` or `TEXT_TYPES`, and `text/csv;charset=UTF-8`
+ * misses both: the CSV would come back as base64, which is the case this tool
+ * exists to serve.
+ */
+function bareMimeType(rawContentType: string): string {
+  return rawContentType.split(';')[0].trim().toLowerCase();
+}
+
 function startsWith(bytes: Uint8Array, signature: number[]): boolean {
   return signature.every((byte, index) => bytes[index] === byte);
 }
@@ -382,7 +396,8 @@ export const getIssueAttachmentTool = (
       // matches and the server promised a raster does the type become opaque:
       // saying `image/png` for something that is not one makes a client draw a
       // broken image with no explanation.
-      const declaredType = fileData.contentType || 'application/octet-stream';
+      const declaredType =
+        bareMimeType(fileData.contentType) || 'application/octet-stream';
       const contentType =
         sniffImageType(bytes) ??
         (INLINE_IMAGE_TYPES.has(declaredType)
