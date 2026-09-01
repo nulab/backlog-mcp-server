@@ -220,7 +220,7 @@ function toBase64(bytes: Uint8Array): string {
 /**
  * A name safe to put in metadata and a resource URI.
  *
- * `backlog-js` decodes `Content-Disposition` since 0.20.0, so what arrives is
+ * `backlog-js` decodes `Content-Disposition` since 0.20.1, so what arrives is
  * already the real name. What is left is that it is the server's string: strip
  * any directory part and control characters rather than pass those on, and
  * fall back to the id when nothing usable remains.

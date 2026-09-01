@@ -179,7 +179,7 @@ describe('getIssueAttachmentTool', () => {
     });
   });
 
-  // `backlog-js` decodes the header from 0.20.0, so what arrives is the real
+  // `backlog-js` decodes the header from 0.20.1, so what arrives is the real
   // name. What is still the server's to get wrong is a path or a control
   // character in it.
   it.each([
