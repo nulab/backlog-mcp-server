@@ -1,4 +1,4 @@
-import { DynamicToolDefinition, ToolDefinition } from './tool.js';
+import { NativeContentToolDefinition, ToolDefinition } from './tool.js';
 
 type BaseToolset<TTool> = {
   name: string;
@@ -19,6 +19,6 @@ export type Toolset = BaseToolset<ToolDefinition<any, any>> & {
    * and the prefix apply to both.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dynamicTools?: DynamicToolDefinition<any>[];
+  nativeContentTools?: NativeContentToolDefinition<any>[];
 };
 export type ToolsetGroup = { toolsets: Toolset[] };

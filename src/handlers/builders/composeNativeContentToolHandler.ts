@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { wrapWithErrorHandling } from '../transformers/wrapWithErrorHandling.js';
 import { wrapWithOrganizationContext } from '../transformers/wrapWithOrganizationContext.js';
 import { ErrorLike, isErrorLike } from '../../types/result.js';
-import { DynamicToolDefinition } from '../../types/tool.js';
+import { NativeContentToolDefinition } from '../../types/tool.js';
 
-export type ComposeDynamicOptions = {
+export type ComposeNativeContentOptions = {
   errorHandler?: (err: unknown) => ErrorLike;
   useOrganization?: boolean;
 };
 
-type DynamicInput = {
+type NativeContentInput = {
   organization?: string;
 } & Record<string, unknown>;
 
@@ -36,10 +36,10 @@ type DynamicInput = {
  * definition is never mutated, because one toolset group is shared across
  * per-request servers.
  */
-export function composeDynamicToolHandler(
+export function composeNativeContentToolHandler(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tool: DynamicToolDefinition<any>,
-  { errorHandler, useOrganization = false }: ComposeDynamicOptions = {}
+  tool: NativeContentToolDefinition<any>,
+  { errorHandler, useOrganization = false }: ComposeNativeContentOptions = {}
 ) {
   // `extend` even with nothing to add, so the returned schema is always a copy.
   // Handing back `tool.schema` itself would make the invariant above hold only
@@ -64,7 +64,7 @@ export function composeDynamicToolHandler(
 
   return {
     schema,
-    handler: async (input: DynamicInput) => {
+    handler: async (input: NativeContentInput) => {
       const result = await handler(input);
 
       return isErrorLike(result)

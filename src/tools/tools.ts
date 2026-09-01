@@ -103,7 +103,7 @@ export const allTools = (
         name: 'issue',
         description: 'Tools for managing issues and their comments.',
         enabled: false,
-        dynamicTools: [getIssueAttachmentTool(backlog, helper)],
+        nativeContentTools: [getIssueAttachmentTool(backlog, helper)],
         tools: [
           getIssueTool(backlog, helper),
           getIssuesTool(backlog, helper),

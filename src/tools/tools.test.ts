@@ -13,7 +13,9 @@ describe('allTools', () => {
     {} as Backlog,
     createDescriptionHelper()
   ).toolsets.flatMap((toolset) =>
-    [...toolset.tools, ...(toolset.dynamicTools ?? [])].map((tool) => tool.name)
+    [...toolset.tools, ...(toolset.nativeContentTools ?? [])].map(
+      (tool) => tool.name
+    )
   );
 
   it('names every tool in snake_case', () => {

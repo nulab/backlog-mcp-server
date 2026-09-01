@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
-import { composeDynamicToolHandler } from './handlers/builders/composeDynamicToolHandler.js';
+import { composeNativeContentToolHandler } from './handlers/builders/composeNativeContentToolHandler.js';
 import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 import { MCPOptions } from './types/mcp.js';
 import { ToolsetGroup } from './types/toolsets.js';
@@ -56,11 +56,11 @@ export function registerTools(
     server,
     toolsets: toolsetGroup.toolsets.map((toolset) => ({
       enabled: toolset.enabled,
-      tools: toolset.dynamicTools ?? [],
+      tools: toolset.nativeContentTools ?? [],
     })),
     prefix,
     prepareTool: (tool) =>
-      composeDynamicToolHandler(tool, {
+      composeNativeContentToolHandler(tool, {
         errorHandler: backlogErrorHandler,
         useOrganization,
       }),

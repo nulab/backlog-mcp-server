@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { z } from 'zod';
 import type {
   ComposeOptions,
-  DynamicToolDefinition,
+  NativeContentToolDefinition,
   ErrorLike,
   SafeResult,
   ToolDefinition,
@@ -24,7 +24,7 @@ describe('library entry point', () => {
       'allTools',
       'backlogErrorHandler',
       'buildToolSchema',
-      'composeDynamicToolHandler',
+      'composeNativeContentToolHandler',
       'composeToolHandler',
       'createDescriptionHelper',
       'isErrorLike',
@@ -42,7 +42,7 @@ describe('library entry point', () => {
   it('exports the documented types', () => {
     const types: [
       ComposeOptions?,
-      DynamicToolDefinition<z.ZodRawShape>?,
+      NativeContentToolDefinition<z.ZodRawShape>?,
       ErrorLike?,
       SafeResult<unknown>?,
       ToolDefinition<z.ZodRawShape, z.ZodRawShape>?,
