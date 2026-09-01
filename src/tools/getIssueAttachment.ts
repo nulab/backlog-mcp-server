@@ -267,8 +267,6 @@ function startsWith(bytes: Uint8Array, signature: number[]): boolean {
  */
 function isExpectedImage(bytes: Uint8Array, contentType: string): boolean {
   switch (contentType) {
-    case 'image/bmp':
-      return startsWith(bytes, [0x42, 0x4d]);
     case 'image/gif':
       return (
         startsWith(bytes, [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) ||
