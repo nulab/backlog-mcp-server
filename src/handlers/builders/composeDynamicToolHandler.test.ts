@@ -79,4 +79,15 @@ describe('composeDynamicToolHandler', () => {
     });
     expect(errorHandler).toHaveBeenCalled();
   });
+
+  it("never hands back the tool definition's own schema", () => {
+    const tool = toolReturning(async () => ({ content: [] }));
+
+    // One toolset group is shared across per-request servers, so a caller that
+    // extended what it got back would be extending every request's copy.
+    expect(composeDynamicToolHandler(tool).schema).not.toBe(tool.schema);
+    expect(
+      composeDynamicToolHandler(tool, { useOrganization: true }).schema
+    ).not.toBe(tool.schema);
+  });
 });

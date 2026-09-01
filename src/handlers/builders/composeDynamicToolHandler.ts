@@ -41,16 +41,21 @@ export function composeDynamicToolHandler(
   tool: DynamicToolDefinition<any>,
   { errorHandler, useOrganization = false }: ComposeDynamicOptions = {}
 ) {
-  const schema = useOrganization
-    ? tool.schema.extend({
-        organization: z
-          .string()
-          .optional()
-          .describe(
-            'Optional organization name. Use list_organizations to inspect available organizations.'
-          ),
-      })
-    : tool.schema;
+  // `extend` even with nothing to add, so the returned schema is always a copy.
+  // Handing back `tool.schema` itself would make the invariant above hold only
+  // when `useOrganization` is set.
+  const schema = tool.schema.extend(
+    useOrganization
+      ? {
+          organization: z
+            .string()
+            .optional()
+            .describe(
+              'Optional organization name. Use list_organizations to inspect available organizations.'
+            ),
+        }
+      : {}
+  );
 
   const handler = wrapWithErrorHandling(
     wrapWithOrganizationContext(tool.handler),
