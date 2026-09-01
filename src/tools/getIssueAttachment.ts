@@ -42,8 +42,19 @@ const MIME_TYPES: Record<string, string> = {
   '.zip': 'application/zip',
 };
 
+/**
+ * The raster types a client will accept as MCP `image` content.
+ *
+ * Deliberately narrower than the raster entries in `MIME_TYPES`. It is the set
+ * every MCP host is known to render: a client that rejects an unsupported
+ * media type rejects the whole tool result, so an inlined `image/bmp` costs
+ * the caller the metadata as well as the file. `image/svg+xml` is absent for a
+ * different reason — an SVG can carry script.
+ *
+ * Anything not here is returned as an embedded resource, which every client
+ * can hold.
+ */
 const INLINE_IMAGE_TYPES = new Set([
-  'image/bmp',
   'image/gif',
   'image/jpeg',
   'image/png',

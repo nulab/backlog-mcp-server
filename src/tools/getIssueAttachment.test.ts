@@ -4,6 +4,7 @@ import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { getIssueAttachmentTool } from './getIssueAttachment.js';
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const BMP_MAGIC = [0x42, 0x4d];
 
 function streamOf(chunks: number[][]) {
   let index = 0;
@@ -66,6 +67,25 @@ describe('getIssueAttachmentTool', () => {
       mimeType: 'image/png',
       data: 'iVBORw0KGgoBAg==',
     });
+  });
+
+  // Not every raster is inlinable: a client that rejects an unsupported media
+  // type rejects the whole result, so BMP goes down the resource path.
+  it('returns a valid BMP as a resource, not as image content', async () => {
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([BMP_MAGIC, [0x00, 0x00]]),
+      filename: 'pic.bmp',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/13',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 13,
+    });
+
+    expect(JSON.parse(textOf(result.content[0])).contentType).toBe('image/bmp');
+    expect(result.content[1]).toMatchObject({ type: 'resource' });
+    expect(result.content[1]).not.toMatchObject({ type: 'image' });
   });
 
   it('falls back to a resource when the bytes are not the image the name promises', async () => {
