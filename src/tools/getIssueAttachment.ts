@@ -46,10 +46,11 @@ const MIME_TYPES: Record<string, string> = {
  * The raster types a client will accept as MCP `image` content.
  *
  * Deliberately narrower than the raster entries in `MIME_TYPES`. It is the set
- * every MCP host is known to render: a client that rejects an unsupported
- * media type rejects the whole tool result, so an inlined `image/bmp` costs
- * the caller the metadata as well as the file. `image/svg+xml` is absent for a
- * different reason — an SVG can carry script.
+ * every MCP host is known to render: `image/bmp` is not in it, and a client
+ * that rejects an unsupported media type rejects the whole tool result rather
+ * than just failing to draw the file. `image/svg+xml` is absent for a
+ * different reason — an SVG can carry script, and it is text, so it goes down
+ * the text path below where it can be read rather than executed.
  *
  * Anything not here is returned as an embedded resource, which every client
  * can hold.
@@ -59,6 +60,23 @@ const INLINE_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
+]);
+
+/**
+ * Types whose bytes are meant to be read rather than rendered.
+ *
+ * These are returned as `resource.text`. Handing a caller base64 of a CSV is
+ * the same as handing it nothing: the point of fetching a log or a spreadsheet
+ * is the content, and base64 has to be decoded by something that can already
+ * read the file.
+ */
+const TEXT_TYPES = new Set([
+  'application/json',
+  'application/xml',
+  'image/svg+xml',
+  'text/csv',
+  'text/html',
+  'text/plain',
 ]);
 
 const getIssueAttachmentSchema = buildToolSchema((t) => ({
@@ -318,6 +336,19 @@ function sniffImageType(bytes: Uint8Array): string | undefined {
   return undefined;
 }
 
+/**
+ * `undefined` rather than replacement characters when the bytes are not UTF-8,
+ * so a binary file under a `.txt` name falls back to a blob instead of
+ * arriving as mojibake that reads like a successful download.
+ */
+function decodeUtf8(bytes: Uint8Array): string | undefined {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return undefined;
+  }
+}
+
 function getSpaceNamespace(sourceUrl: string): string {
   try {
     return new URL(sourceUrl).host || 'unknown-space';
@@ -394,9 +425,9 @@ export const getIssueAttachmentTool = (
         (INLINE_IMAGE_TYPES.has(declaredType)
           ? 'application/octet-stream'
           : declaredType);
-      const data = toBase64(bytes);
 
       if (format === 'base64') {
+        const data = toBase64(bytes);
         return {
           content: [
             {
@@ -419,21 +450,29 @@ export const getIssueAttachmentTool = (
         issueIdOrKey: resolved.value,
       };
 
-      const binaryContent = INLINE_IMAGE_TYPES.has(contentType)
-        ? { type: 'image' as const, data, mimeType: contentType }
-        : {
-            type: 'resource' as const,
-            resource: {
-              uri: buildResourceUri(
-                fileData.url,
-                resolved.value,
-                attachmentId,
-                filename
-              ),
-              blob: data,
-              mimeType: contentType,
-            },
-          };
+      if (INLINE_IMAGE_TYPES.has(contentType)) {
+        return {
+          content: [
+            { type: 'text', text: JSON.stringify(metadata, null, 2) },
+            { type: 'image', data: toBase64(bytes), mimeType: contentType },
+          ],
+        };
+      }
+
+      const uri = buildResourceUri(
+        fileData.url,
+        resolved.value,
+        attachmentId,
+        filename
+      );
+      const text = TEXT_TYPES.has(contentType) ? decodeUtf8(bytes) : undefined;
+      const binaryContent = {
+        type: 'resource' as const,
+        resource:
+          text === undefined
+            ? { uri, blob: toBase64(bytes), mimeType: contentType }
+            : { uri, text, mimeType: contentType },
+      };
 
       return {
         content: [

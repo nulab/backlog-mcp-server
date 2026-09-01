@@ -5,6 +5,7 @@ import { getIssueAttachmentTool } from './getIssueAttachment.js';
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const BMP_MAGIC = [0x42, 0x4d];
+const bytesOf = (value: string) => Array.from(new TextEncoder().encode(value));
 
 function streamOf(chunks: number[][]) {
   let index = 0;
@@ -106,6 +107,48 @@ describe('getIssueAttachmentTool', () => {
     expect(JSON.parse(textOf(result.content[0])).contentType).toBe('image/bmp');
     expect(result.content[1]).toMatchObject({ type: 'resource' });
     expect(result.content[1]).not.toMatchObject({ type: 'image' });
+  });
+
+  it('returns a text attachment as text, not as base64', async () => {
+    const csv = 'id,name\n1,foo\n';
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([bytesOf(csv)]),
+      filename: 'data.csv',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/14',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 14,
+    });
+
+    expect(JSON.parse(textOf(result.content[0])).contentType).toBe('text/csv');
+    expect(result.content[1]).toMatchObject({
+      type: 'resource',
+      resource: { mimeType: 'text/csv', text: csv },
+    });
+    // Base64 of a CSV is the same as returning nothing readable.
+    expect(result.content[1]).not.toHaveProperty('resource.blob');
+  });
+
+  it('falls back to a blob when a text-typed attachment is not UTF-8', async () => {
+    getIssueAttachment.mockResolvedValue({
+      ...streamOf([[0xff, 0xfe, 0x00, 0x01]]),
+      filename: 'notes.txt',
+      url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/15',
+    });
+
+    const result = await tool.handler({
+      issueKey: 'PROJ-1',
+      attachmentId: 15,
+    });
+
+    // Mojibake would read like a successful download.
+    expect(result.content[1]).toMatchObject({
+      type: 'resource',
+      resource: { mimeType: 'text/plain', blob: '//4AAQ==' },
+    });
+    expect(result.content[1]).not.toHaveProperty('resource.text');
   });
 
   it('falls back to a resource when the bytes are not the image the name promises', async () => {
