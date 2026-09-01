@@ -47,6 +47,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([PNG_MAGIC, [0x01, 0x02]]),
       filename: 'shot.png',
+      contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/7',
     });
 
@@ -74,6 +75,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([PNG_MAGIC]),
       filename: 'shot.jpg',
+      contentType: 'image/jpeg',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/12',
     });
 
@@ -97,6 +99,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([BMP_MAGIC, [0x00, 0x00]]),
       filename: 'pic.bmp',
+      contentType: 'image/bmp',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/13',
     });
 
@@ -115,6 +118,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([bytesOf(csv)]),
       filename: 'data.csv',
+      contentType: 'text/csv',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/14',
     });
 
@@ -136,6 +140,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([[0xff, 0xfe, 0x00, 0x01]]),
       filename: 'notes.txt',
+      contentType: 'text/plain',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/15',
     });
 
@@ -156,6 +161,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([[0x25, 0x50, 0x44, 0x46]]),
       filename: 'not-really.png',
+      contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/8',
     });
 
@@ -173,17 +179,18 @@ describe('getIssueAttachmentTool', () => {
     });
   });
 
-  // `Backlog.parseFileData` slices `Content-Disposition` at the first `''`, so
-  // a header without the RFC 5987 form arrives with its first character gone,
-  // and one with it arrives percent-encoded.
+  // `backlog-js` decodes the header from 0.20.0, so what arrives is the real
+  // name. What is still the server's to get wrong is a path or a control
+  // character in it.
   it.each([
-    ["UTF-8''%E5%9B%B3%E9%9D%A2.png", '図面.png'],
-    ['ttachment; filename="report.png"', 'report.png'],
-    ['%E5%9B%B3%E9%9D%A2.png', '図面.png'],
-  ])('recovers the filename from %j', async (raw, expected) => {
+    ['図面.png', '図面.png'],
+    ['../../etc/passwd', 'passwd'],
+    ['a\u0000b.png', 'ab.png'],
+  ])('keeps %j usable', async (raw, expected) => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([PNG_MAGIC]),
       filename: raw,
+      contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/9',
     });
 
@@ -199,6 +206,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([[0x00]]),
       filename: '',
+      contentType: '',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/11',
     });
 
@@ -216,6 +224,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([PNG_MAGIC, [0x01, 0x02]]),
       filename: 'shot.png',
+      contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/7',
     });
 
@@ -238,6 +247,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([[0x00]]),
       filename: 'notes.txt',
+      contentType: 'text/plain',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/12?apiKey=secret',
     });
 
@@ -265,6 +275,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamed,
       filename: 'big.bin',
+      contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/13',
     });
 
@@ -285,6 +296,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamed,
       filename: 'odd.bin',
+      contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/16',
     });
 
@@ -302,6 +314,7 @@ describe('getIssueAttachmentTool', () => {
     getIssueAttachment.mockResolvedValue({
       ...streamed,
       filename: 'small.bin',
+      contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/17',
     });
 

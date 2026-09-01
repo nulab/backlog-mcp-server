@@ -15,37 +15,10 @@ const MEBIBYTE = 1024 * 1024;
 const DEFAULT_MAX_BYTES = 5 * MEBIBYTE;
 const MAX_ATTACHMENT_BYTES = 7 * MEBIBYTE;
 
-const MIME_TYPES: Record<string, string> = {
-  '.bmp': 'image/bmp',
-  '.csv': 'text/csv',
-  '.doc': 'application/msword',
-  '.docx':
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  '.gif': 'image/gif',
-  '.gz': 'application/gzip',
-  '.html': 'text/html',
-  '.jpeg': 'image/jpeg',
-  '.jpg': 'image/jpeg',
-  '.json': 'application/json',
-  '.pdf': 'application/pdf',
-  '.png': 'image/png',
-  '.ppt': 'application/vnd.ms-powerpoint',
-  '.pptx':
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  '.svg': 'image/svg+xml',
-  '.tar': 'application/x-tar',
-  '.txt': 'text/plain',
-  '.webp': 'image/webp',
-  '.xls': 'application/vnd.ms-excel',
-  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.xml': 'application/xml',
-  '.zip': 'application/zip',
-};
-
 /**
  * The raster types this tool returns as MCP `image` content.
  *
- * Deliberately narrower than the raster entries in `MIME_TYPES`, and the limit
+ * Narrower than the raster types Backlog serves, and the limit
  * does not come from MCP — `ImageContent.mimeType` is an unconstrained string
  * in the schema. It comes from the far end: a Claude-backed host forwards the
  * block to the Messages API, which documents support for `image/jpeg`,
@@ -245,34 +218,15 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Recovers a usable filename from what `backlog-js` reports.
+ * A name safe to put in metadata and a resource URI.
  *
- * `Backlog.parseFileData` takes everything after the first `''` in
- * `Content-Disposition`. When the header carries no RFC 5987 form, `indexOf`
- * returns -1 and the result is the header minus its first character; when it
- * does, the value is left percent-encoded, which is every attachment with a
- * non-ASCII name. Both are repaired here rather than in the client, so the tool
- * works against the published `backlog-js`.
+ * `backlog-js` decodes `Content-Disposition` since 0.20.0, so what arrives is
+ * already the real name. What is left is that it is the server's string: strip
+ * any directory part and control characters rather than pass those on, and
+ * fall back to the id when nothing usable remains.
  */
 function normalizeFilename(rawName: string | undefined, attachmentId: number) {
-  const raw = rawName?.trim() ?? '';
-  const contentDispositionMatch =
-    /(?:^|;)\s*filename\*?=\s*(?:[\w-]*'[^']*')?"?([^";]+)"?/i.exec(raw);
-  // A bare `charset'lang'` prefix with no `filename*=` in front of it is what a
-  // client that split the header on the delimiter itself would leave behind.
-  const encodedName = (contentDispositionMatch?.[1] ?? raw).replace(
-    /^[\w-]*'[^']*'/,
-    ''
-  );
-
-  let decodedName = encodedName;
-  try {
-    decodedName = decodeURIComponent(encodedName);
-  } catch {
-    // Keep malformed percent-encoding as provided by Backlog.
-  }
-
-  const basename = decodedName.split(/[/\\]/).pop() ?? decodedName;
+  const basename = (rawName ?? '').split(/[/\\]/).pop() ?? '';
   const cleaned = Array.from(basename)
     .filter((character) => {
       const codePoint = character.codePointAt(0) ?? 0;
@@ -284,18 +238,6 @@ function normalizeFilename(rawName: string | undefined, attachmentId: number) {
   return !cleaned || cleaned === '.' || cleaned === '..'
     ? `attachment-${attachmentId}`
     : cleaned;
-}
-
-/**
- * Derived from the filename, because `backlog-js` discards the response
- * headers: `File.FileData` is `{ body, url, filename }` and the real
- * `Content-Type` never reaches this layer.
- */
-function getContentType(filename: string): string {
-  const extensionIndex = filename.lastIndexOf('.');
-  const extension =
-    extensionIndex >= 0 ? filename.slice(extensionIndex).toLowerCase() : '';
-  return MIME_TYPES[extension] ?? 'application/octet-stream';
 }
 
 function startsWith(bytes: Uint8Array, signature: number[]): boolean {
@@ -434,11 +376,13 @@ export const getIssueAttachmentTool = (
         maxBytes ?? DEFAULT_MAX_BYTES
       );
 
-      // What the bytes are beats what the name claims. Only when nothing
-      // matches and the name promised a raster does the type become opaque:
+      // What the bytes are beats what the server says, because Backlog derives
+      // `Content-Type` from the extension too — an attachment saved as `.jpg`
+      // whose bytes are a PNG is served as `image/jpeg`. Only when nothing
+      // matches and the server promised a raster does the type become opaque:
       // saying `image/png` for something that is not one makes a client draw a
       // broken image with no explanation.
-      const declaredType = getContentType(filename);
+      const declaredType = fileData.contentType || 'application/octet-stream';
       const contentType =
         sniffImageType(bytes) ??
         (INLINE_IMAGE_TYPES.has(declaredType)
