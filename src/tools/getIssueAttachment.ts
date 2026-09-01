@@ -43,14 +43,24 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 /**
- * The raster types a client will accept as MCP `image` content.
+ * The raster types this tool returns as MCP `image` content.
  *
- * Deliberately narrower than the raster entries in `MIME_TYPES`. It is the set
- * every MCP host is known to render: `image/bmp` is not in it, and a client
- * that rejects an unsupported media type rejects the whole tool result rather
- * than just failing to draw the file. `image/svg+xml` is absent for a
- * different reason — an SVG can carry script, and it is text, so it goes down
- * the text path below where it can be read rather than executed.
+ * Deliberately narrower than the raster entries in `MIME_TYPES`, and the limit
+ * does not come from MCP — `ImageContent.mimeType` is an unconstrained string
+ * in the schema. It comes from the far end: a Claude-backed host forwards the
+ * block to the Messages API, which documents support for `image/jpeg`,
+ * `image/png`, `image/gif` and `image/webp` and nothing else
+ * (https://platform.claude.com/docs/en/build-with-claude/vision). An
+ * `image/bmp` block is rejected there, and a rejected block costs the caller
+ * the metadata as well as the file rather than merely failing to draw.
+ *
+ * These four are therefore what is safe to inline. A host backed by something
+ * other than Claude may well accept more; nothing here asserts otherwise, it
+ * just does not rely on it.
+ *
+ * `image/svg+xml` is absent for an unrelated reason — an SVG can carry script,
+ * and it is text, so it goes down the text path below where it can be read
+ * rather than executed.
  *
  * Anything not here is returned as an embedded resource, which every client
  * can hold.

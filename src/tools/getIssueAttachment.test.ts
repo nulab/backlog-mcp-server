@@ -90,8 +90,9 @@ describe('getIssueAttachmentTool', () => {
     });
   });
 
-  // Not every raster is inlinable: a client that rejects an unsupported media
-  // type rejects the whole result, so BMP goes down the resource path.
+  // Not every raster is inlinable: the Messages API accepts jpeg, png, gif and
+  // webp, and a rejected image block costs the whole result, so BMP goes down
+  // the resource path.
   it('returns a valid BMP as a resource, not as image content', async () => {
     getIssueAttachment.mockResolvedValue({
       ...streamOf([BMP_MAGIC, [0x00, 0x00]]),
