@@ -23,7 +23,12 @@ RUN pnpm run build
 # typescript, vitest, oxlint, tsx — belongs in a published image. Pruning here
 # rather than reinstalling in the runner keeps pnpm and corepack out of the
 # runtime stage entirely.
-RUN pnpm prune --prod
+#
+# `CI=true` because pnpm refuses to remove a modules directory it cannot ask
+# about: without a TTY and without that variable it aborts with
+# ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY. The runner sets `CI`, but a
+# `docker buildx build` container does not inherit it.
+RUN CI=true pnpm prune --prod
 
 # Runtime stage
 FROM node:26-slim AS runner
