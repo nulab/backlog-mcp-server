@@ -277,6 +277,7 @@ Tools for managing Backlog space settings and general information.
 - `get_space`: Returns information about the Backlog space.
 - `get_users`: Returns list of users in the Backlog space.
 - `get_myself`: Returns information about the authenticated user.
+- `add_attachment`: Uploads a file and returns its attachment id, for use in the `attachmentId` array of `add_issue`, `update_issue` or `add_issue_comment`. See [Attachment uploads](#attachment-uploads).
 
 ### Toolset: `project`
 
@@ -585,6 +586,25 @@ MAX_TOKENS=10000
 If a response exceeds the limit, it will be truncated with a warning.
 
 > Note: This is a best-effort mitigation, not a guaranteed enforcement.
+
+### Attachment uploads
+
+`add_attachment` is the only tool that reads the host's filesystem. It takes a `filePath`, uploads that file to the space and returns `{ id, name, size }`; the id is what `add_issue`, `update_issue` and `add_issue_comment` accept in `attachmentId`, since those tools attach existing uploads rather than performing one.
+
+The path is resolved **on the machine running the server**, not on the client:
+
+- With the stdio/npx setup the two are the same machine, so a local path works as written.
+- In the container image they are not. Bind-mount the directory first (`-v /host/dir:/data`) and pass the path inside the container.
+
+| Variable                    | Description                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKLOG_ATTACHMENT_ROOTS`  | Directories `add_attachment` may read from, separated by the platform's path delimiter (`:` on Unix, `;` on Windows). Unset means no restriction. |
+
+Symlinks are resolved before the check, so a link inside an allowed directory cannot be used to reach a file outside it.
+
+```
+BACKLOG_ATTACHMENT_ROOTS=/srv/uploads:/tmp/backlog-in
+```
 
 ### Logging
 
