@@ -10,7 +10,6 @@ import { addWikiTool } from './addWiki.js';
 import { updateWikiTool } from './updateWiki.js';
 import { countIssuesTool } from './countIssues.js';
 import { deleteIssueTool } from './deleteIssue.js';
-import { deleteProjectTool } from './deleteProject.js';
 import { getCategoriesTool } from './getCategories.js';
 import { getCustomFieldsTool } from './getCustomFields.js';
 import { getGitRepositoriesTool } from './getGitRepositories.js';
@@ -96,7 +95,6 @@ export const allTools = (
           getProjectTool(backlog, helper),
           getProjectUsersTool(backlog, helper),
           updateProjectTool(backlog, helper),
-          deleteProjectTool(backlog, helper),
         ],
       },
       {

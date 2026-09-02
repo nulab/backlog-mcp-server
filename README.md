@@ -287,7 +287,6 @@ Tools for managing projects, categories, custom fields, and issue types.
 - `get_project`: Returns information about a specific project.
 - `get_project_users`: Returns list of users in a specific project.
 - `update_project`: Updates an existing project.
-- `delete_project`: Deletes a project.
 
 ### Toolset: `issue`
 
