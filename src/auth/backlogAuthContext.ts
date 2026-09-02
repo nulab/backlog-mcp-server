@@ -4,7 +4,11 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 type BacklogAuthContext = {
-  accessToken: string | undefined;
+  // Not optional: a context exists only for a request the bearer middleware
+  // already resolved a stored token for. Keeping it non-nullable is what makes
+  // "a context is present" and "a token is present" the same question, so the
+  // wording of an auth failure and the decision to revoke cannot disagree.
+  accessToken: string;
   onAuthError?: () => void;
   authErrorReported: boolean;
 };
@@ -21,7 +25,7 @@ const authContextStorage = new AsyncLocalStorage<BacklogAuthContext>();
  * inspecting the outcome afterwards to invalidate anything.
  */
 export function runWithAccessToken<T>(
-  token: string | undefined,
+  token: string,
   fn: () => Promise<T>,
   onAuthError?: () => void
 ): Promise<T> {
