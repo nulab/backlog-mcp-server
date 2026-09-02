@@ -32,7 +32,11 @@ const createServer = (): BacklogMCPServer => {
   return server;
 };
 
-type RawResponse = { status: number; body: string };
+type RawResponse = {
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  body: string;
+};
 
 /**
  * Raw node:http request. `fetch` treats `Host` as a forbidden header, so the
@@ -59,7 +63,9 @@ const send = (
         let body = '';
         res.setEncoding('utf8');
         res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+        res.on('end', () =>
+          resolve({ status: res.statusCode ?? 0, headers: res.headers, body })
+        );
       }
     );
     req.on('error', reject);
@@ -311,6 +317,16 @@ describe('runHttpMcpServer', () => {
 
       expect(res.status).toBe(401);
       expect(JSON.parse(res.body).error).toBe('invalid_token');
+      // The header, not the status, is what makes this recoverable: the client
+      // reads `resource_metadata` from it to find where to re-authenticate. It
+      // reaches the wire through Hono's `c.res` setter, which merges the
+      // headers of the response it replaces, so it is worth pinning.
+      expect(res.headers['www-authenticate']).toContain(
+        `resource_metadata="${oauthConfig.serverBaseUrl}/.well-known/oauth-protected-resource/mcp"`
+      );
+      expect(res.headers['www-authenticate']).toContain(
+        'error="invalid_token"'
+      );
     });
 
     it('revokes the token, so the next call is rejected up front', async () => {
