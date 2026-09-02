@@ -26,12 +26,53 @@ export type ParsedBacklogAPIError = {
   url?: string;
 };
 
+/**
+ * Query parameter names that carry a credential. Compared case-insensitively.
+ */
+const CREDENTIAL_QUERY_PARAMS = new Set([
+  'apikey',
+  'api_key',
+  'accesstoken',
+  'access_token',
+  'refreshtoken',
+  'refresh_token',
+  'token',
+  'client_secret',
+  'password',
+]);
+
+const REDACTED = 'REDACTED';
+
+/**
+ * Replaces the value of any credential-bearing query parameter, keeping the
+ * rest of the URL so the message still says which endpoint failed.
+ *
+ * Returns undefined for a URL that cannot be parsed: there is no way to tell
+ * what such a string holds, so it is withheld rather than passed through.
+ */
+export function redactCredentialsInUrl(url: string): string | undefined {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return undefined;
+  }
+
+  for (const name of [...parsed.searchParams.keys()]) {
+    if (CREDENTIAL_QUERY_PARAMS.has(name.toLowerCase())) {
+      parsed.searchParams.set(name, REDACTED);
+    }
+  }
+
+  return parsed.toString();
+}
+
 export function parseBacklogAPIError(err: unknown): ParsedBacklogAPIError {
   const e = err as MaybeBacklogErrorObject;
 
   if (e._name && e._status && e._url) {
     const status = e._status;
-    const url = e._url;
+    const url = redactCredentialsInUrl(e._url);
     const code = e._body?.errors?.[0]?.code;
     const message =
       e._body?.errors?.[0]?.message ?? 'An unknown error occurred.';
@@ -58,7 +99,9 @@ export function parseBacklogAPIError(err: unknown): ParsedBacklogAPIError {
     if (e._name === 'UnexpectedError') {
       return {
         type: 'UnexpectedError',
-        message: `Unexpected error (HTTP ${status}) while accessing ${url}.`,
+        message: url
+          ? `Unexpected error (HTTP ${status}) while accessing ${url}.`
+          : `Unexpected error (HTTP ${status}).`,
         status,
         url,
       };
