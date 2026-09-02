@@ -232,6 +232,56 @@ describe('createTokenStore', () => {
     });
   });
 
+  describe('revokeMcpToken', () => {
+    const seed = () => {
+      store.storeMcpToken('mcp-token', {
+        backlogAccessToken: 'bl-at',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
+      store.cacheVerification(
+        'mcp-token',
+        { token: 'bl-at', clientId: '1', scopes: [], expiresAt: 0 },
+        300_000
+      );
+      store.storeMcpRefreshToken('mcp-refresh', {
+        backlogRefreshToken: 'bl-rt',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
+    };
+
+    it('drops the access token and its cached verification', () => {
+      seed();
+
+      store.revokeMcpToken('mcp-token');
+
+      expect(store.getMcpToken('mcp-token')).toBeUndefined();
+      expect(store.getCachedVerification('mcp-token')).toBeUndefined();
+    });
+
+    // A Backlog 401 says the access token is spent, not that the grant is gone,
+    // so the client should still be able to recover through the refresh grant.
+    it('leaves the refresh token usable', () => {
+      seed();
+
+      store.revokeMcpToken('mcp-token');
+
+      expect(store.consumeMcpRefreshToken('mcp-refresh')).toMatchObject({
+        backlogRefreshToken: 'bl-rt',
+      });
+    });
+
+    it('is a no-op for an unknown token', () => {
+      seed();
+
+      expect(() => store.revokeMcpToken('other-token')).not.toThrow();
+      expect(store.getMcpToken('mcp-token')).toMatchObject({
+        backlogAccessToken: 'bl-at',
+      });
+    });
+  });
+
   describe('cleanup', () => {
     it('removes expired entries including MCP tokens', () => {
       store.storePendingAuth('s1', {

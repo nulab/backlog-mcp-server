@@ -7,6 +7,9 @@ import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/server';
 import { runHttpMcpServer } from './httpMcpServer.js';
+import { createTokenStore } from './auth/tokenStore.js';
+import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 import {
   wrapServerWithToolRegistry,
   type BacklogMCPServer,
@@ -29,7 +32,11 @@ const createServer = (): BacklogMCPServer => {
   return server;
 };
 
-type RawResponse = { status: number; body: string };
+type RawResponse = {
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  body: string;
+};
 
 /**
  * Raw node:http request. `fetch` treats `Host` as a forbidden header, so the
@@ -61,7 +68,9 @@ const send = (
         let body = '';
         res.setEncoding('utf8');
         res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+        res.on('end', () =>
+          resolve({ status: res.statusCode ?? 0, headers: res.headers, body })
+        );
       }
     );
     req.on('error', reject);
@@ -273,6 +282,107 @@ describe('runHttpMcpServer', () => {
 
       expect(res.status).toBe(400);
       expect(JSON.parse(res.body).error.code).toBe(-32020);
+    });
+  });
+
+  // End to end for #213: an OAuth-authenticated tool call that Backlog rejects
+  // has to reach the client as a transport 401, not as tool output on a 200.
+  describe('a Backlog 401 under OAuth', () => {
+    const oauthConfig: BacklogOAuthConfig = {
+      clientId: 'cid',
+      clientSecret: 'csecret',
+      backlogDomain: 'example.backlog.com',
+      serverBaseUrl: 'https://mcp.example.com',
+    };
+
+    const backlogAuthError = {
+      _name: 'BacklogAuthError',
+      _status: 401,
+      _url: 'https://example.backlog.com/api/v2/users/myself',
+    };
+
+    // A tool shaped like the real ones: the Backlog rejection is funnelled
+    // through backlogErrorHandler and returned as a result, never thrown.
+    const createRejectingServer = (): BacklogMCPServer => {
+      const server = wrapServerWithToolRegistry(
+        new McpServer({ name: 'backlog-test', version: '0.0.0' })
+      );
+      server.registerOnce('get_myself', 'test tool', z.object({}), () => {
+        const { message } = backlogErrorHandler(backlogAuthError);
+        return { content: [{ type: 'text' as const, text: message }] };
+      });
+      return server;
+    };
+
+    const toolsCall = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'get_myself', arguments: {}, _meta: MODERN_ENVELOPE },
+    });
+
+    const startOAuth = async (store: ReturnType<typeof createTokenStore>) =>
+      start({
+        createServer: createRejectingServer,
+        oauthConfig,
+        tokenStore: store,
+      });
+
+    const seed = (store: ReturnType<typeof createTokenStore>) => {
+      store.storeMcpToken('mcp-token', {
+        backlogAccessToken: 'bl-token',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
+      store.cacheVerification(
+        'mcp-token',
+        { token: 'bl-token', clientId: '1', scopes: [], expiresAt: 0 },
+        300_000
+      );
+    };
+
+    const callTool = (port: number) =>
+      send(port, {
+        headers: {
+          authorization: 'Bearer mcp-token',
+          'mcp-method': 'tools/call',
+          'mcp-name': 'get_myself',
+        },
+        body: toolsCall,
+      });
+
+    it('answers 401 with WWW-Authenticate instead of 200', async () => {
+      const store = createTokenStore();
+      seed(store);
+      const port = await startOAuth(store);
+
+      const res = await callTool(port);
+
+      expect(res.status).toBe(401);
+      expect(JSON.parse(res.body).error).toBe('invalid_token');
+      // The header, not the status, is what makes this recoverable: the client
+      // reads `resource_metadata` from it to find where to re-authenticate. It
+      // reaches the wire through Hono's `c.res` setter, which merges the
+      // headers of the response it replaces, so it is worth pinning.
+      expect(res.headers['www-authenticate']).toContain(
+        `resource_metadata="${oauthConfig.serverBaseUrl}/.well-known/oauth-protected-resource/mcp"`
+      );
+      expect(res.headers['www-authenticate']).toContain(
+        'error="invalid_token"'
+      );
+    });
+
+    it('revokes the token, so the next call is rejected up front', async () => {
+      const store = createTokenStore();
+      seed(store);
+      const port = await startOAuth(store);
+
+      await callTool(port);
+      const res = await callTool(port);
+
+      expect(res.status).toBe(401);
+      expect(store.getMcpToken('mcp-token')).toBeUndefined();
+      expect(store.getCachedVerification('mcp-token')).toBeUndefined();
     });
   });
 });

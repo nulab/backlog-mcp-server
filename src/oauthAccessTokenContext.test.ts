@@ -19,7 +19,8 @@ import {
  * Under OAuth, `createOAuthBacklogClientRegistry` resolves the Backlog access
  * token by calling `getCurrentAccessToken()` — an AsyncLocalStorage read — at
  * the moment a tool runs, and throws when it comes back empty. The token is put
- * into that storage by `runWithAccessToken` wrapping `mcpHandler.fetch`.
+ * into that storage by `runWithAccessToken`, which `createBearerAuthMiddleware`
+ * scopes around `next()` — so the context spans the whole dispatch below it.
  *
  * So the whole OAuth transport hinges on the ALS context surviving the SDK's
  * dispatch: request → handler → transport → tool. If the SDK ever resolved

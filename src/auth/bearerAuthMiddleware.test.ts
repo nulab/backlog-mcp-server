@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { createBearerAuthMiddleware } from './bearerAuthMiddleware.js';
+import { reportBacklogAuthError } from './backlogAuthContext.js';
 import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
@@ -116,5 +117,76 @@ describe('createBearerAuthMiddleware', () => {
       headers: { Authorization: 'Bearer mcp-token-3' },
     });
     expect(res.status).toBe(401);
+  });
+
+  // Regression for a Backlog 401 arriving as tool output over transport 200:
+  // the client sees a healthy connection and is never told to re-authenticate.
+  describe('when a downstream Backlog call reports an auth error', () => {
+    let failing: Hono;
+
+    beforeEach(() => {
+      failing = new Hono();
+      failing.use('/mcp', createBearerAuthMiddleware(store, config, '/mcp'));
+      failing.post('/mcp', (c) => {
+        reportBacklogAuthError();
+        return c.json({ ok: true });
+      });
+
+      store.storeMcpToken('mcp-token-live', {
+        backlogAccessToken: 'bl-token-live',
+        clientId: 'c1',
+        expiresAt: Date.now() + 3600_000,
+      });
+      store.cacheVerification(
+        'mcp-token-live',
+        { token: 'bl-token-live', clientId: '1', scopes: [], expiresAt: 0 },
+        300_000
+      );
+    });
+
+    const call = (app: Hono) =>
+      app.request('/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer mcp-token-live' },
+      });
+
+    it('replaces the tool result with 401 and WWW-Authenticate', async () => {
+      const res = await call(failing);
+
+      expect(res.status).toBe(401);
+      expect(res.headers.get('www-authenticate')).toContain(
+        'resource_metadata'
+      );
+      const body = await res.json();
+      expect(body.error).toBe('invalid_token');
+    });
+
+    it('revokes the MCP token and its cached verification', async () => {
+      await call(failing);
+
+      expect(store.getMcpToken('mcp-token-live')).toBeUndefined();
+      expect(store.getCachedVerification('mcp-token-live')).toBeUndefined();
+    });
+
+    // The revocation, not the rewritten response, is what makes this
+    // recoverable: a response that upgraded to SSE has already been sent.
+    it('answers the next request on the same token with 401', async () => {
+      await call(failing);
+      const res = await call(app);
+
+      expect(res.status).toBe(401);
+      const body = await res.json();
+      expect(body.error_description).toContain('Unknown or expired');
+    });
+
+    it('leaves a request that reported nothing untouched', async () => {
+      const res = await call(app);
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true });
+      expect(store.getMcpToken('mcp-token-live')).toMatchObject({
+        backlogAccessToken: 'bl-token-live',
+      });
+    });
   });
 });
