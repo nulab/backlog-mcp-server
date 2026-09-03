@@ -14,6 +14,10 @@ import { logger } from '../utils/logger.js';
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/** Seconds left until `expiresAt`, floored at zero so it is never negative. */
+const remainingSeconds = (expiresAt: number): number =>
+  Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
 const LOCALHOST_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 const SUPPORTED_AUTH_METHODS = ['client_secret_post', 'none'];
 
@@ -406,6 +410,9 @@ export function createOAuthRoutes(
     store.storeAuthCode(mcpCode, {
       mcpClientId: pending.mcpClientId,
       backlogTokens,
+      // Resolved here, against the response just received, rather than at
+      // `/token` where `expires_in` would be counted from the wrong instant.
+      backlogAccessTokenExpiresAt: Date.now() + backlogTokens.expires_in * 1000,
       codeChallenge: pending.codeChallenge,
       redirectUri: pending.redirectUri,
       resource: pending.resource,
@@ -497,7 +504,7 @@ export function createOAuthRoutes(
       store.storeMcpToken(mcpAccessToken, {
         backlogAccessToken: entry.backlogTokens.access_token,
         clientId,
-        expiresAt: Date.now() + entry.backlogTokens.expires_in * 1000,
+        expiresAt: entry.backlogAccessTokenExpiresAt,
       });
       store.storeMcpRefreshToken(mcpRefreshToken, {
         backlogRefreshToken: entry.backlogTokens.refresh_token,
@@ -508,7 +515,10 @@ export function createOAuthRoutes(
       return c.json({
         access_token: mcpAccessToken,
         token_type: 'bearer',
-        expires_in: entry.backlogTokens.expires_in,
+        // What is left, not what Backlog reported at `/callback`. A client
+        // uses this to decide when to refresh, so handing it the original
+        // duration would have it wait past the real expiry.
+        expires_in: remainingSeconds(entry.backlogAccessTokenExpiresAt),
         refresh_token: mcpRefreshToken,
       });
     }
