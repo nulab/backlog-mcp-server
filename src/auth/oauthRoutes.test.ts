@@ -403,6 +403,78 @@ describe('createOAuthRoutes', () => {
       return { verifier, challenge };
     }
 
+    // Backlog counts `expires_in` from the moment it answered at `/callback`,
+    // not from whenever the client gets round to redeeming the code. Re-basing
+    // it at `/token` hands out an expiry later than the real one, which is how
+    // a spent Backlog token ends up behind a token this server calls live.
+    it('does not re-base the Backlog expiry when the code is redeemed later', async () => {
+      const { verifier, challenge } = makePkce();
+      const REDEEM_DELAY_MS = 120_000;
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+      store.storePendingAuth('bl-state-drift', {
+        mcpClientId: 'c1',
+        codeChallenge: challenge,
+        redirectUri: 'https://client.example.com/cb',
+        scopes: [],
+        createdAt: Date.now(),
+      });
+
+      vi.useFakeTimers();
+      try {
+        const callbackAt = Date.now();
+        vi.setSystemTime(callbackAt);
+
+        // `exchangeBacklogCode` is mocked to answer `expires_in: 3600`, so the
+        // real expiry is fixed at this instant plus an hour.
+        const callbackRes = await app.request(
+          '/callback?code=bl-code&state=bl-state-drift',
+          { redirect: 'manual' }
+        );
+        const mcpCode = new URL(
+          callbackRes.headers.get('location')!
+        ).searchParams.get('code')!;
+        const realExpiry = callbackAt + 3600 * 1000;
+
+        vi.setSystemTime(callbackAt + REDEEM_DELAY_MS);
+
+        const res = await app.request('/token', {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: 'c1',
+            client_secret: 's1',
+            code: mcpCode,
+            code_verifier: verifier,
+            redirect_uri: 'https://client.example.com/cb',
+          }).toString(),
+        });
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as {
+          access_token: string;
+          expires_in: number;
+        };
+
+        // What the client is told: what is left, not the original 3600.
+        expect(json.expires_in).toBe(3600 - REDEEM_DELAY_MS / 1000);
+
+        // What the server stores: the instant Backlog fixed, unmoved.
+        expect(store.getMcpToken(json.access_token)?.expiresAt).toBe(
+          realExpiry
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('exchanges authorization code for opaque MCP tokens', async () => {
       const { verifier, challenge } = makePkce();
 
@@ -422,6 +494,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
@@ -449,7 +522,11 @@ describe('createOAuthRoutes', () => {
       expect(json.access_token).not.toBe('bl-at');
       expect(json.refresh_token).not.toBe('bl-rt');
       expect(json.token_type).toBe('bearer');
-      expect(json.expires_in).toBe(3600);
+      // The remaining life, so an immediate redemption comes back a second
+      // short of the 3600 Backlog reported. The exact arithmetic is pinned by
+      // 'does not re-base the Backlog expiry when the code is redeemed later'.
+      expect(json.expires_in).toBeLessThanOrEqual(3600);
+      expect(json.expires_in).toBeGreaterThan(3590);
     });
 
     it('rejects mismatched resource in token exchange', async () => {
@@ -471,6 +548,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         resource: 'https://mcp.example.com/mcp',
@@ -549,6 +627,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
@@ -590,6 +669,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: 'correct-challenge',
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,

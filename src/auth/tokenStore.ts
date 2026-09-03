@@ -35,6 +35,17 @@ type PendingAuthorization = {
 type AuthCodeEntry = {
   mcpClientId: string;
   backlogTokens: BacklogTokenData;
+  /**
+   * When the Backlog access token in `backlogTokens` actually expires, in
+   * epoch milliseconds, resolved at `/callback`.
+   *
+   * `backlogTokens.expires_in` is a duration counted from the moment Backlog
+   * answered, and this entry then sits here until the client redeems the code
+   * — up to `AUTH_CODE_TTL_MS`. Re-basing that duration at `/token` would put
+   * the expiry later than the real one by however long the redemption took,
+   * leaving a window where this server treats a spent Backlog token as live.
+   */
+  backlogAccessTokenExpiresAt: number;
   codeChallenge: string;
   redirectUri: string;
   resource?: string;
