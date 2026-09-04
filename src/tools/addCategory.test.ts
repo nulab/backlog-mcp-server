@@ -14,7 +14,10 @@ describe('addCategoryTool', () => {
   };
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addCategoryTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = addCategoryTool(
+    mockBacklog as Backlog,
+    mockDescriptionHelper
+  );
 
   it('returns created category', async () => {
     const result = await tool.handler({

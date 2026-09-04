@@ -20,7 +20,10 @@ const addCategorySchema = buildToolSchema((t) => ({
     .string()
     .optional()
     .describe(
-      t('TOOL_ADD_CATEGORY_PROJECT_KEY', "The key of the project (e.g., 'PROJECT')")
+      t(
+        'TOOL_ADD_CATEGORY_PROJECT_KEY',
+        "The key of the project (e.g., 'PROJECT')"
+      )
     ),
   name: z
     .string()
@@ -30,7 +33,10 @@ const addCategorySchema = buildToolSchema((t) => ({
 export const addCategoryTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<ReturnType<typeof addCategorySchema>, Entity.Project.Category> => {
+): ToolDefinition<
+  ReturnType<typeof addCategorySchema>,
+  Entity.Project.Category
+> => {
   return {
     name: 'add_category',
     description: t(
