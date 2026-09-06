@@ -56,10 +56,8 @@ describe('addCategoryTool', () => {
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
-    await expect(
-      tool.handler({
-        name: 'Support',
-      } as any)
-    ).rejects.toThrow(Error);
+    const params = { name: 'Support' };
+
+    await expect(tool.handler(params as any)).rejects.toThrow(Error);
   });
 });
