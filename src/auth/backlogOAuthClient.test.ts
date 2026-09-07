@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+  BacklogTokenError,
   buildBacklogAuthorizationUrl,
   exchangeBacklogCode,
   refreshBacklogToken,
@@ -109,6 +110,65 @@ describe('refreshBacklogToken', () => {
       'Backlog token refresh failed (401)'
     );
   });
+
+  // The status is what tells a revoked grant from a Backlog that is merely
+  // down, and `/token` answers `invalid_grant` or `server_error` on it. Carried
+  // in the message alone the caller would have to parse prose to decide.
+  it('carries the upstream status on a rejection', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('{"error":"invalid_grant"}', { status: 400 })
+    );
+
+    await expect(refreshBacklogToken(config, 'revoked')).rejects.toMatchObject({
+      name: 'BacklogTokenError',
+      status: 400,
+    });
+  });
+
+  it('leaves the status absent when Backlog cannot be reached', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new TypeError('fetch failed')
+    );
+
+    const err = await refreshBacklogToken(config, 'rt').catch(
+      (e: unknown) => e
+    );
+
+    expect(err).toBeInstanceOf(BacklogTokenError);
+    expect((err as BacklogTokenError).status).toBeUndefined();
+  });
+
+  // The status cannot separate these two, and they ask `/token` for opposite
+  // answers: a dead grant means re-authorize, a rejected client secret is the
+  // operator's problem and re-authorizing would fail the same way.
+  it.each([
+    ['invalid_grant', 400],
+    ['invalid_client', 401],
+  ])('reads %s out of the response body', async (code, status) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: code }), { status })
+    );
+
+    await expect(refreshBacklogToken(config, 'rt')).rejects.toMatchObject({
+      status,
+      errorCode: code,
+    });
+  });
+
+  // A proxy or a WAF can answer the token endpoint with HTML. The status and
+  // the raw text are already in the message, so there is nothing to recover.
+  it('leaves the error code absent when the body is not an OAuth error', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('<html>Gateway Timeout</html>', { status: 504 })
+    );
+
+    const err = await refreshBacklogToken(config, 'rt').catch(
+      (e: unknown) => e
+    );
+
+    expect((err as BacklogTokenError).status).toBe(504);
+    expect((err as BacklogTokenError).errorCode).toBeUndefined();
+  });
 });
 
 describe('verifyBacklogToken', () => {
@@ -141,5 +201,28 @@ describe('verifyBacklogToken', () => {
     await expect(
       verifyBacklogToken('example.backlog.com', 'bad-token')
     ).rejects.toThrow('Backlog token verification failed (401)');
+  });
+
+  it('carries the upstream status on a rejection', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('Unauthorized', { status: 401 })
+    );
+
+    await expect(
+      verifyBacklogToken('example.backlog.com', 'bad-token')
+    ).rejects.toMatchObject({ name: 'BacklogTokenError', status: 401 });
+  });
+
+  it('leaves the status absent when Backlog cannot be reached', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new TypeError('fetch failed')
+    );
+
+    const err = await verifyBacklogToken('example.backlog.com', 'token').catch(
+      (e: unknown) => e
+    );
+
+    expect(err).toBeInstanceOf(BacklogTokenError);
+    expect((err as BacklogTokenError).status).toBeUndefined();
   });
 });
