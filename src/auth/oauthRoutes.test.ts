@@ -7,7 +7,13 @@ import { createOAuthRoutes } from './oauthRoutes.js';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-vi.mock('./backlogOAuthClient.js', () => ({
+// Only `BacklogTokenError` is borrowed from the real module: the routes branch
+// on `instanceof`, so a stand-in class would make the branch untestable. Every
+// function stays mocked, so nothing here can reach the network.
+vi.mock('./backlogOAuthClient.js', async (importOriginal) => ({
+  BacklogTokenError: (
+    await importOriginal<typeof import('./backlogOAuthClient.js')>()
+  ).BacklogTokenError,
   buildBacklogAuthorizationUrl: vi.fn(
     (_config: unknown, _redirect: unknown, state: string) =>
       `https://example.backlog.com/OAuth2AccessRequest.action?state=${state}`
@@ -817,6 +823,104 @@ describe('createOAuthRoutes', () => {
       const restored = store.consumeMcpRefreshToken('mcp-refresh-retry');
       expect(restored).toBeDefined();
       expect(restored!.backlogRefreshToken).toBe('bl-refresh');
+    });
+
+    // The bug this covers: every refresh failure answered 503, so a client
+    // whose grant Backlog had permanently discarded backed off and retried on
+    // a schedule forever, and never reached the re-authorization that was the
+    // only way out.
+    it('answers invalid_grant when Backlog says the grant is gone', async () => {
+      const { refreshBacklogToken, BacklogTokenError } =
+        await import('./backlogOAuthClient.js');
+      (refreshBacklogToken as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new BacklogTokenError(
+          'Backlog token refresh failed (400): {"error":"invalid_grant"}',
+          400,
+          'invalid_grant'
+        )
+      );
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-revoked', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-revoked',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toBe('invalid_grant');
+
+      // Not restored: Backlog has disowned the token it holds, so keeping it
+      // until its TTL lapses would only hand the next attempt the same
+      // credential.
+      expect(
+        store.consumeMcpRefreshToken('mcp-refresh-revoked')
+      ).toBeUndefined();
+    });
+
+    // `invalid_client` rejects this server's own credentials, not the client's
+    // grant. Answering `invalid_grant` would send every client through an
+    // authorization flow that fails at the same wall.
+    it('treats a rejected client secret as transient and restores the token', async () => {
+      const { refreshBacklogToken, BacklogTokenError } =
+        await import('./backlogOAuthClient.js');
+      (refreshBacklogToken as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new BacklogTokenError(
+          'Backlog token refresh failed (401): {"error":"invalid_client"}',
+          401,
+          'invalid_client'
+        )
+      );
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-401', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-401',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      expect(res.status).toBe(503);
+      expect(store.consumeMcpRefreshToken('mcp-refresh-401')).toBeDefined();
     });
 
     it('rejects unsupported grant_type', async () => {
