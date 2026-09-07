@@ -26,7 +26,6 @@ describe('createBearerAuthMiddleware', () => {
   let app: Hono;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTokenStore();
     app = new Hono();
     app.use('/mcp', createBearerAuthMiddleware(store, config, '/mcp'));

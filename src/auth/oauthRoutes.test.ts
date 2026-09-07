@@ -38,7 +38,6 @@ describe('createOAuthRoutes', () => {
   let app: ReturnType<typeof createOAuthRoutes>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTokenStore();
     app = createOAuthRoutes(config, store, '/mcp');
   });

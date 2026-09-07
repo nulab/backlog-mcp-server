@@ -2,7 +2,7 @@ import { registerTools } from './registerTools';
 import { McpServer } from '@modelcontextprotocol/server';
 import { Backlog } from 'backlog-js';
 import { DescriptionHelper } from './createDescriptionHelper';
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
@@ -41,10 +41,6 @@ describe('registerTools', () => {
   if (issueToolSet == null) {
     throw new Error(`Toolset "issue" not found in allTools. Check test setup.`);
   }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('registers tools from enabled toolsets only', () => {
     const mockServer = wrapServerWithToolRegistry({
