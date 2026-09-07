@@ -4,7 +4,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
-import { verifyBacklogToken } from './backlogOAuthClient.js';
+import { BacklogTokenError, verifyBacklogToken } from './backlogOAuthClient.js';
 import {
   hasBacklogAuthErrorBeenReported,
   runWithAccessToken,
@@ -78,7 +78,39 @@ export function createBearerAuthMiddleware(
         } satisfies AuthInfo;
         store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       } catch (err) {
-        logger.warn({ err }, 'Bearer token verification failed');
+        // Only Backlog rejecting the token means this client should
+        // authenticate again. A Backlog outage answered with 401 would send
+        // every connected client through the whole authorization flow, and the
+        // token that flow produced would fail verification just the same.
+        const rejected =
+          err instanceof BacklogTokenError &&
+          (err.status === 401 || err.status === 403);
+
+        if (!rejected) {
+          logger.error(
+            { err },
+            'Could not verify the bearer token with Backlog'
+          );
+          c.header('Retry-After', '30');
+          return c.json(
+            {
+              error: 'temporarily_unavailable',
+              error_description: 'Could not verify the token with Backlog',
+            },
+            503
+          );
+        }
+
+        // A rejection here is the same fact `onAuthError` below acts on — the
+        // stored Backlog token is spent — so it gets the same treatment.
+        // Dropping the entry is what makes this recoverable: the client's next
+        // request fails the `getMcpToken` check above, and it reaches for its
+        // refresh token instead of replaying a credential that cannot work.
+        logger.warn(
+          { err, clientId: tokenEntry.clientId },
+          'Backlog rejected the stored access token during verification; revoking the MCP token'
+        );
+        store.revokeMcpToken(mcpToken);
         return unauthorized('Token verification failed');
       }
     }
