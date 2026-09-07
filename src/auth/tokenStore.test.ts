@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createTokenStore, type TokenStore } from './tokenStore.js';
+import { createTokenStore } from './tokenStore.js';
 
 describe('createTokenStore', () => {
-  let store: TokenStore;
+  let store: ReturnType<typeof createTokenStore>;
 
   beforeEach(() => {
     store = createTokenStore();

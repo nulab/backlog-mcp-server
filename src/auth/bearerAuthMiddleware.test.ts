@@ -179,6 +179,37 @@ describe('createBearerAuthMiddleware', () => {
       expect(body.error_description).toContain('Unknown or expired');
     });
 
+    // `reportBacklogAuthError` invokes the revocation synchronously from inside
+    // the tool handler, so an asynchronous store's promise has nowhere to be
+    // awaited at that point. Left unawaited it would settle after the response,
+    // and the next request would still find the token the middleware believes
+    // it revoked.
+    it('finishes an asynchronous revocation before answering', async () => {
+      const asyncStore = {
+        ...store,
+        revokeMcpToken: async (mcpToken: string) => {
+          // A macrotask, so the revocation cannot settle on the microtask
+          // queue the response already drains: only an explicit await keeps
+          // the middleware from answering first.
+          await new Promise((r) => setTimeout(r, 0));
+          store.revokeMcpToken(mcpToken);
+        },
+      };
+      const asyncFailing = new Hono();
+      asyncFailing.use(
+        '/mcp',
+        createBearerAuthMiddleware(asyncStore, config, '/mcp')
+      );
+      asyncFailing.post('/mcp', (c) => {
+        reportBacklogAuthError();
+        return c.json({ ok: true });
+      });
+
+      await call(asyncFailing);
+
+      expect(store.getMcpToken('mcp-token-live')).toBeUndefined();
+    });
+
     it('leaves a request that reported nothing untouched', async () => {
       const res = await call(app);
 
