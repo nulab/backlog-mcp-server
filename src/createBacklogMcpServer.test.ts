@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { Backlog } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
@@ -48,10 +48,6 @@ describe('createBacklogMcpServer', () => {
     enabledToolsets: ['all'],
     mcpOption,
   };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('returns a server wrapped with tool registry', () => {
     const server = createBacklogMcpServer(baseConfig);
