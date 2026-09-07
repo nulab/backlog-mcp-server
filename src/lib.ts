@@ -7,10 +7,12 @@
  * This module exposes the pieces needed to build a server, and nothing that runs
  * on import.
  *
- * Nothing reachable from here may touch a Node built-in. `loadDescriptionOverrides`
- * is the counter-example worth remembering: it reads the override file from disk,
- * so it belongs to the CLI and is deliberately absent below. Consumers on other
- * runtimes pass their own overrides to `createDescriptionHelper`.
+ * Nothing reachable from here may need a dependency a non-Node runtime lacks —
+ * not "no Node built-ins": the two `AsyncLocalStorage` request contexts are
+ * reachable, and `node:async_hooks` exists on Workers, Deno and Bun.
+ * `loadDescriptionOverrides` reads from disk, so it belongs to the CLI and is
+ * absent below; other runtimes pass their own overrides to
+ * `createDescriptionHelper`. `lib.test.ts` walks the graph and holds the line.
  *
  * The OAuth exports are the token calls and the two predicates that say what a
  * failure means. The routes and the middleware are absent: they are built
