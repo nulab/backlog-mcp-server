@@ -5,6 +5,7 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 import {
+  BacklogTokenError,
   buildBacklogAuthorizationUrl,
   exchangeBacklogCode,
   refreshBacklogToken,
@@ -577,6 +578,46 @@ export function createOAuthRoutes(
           refresh_token: mcpRefreshToken,
         });
       } catch (err) {
+        // `invalid_grant` is Backlog stating the grant is gone: revoked from
+        // the user's settings, or a refresh token it no longer recognises.
+        // That is the one answer that moves the client to a fresh
+        // authorization. Reported as 503 the same failure asks it to back off
+        // and retry a grant that can never come back, so it retries on a
+        // schedule forever. The consumed entry stays consumed in this branch:
+        // what it holds is a refresh token Backlog has already disowned, and
+        // keeping it until its TTL lapses only hands the next attempt the same
+        // dead credential.
+        //
+        // The code is read from the body rather than inferred from the status,
+        // because the status cannot separate the two rejections the token
+        // endpoint makes: `invalid_client` rejects *this server's* credentials,
+        // which is the operator's misconfiguration and not the client's grant,
+        // and re-authorizing would fail at the same wall. A bare 400 with no
+        // readable code is still treated as a dead grant — that is what the
+        // status means on this endpoint when nothing more specific is said.
+        //
+        // Everything else leaves the grant's fate unknown — unreachable, a
+        // timeout, a 5xx, a rejected client secret — so the entry goes back and
+        // the client is told to retry.
+        const grantIsGone =
+          err instanceof BacklogTokenError &&
+          (err.errorCode === 'invalid_grant' ||
+            (err.status === 400 && err.errorCode === undefined));
+
+        if (grantIsGone) {
+          logger.warn(
+            { err, clientId },
+            'Backlog no longer recognizes the refresh grant; the client must authorize again'
+          );
+          return c.json(
+            oauthError(
+              'invalid_grant',
+              'Backlog no longer recognizes this grant. A new authorization is required.'
+            ),
+            400
+          );
+        }
+
         logger.error({ err }, 'Failed to refresh Backlog token');
         store.storeMcpRefreshToken(refreshToken, refreshEntry);
         return c.json(
