@@ -74,15 +74,11 @@ describe('library entry point', () => {
     expect(lib).not.toHaveProperty('loadDescriptionOverrides');
   });
 
-  // The header of `src/lib.ts` promises that nothing reachable from it needs a
-  // dependency a non-Node runtime lacks. Read as a guarantee, it gets used as
-  // one — #180 put `createTranslationHelper` on a subpath rather than let
-  // `cosmiconfig` and `node:os` into this graph — so the claim has to be
-  // checked rather than trusted. ESM evaluates a module's static imports
-  // whether or not the importing module uses the symbol, so one specifier
-  // anywhere in the graph is enough to break it for every consumer. Type-only
-  // imports are erased before it runs and dynamic ones are reached only when
-  // called, so neither counts.
+  // The header of `src/lib.ts` reads as a guarantee and gets used as one — #180
+  // put `createTranslationHelper` on a subpath to keep `cosmiconfig` and
+  // `node:os` out of this graph — so it is checked rather than trusted. ESM
+  // evaluates static imports whether or not the symbol is used, so one
+  // specifier anywhere in the graph breaks it for every consumer.
   it('reaches no unportable Node built-in through a static import', () => {
     const srcDir = dirname(fileURLToPath(import.meta.url));
     const seen = new Set<string>();
@@ -101,11 +97,9 @@ describe('library entry point', () => {
           );
           continue;
         }
-        // Bare specifiers stop the walk: a package's own graph lives in
-        // `node_modules` and its `exports` may hand a different file to each
-        // runtime, so a source-level walk cannot answer for it. `cosmiconfig`
-        // — the other half of what #180 kept out — is therefore not covered
-        // here; only the `import` in this repository's own sources is.
+        // Bare specifiers stop the walk: `exports` may hand a different file
+        // to each runtime, so a source-level walk cannot answer for a package.
+        // `cosmiconfig` is therefore not covered here.
         if (!specifier.startsWith('.')) continue;
         walk(resolveTs(file, specifier), [...trail, relative(file)]);
       }
@@ -122,14 +116,10 @@ describe('library entry point', () => {
 });
 
 /**
- * Node built-ins the entry point is allowed to reach.
- *
- * The list is not "harmless built-ins" but "built-ins every runtime a consumer
- * is on provides". `node:async_hooks` qualifies: Cloudflare Workers under
- * `nodejs_compat`, Deno and Bun all have it, and the two `AsyncLocalStorage`
- * request contexts need it on import. Adding to this list is a decision about
- * which runtimes the package still supports, so it wants an argument in the
- * commit rather than a quick edit to make a test pass.
+ * Not "harmless built-ins" but "built-ins every runtime a consumer is on has".
+ * `async_hooks` is on Workers (`nodejs_compat`), Deno and Bun, and the two
+ * `AsyncLocalStorage` request contexts need it on import. Adding to this set
+ * narrows which runtimes the package supports — argue for it in the commit.
  */
 const PORTABLE_BUILTINS = new Set(['node:async_hooks']);
 
@@ -141,11 +131,9 @@ function stripComments(source: string): string {
 }
 
 /**
- * The specifiers of the module's value-level static imports and re-exports.
- *
- * `import type` and `export type` are dropped: TypeScript erases them, so they
- * never reach the runtime graph. Dynamic `import()` is not matched at all — it
- * runs when the call runs, which is the whole point of using it here.
+ * Value-level static imports and re-exports. `import type` is dropped because
+ * TypeScript erases it; dynamic `import()` is not matched, since it runs only
+ * when called.
  */
 function staticImportsOf(source: string): string[] {
   const pattern =

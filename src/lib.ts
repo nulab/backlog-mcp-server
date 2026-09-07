@@ -7,22 +7,12 @@
  * This module exposes the pieces needed to build a server, and nothing that runs
  * on import.
  *
- * The rule this entry point holds is narrower than "no Node built-ins": nothing
- * reachable from here may touch a dependency that a non-Node runtime lacks.
- * `loadDescriptionOverrides` is the counter-example worth remembering: it reads
- * the override file from disk, so it belongs to the CLI and is deliberately
- * absent below. Consumers on other runtimes pass their own overrides to
- * `createDescriptionHelper`.
- *
- * `node:async_hooks` is the case that fixes the wording. Two `AsyncLocalStorage`
- * modules — the OAuth request's access token, and the organization a
- * multi-organization call is for — are reachable from `backlogErrorHandler` and
- * from the two handler builders respectively, and ESM evaluates them on import
- * whether or not the consumer uses the symbol. They stay: Cloudflare Workers
- * (`nodejs_compat`), Deno and Bun all provide `async_hooks`, and every consumer
- * on record runs on one of those or on Node. `lib.test.ts` walks the import
- * graph and holds exactly this line — a built-in outside the allowed set fails
- * there rather than in a consumer's build.
+ * Nothing reachable from here may need a dependency a non-Node runtime lacks —
+ * not "no Node built-ins": the two `AsyncLocalStorage` request contexts are
+ * reachable, and `node:async_hooks` exists on Workers, Deno and Bun.
+ * `loadDescriptionOverrides` reads from disk, so it belongs to the CLI and is
+ * absent below; other runtimes pass their own overrides to
+ * `createDescriptionHelper`. `lib.test.ts` walks the graph and holds the line.
  *
  * The OAuth exports are the token calls and the two predicates that say what a
  * failure means. The routes and the middleware are absent: they are built
