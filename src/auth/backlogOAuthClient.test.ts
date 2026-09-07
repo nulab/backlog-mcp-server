@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   BacklogTokenError,
   buildBacklogAuthorizationUrl,
+  isGrantGone,
+  isTokenRejected,
   exchangeBacklogCode,
   refreshBacklogToken,
   verifyBacklogToken,
@@ -224,5 +226,47 @@ describe('verifyBacklogToken', () => {
 
     expect(err).toBeInstanceOf(BacklogTokenError);
     expect((err as BacklogTokenError).status).toBeUndefined();
+  });
+});
+
+// Exported from `src/lib.ts`, so a consumer hosting the same flow branches on
+// these instead of reimplementing the rules. Worth pinning directly: reading
+// `invalid_client` as a dead grant costs every client a pointless
+// authorization, and reading an outage as a rejection costs a live grant.
+describe('isGrantGone', () => {
+  it.each([
+    [
+      'an explicit invalid_grant',
+      new BacklogTokenError('m', 400, 'invalid_grant'),
+    ],
+    ['a bare 400 with no readable code', new BacklogTokenError('m', 400)],
+  ])('is true for %s', (_label, err) => {
+    expect(isGrantGone(err)).toBe(true);
+  });
+
+  it.each([
+    ['invalid_client', new BacklogTokenError('m', 401, 'invalid_client')],
+    ['a 5xx', new BacklogTokenError('m', 503)],
+    ['an unreachable Backlog', new BacklogTokenError('m')],
+    ['an error of another type', new Error('boom')],
+  ])('is false for %s', (_label, err) => {
+    expect(isGrantGone(err)).toBe(false);
+  });
+});
+
+describe('isTokenRejected', () => {
+  it.each([
+    ['a 401', new BacklogTokenError('m', 401)],
+    ['a 403', new BacklogTokenError('m', 403)],
+  ])('is true for %s', (_label, err) => {
+    expect(isTokenRejected(err)).toBe(true);
+  });
+
+  it.each([
+    ['a 500', new BacklogTokenError('m', 500)],
+    ['an unreachable Backlog', new BacklogTokenError('m')],
+    ['an error of another type', new Error('boom')],
+  ])('is false for %s', (_label, err) => {
+    expect(isTokenRejected(err)).toBe(false);
   });
 });

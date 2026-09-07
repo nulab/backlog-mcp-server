@@ -58,6 +58,45 @@ function readOAuthErrorCode(body: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Whether the failure is Backlog stating the grant is gone.
+ *
+ * The one answer that means the client should stop retrying and start a fresh
+ * authorization. Everything else leaves the grant's fate unknown, and a client
+ * told to re-authorize on a transient failure throws away a grant that was
+ * still alive.
+ *
+ * Read from `errorCode` rather than inferred from the status, because the
+ * status cannot separate the two rejections a token endpoint makes:
+ * `invalid_client` rejects the *server's* own credentials, which is the
+ * operator's misconfiguration and not the client's grant — re-authorizing would
+ * fail at the same wall. A bare 400 with no readable code is still a dead
+ * grant: that is what the status means on this endpoint when nothing more
+ * specific is said.
+ */
+export function isGrantGone(err: unknown): boolean {
+  return (
+    err instanceof BacklogTokenError &&
+    (err.errorCode === 'invalid_grant' ||
+      (err.status === 400 && err.errorCode === undefined))
+  );
+}
+
+/**
+ * Whether Backlog rejected the credential, as opposed to failing to answer.
+ *
+ * Only a rejection means the caller should authenticate again. An outage
+ * treated as a rejection sends every connected client through the whole
+ * authorization flow, and the credential that flow produces fails the same way
+ * — after the client has already lost the one it had.
+ */
+export function isTokenRejected(err: unknown): boolean {
+  return (
+    err instanceof BacklogTokenError &&
+    (err.status === 401 || err.status === 403)
+  );
+}
+
 export function buildBacklogAuthorizationUrl(
   config: BacklogOAuthConfig,
   redirectUri: string,

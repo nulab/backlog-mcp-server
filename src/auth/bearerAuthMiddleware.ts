@@ -4,7 +4,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
-import { BacklogTokenError, verifyBacklogToken } from './backlogOAuthClient.js';
+import { isTokenRejected, verifyBacklogToken } from './backlogOAuthClient.js';
 import {
   hasBacklogAuthErrorBeenReported,
   runWithAccessToken,
@@ -79,14 +79,9 @@ export function createBearerAuthMiddleware(
         store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       } catch (err) {
         // Only Backlog rejecting the token means this client should
-        // authenticate again. A Backlog outage answered with 401 would send
-        // every connected client through the whole authorization flow, and the
-        // token that flow produced would fail verification just the same.
-        const rejected =
-          err instanceof BacklogTokenError &&
-          (err.status === 401 || err.status === 403);
-
-        if (!rejected) {
+        // authenticate again; `isTokenRejected` holds why the distinction
+        // matters.
+        if (!isTokenRejected(err)) {
           logger.error(
             { err },
             'Could not verify the bearer token with Backlog'
