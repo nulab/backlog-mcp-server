@@ -2,6 +2,8 @@ import * as lib from './lib';
 import { describe, it, expect } from 'vitest';
 import type { z } from 'zod';
 import type {
+  BacklogOAuthConfig,
+  BacklogTokenData,
   ComposeOptions,
   NativeContentToolDefinition,
   ErrorLike,
@@ -21,16 +23,24 @@ import type {
 describe('library entry point', () => {
   it('exports exactly the documented runtime surface', () => {
     expect(Object.keys(lib).sort()).toEqual([
+      'BacklogTokenError',
       'allTools',
       'backlogErrorHandler',
+      'buildBacklogAuthorizationUrl',
       'buildToolSchema',
       'composeNativeContentToolHandler',
       'composeToolHandler',
       'createDescriptionHelper',
+      'exchangeBacklogCode',
       'isErrorLike',
+      'isGrantGone',
+      'isTokenRejected',
+      'refreshBacklogToken',
+      'verifyBacklogToken',
     ]);
   });
 
+  // A class is a function too, so `BacklogTokenError` belongs in this check.
   it('exports every runtime symbol as a function', () => {
     for (const [name, value] of Object.entries(lib)) {
       expect(typeof value, name).toBe('function');
@@ -41,6 +51,8 @@ describe('library entry point', () => {
   // `typecheck:all` if any of them stops being exported.
   it('exports the documented types', () => {
     const types: [
+      BacklogOAuthConfig?,
+      BacklogTokenData?,
       ComposeOptions?,
       NativeContentToolDefinition<z.ZodRawShape>?,
       ErrorLike?,

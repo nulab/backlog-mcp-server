@@ -8,15 +8,14 @@ import { reportBacklogAuthError } from './backlogAuthContext.js';
 import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-// `BacklogTokenError` is the real class because the middleware branches on
-// `instanceof`; `verifyBacklogToken` is the only function this file needs, and
-// leaving the rest out keeps the network unreachable from here.
-vi.mock('./backlogOAuthClient.js', async (importOriginal) => ({
-  BacklogTokenError: (
-    await importOriginal<typeof import('./backlogOAuthClient.js')>()
-  ).BacklogTokenError,
-  verifyBacklogToken: vi.fn(),
-}));
+// The error class and `isTokenRejected` are the real ones, because they are
+// what the middleware branches on; `verifyBacklogToken` is the only function
+// this file needs, and leaving the rest out keeps the network unreachable.
+vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
+  const { BacklogTokenError, isTokenRejected } =
+    await importOriginal<typeof import('./backlogOAuthClient.js')>();
+  return { BacklogTokenError, isTokenRejected, verifyBacklogToken: vi.fn() };
+});
 
 import { BacklogTokenError, verifyBacklogToken } from './backlogOAuthClient.js';
 

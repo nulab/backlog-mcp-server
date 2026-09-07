@@ -7,30 +7,33 @@ import { createOAuthRoutes } from './oauthRoutes.js';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-// Only `BacklogTokenError` is borrowed from the real module: the routes branch
-// on `instanceof`, so a stand-in class would make the branch untestable. Every
-// function stays mocked, so nothing here can reach the network.
-vi.mock('./backlogOAuthClient.js', async (importOriginal) => ({
-  BacklogTokenError: (
-    await importOriginal<typeof import('./backlogOAuthClient.js')>()
-  ).BacklogTokenError,
-  buildBacklogAuthorizationUrl: vi.fn(
-    (_config: unknown, _redirect: unknown, state: string) =>
-      `https://example.backlog.com/OAuth2AccessRequest.action?state=${state}`
-  ),
-  exchangeBacklogCode: vi.fn().mockResolvedValue({
-    access_token: 'bl-access',
-    token_type: 'bearer',
-    expires_in: 3600,
-    refresh_token: 'bl-refresh',
-  }),
-  refreshBacklogToken: vi.fn().mockResolvedValue({
-    access_token: 'bl-new-access',
-    token_type: 'bearer',
-    expires_in: 3600,
-    refresh_token: 'bl-new-refresh',
-  }),
-}));
+// The error class and the failure predicates are borrowed from the real module:
+// they are what the routes branch on, so stand-ins would make the branch prove
+// nothing. Only the functions that reach the network are mocked.
+vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
+  const { BacklogTokenError, isGrantGone } =
+    await importOriginal<typeof import('./backlogOAuthClient.js')>();
+  return {
+    BacklogTokenError,
+    isGrantGone,
+    buildBacklogAuthorizationUrl: vi.fn(
+      (_config: unknown, _redirect: unknown, state: string) =>
+        `https://example.backlog.com/OAuth2AccessRequest.action?state=${state}`
+    ),
+    exchangeBacklogCode: vi.fn().mockResolvedValue({
+      access_token: 'bl-access',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'bl-refresh',
+    }),
+    refreshBacklogToken: vi.fn().mockResolvedValue({
+      access_token: 'bl-new-access',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'bl-new-refresh',
+    }),
+  };
+});
 
 const config: BacklogOAuthConfig = {
   clientId: 'bl-client-id',
