@@ -38,9 +38,14 @@ export function parseAttachmentRoots(
 /**
  * Whether `child` is `root` or sits beneath it.
  *
- * Both are expected to be resolved real paths. The separator is appended before
- * the prefix test so that `/srv/uploads-secret` does not count as being inside
- * `/srv/uploads`, which a bare `startsWith` would allow.
+ * Both are expected to be absolute, normalized paths — real paths when the
+ * file exists, the `path.resolve`d form otherwise — so the test can be a plain
+ * prefix comparison with no `..` segments or repeated separators to account
+ * for. Normalizing here would need `node:path`, which this module avoids.
+ *
+ * The separator is appended before the prefix test so that `/srv/uploads-secret`
+ * does not count as being inside `/srv/uploads`, which a bare `startsWith`
+ * would allow.
  */
 export function isInsideRoot(
   child: string,

@@ -84,7 +84,14 @@ async function loadAllowedRoots({
 
 /**
  * The real path of the file to upload, once it is known to be inside the
- * allowlist when one is configured, readable, and a regular file.
+ * allowlist when one is configured, readable, and a regular file — and the
+ * name to upload it under.
+ *
+ * The two come from different paths on purpose. Every check runs against the
+ * real path, because that is the file that will actually be read. The name is
+ * taken from the path as the caller wrote it, because that is the name the
+ * caller chose: a symlink named `evidence.png` pointing at `IMG_0522.PNG` is an
+ * `evidence.png` upload, not an `IMG_0522.PNG` one.
  *
  * Symlinks are resolved before the containment test, not after: a link sitting
  * inside an allowed root can point anywhere, so checking the path as given would
@@ -99,7 +106,7 @@ async function loadAllowedRoots({
 async function resolveUploadPath(
   filePath: string,
   nodeApis: Awaited<ReturnType<typeof loadFileSystem>>
-): Promise<string> {
+): Promise<{ realPath: string; uploadName: string }> {
   const { fsPromises, path } = nodeApis;
   const allowedRoots = await loadAllowedRoots(nodeApis);
   const isAllowed = (candidate: string) =>
@@ -133,7 +140,7 @@ async function resolveUploadPath(
     throw new Error(`Not a regular file: ${filePath}`);
   }
 
-  return realPath;
+  return { realPath, uploadName: path.basename(requested) };
 }
 
 export const addAttachmentTool = (
@@ -154,7 +161,10 @@ export const addAttachmentTool = (
     outputFields: outputFields<Entity.File.FileInfo>()(['id', 'name', 'size']),
     handler: async ({ filePath }) => {
       const nodeApis = await loadFileSystem();
-      const realPath = await resolveUploadPath(filePath, nodeApis);
+      const { realPath, uploadName } = await resolveUploadPath(
+        filePath,
+        nodeApis
+      );
 
       // `openAsBlob` rather than `readFile`: the Blob is backed by the file, so
       // an attachment near the space's per-file limit is streamed into the
@@ -162,7 +172,7 @@ export const addAttachmentTool = (
       // copy inside FormData.
       const blob = await nodeApis.fs.openAsBlob(realPath);
       const form = new FormData();
-      form.append('file', blob, nodeApis.path.basename(realPath));
+      form.append('file', blob, uploadName);
 
       return backlog.postSpaceAttachment(form);
     },

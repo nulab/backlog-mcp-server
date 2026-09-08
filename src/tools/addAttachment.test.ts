@@ -166,4 +166,19 @@ describe('addAttachmentTool', () => {
 
     await expect(tool.handler({ filePath: insideFile })).resolves.toBeDefined();
   });
+  it('uploads a symlink under the name the caller used, not the target name', async () => {
+    const link = join(allowed, 'as-named-by-caller.png');
+    await symlink(insideFile, link);
+    vi.stubEnv(ATTACHMENT_ROOTS_ENV, allowed);
+
+    try {
+      await tool.handler({ filePath: link });
+
+      const sent = postSpaceAttachment.mock.calls[0][0].get('file') as File;
+      expect(sent.name).toBe('as-named-by-caller.png');
+      expect(await sent.text()).toBe(FILE_CONTENT);
+    } finally {
+      await rm(link, { force: true });
+    }
+  });
 });
