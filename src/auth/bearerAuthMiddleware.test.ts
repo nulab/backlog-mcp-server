@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { createBearerAuthMiddleware } from './bearerAuthMiddleware.js';

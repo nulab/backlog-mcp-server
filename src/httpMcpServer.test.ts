@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { describe, it, expect, afterEach } from 'vitest';
 import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';

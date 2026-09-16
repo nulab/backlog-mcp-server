@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { McpServer } from '@modelcontextprotocol/server';
 import type { Backlog } from 'backlog-js';
 import type { DescriptionHelper } from './createDescriptionHelper.js';

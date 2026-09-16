@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { Hono } from 'hono';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
