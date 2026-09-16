@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 import type { BacklogTokenData } from './tokenStore.js';
 

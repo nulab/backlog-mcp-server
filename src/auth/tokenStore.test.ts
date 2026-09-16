@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 

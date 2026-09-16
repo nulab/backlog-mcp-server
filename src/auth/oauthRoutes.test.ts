@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createOAuthRoutes } from './oauthRoutes.js';

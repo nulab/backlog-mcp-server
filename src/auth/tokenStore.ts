@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import type { AuthInfo } from '@modelcontextprotocol/server';
 
 export type BacklogTokenData = {

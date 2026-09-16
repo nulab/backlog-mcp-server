@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
