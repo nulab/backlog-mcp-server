@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { composeNativeContentToolHandler } from './composeNativeContentToolHandler.js';
 import { getCurrentOrganization } from '../../utils/backlogOrganizationContext.js';

@@ -1,5 +1,5 @@
 import { countTokens } from './tokenCounter.js';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 
 describe('countTokens', () => {
   it('returns 0 for empty string', () => {

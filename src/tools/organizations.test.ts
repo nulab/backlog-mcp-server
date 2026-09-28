@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { listOrganizationsTool, organizationTools } from './organizations.js';
 import { BacklogClientRegistry } from '../utils/backlogClientRegistry.js';

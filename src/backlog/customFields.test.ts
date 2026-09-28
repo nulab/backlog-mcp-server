@@ -5,7 +5,7 @@ import {
   type CustomFieldInput,
   type CustomFieldFilterInput,
 } from './customFields.js';
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vite-plus/test';
 
 describe('customFieldsToPayload', () => {
   it('returns an empty object when input is undefined', () => {

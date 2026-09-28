@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, type Mock } from 'vitest';
+import { vi, describe, it, expect, type Mock } from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { getCustomFieldsTool } from './getCustomFields';
 import { createDescriptionHelper } from '../createDescriptionHelper';

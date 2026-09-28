@@ -1,6 +1,6 @@
 import { wrapWithToolResult } from './wrapWithToolResult.js';
 import { ServerContext } from '@modelcontextprotocol/server';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 
 describe('wrapWithToolResult', () => {
   const dummyExtra = {} as ServerContext;

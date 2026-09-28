@@ -1,5 +1,12 @@
 import { createDescriptionHelper } from './createDescriptionHelper';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vite-plus/test';
 
 describe('createDescriptionHelper', () => {
   beforeEach(() => {

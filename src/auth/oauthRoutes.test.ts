@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
 import { createHash } from 'node:crypto';
 import { createOAuthRoutes } from './oauthRoutes.js';
 import { createTokenStore, type TokenStore } from './tokenStore.js';

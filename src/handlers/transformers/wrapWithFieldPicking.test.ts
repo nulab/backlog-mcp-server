@@ -1,6 +1,6 @@
 import { wrapWithFieldPicking } from './wrapWithFieldPicking';
 import type { SafeResult } from '../../types/result';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect } from 'vite-plus/test';
 
 describe('wrapWithFieldPicking', () => {
   const fullData = {

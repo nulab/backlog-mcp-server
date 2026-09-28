@@ -6,7 +6,7 @@ import {
   expect,
   beforeEach,
   type MockedFunction,
-} from 'vitest';
+} from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
