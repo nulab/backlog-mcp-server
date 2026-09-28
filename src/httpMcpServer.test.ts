@@ -14,8 +14,9 @@ import {
 
 // The 2026-07-28 request envelope, carried in `_meta` on every request now
 // that there is no `initialize` handshake to negotiate it once.
+const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const MODERN_ENVELOPE = {
-  'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+  'io.modelcontextprotocol/protocolVersion': MODERN_PROTOCOL_VERSION,
   'io.modelcontextprotocol/clientCapabilities': {},
 };
 
@@ -58,6 +59,8 @@ const send = (
         headers: {
           'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
+          // Required alongside a modern envelope since server 2.1.0.
+          'mcp-protocol-version': MODERN_PROTOCOL_VERSION,
           ...options.headers,
         },
       },

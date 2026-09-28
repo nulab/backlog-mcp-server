@@ -27,8 +27,9 @@ import {
  * boundary for both response modes.
  */
 
+const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const MODERN_ENVELOPE = {
-  'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+  'io.modelcontextprotocol/protocolVersion': MODERN_PROTOCOL_VERSION,
   'io.modelcontextprotocol/clientCapabilities': {},
 };
 
@@ -77,6 +78,7 @@ const call = (port: number, token?: string): Promise<string> =>
         headers: {
           'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
+          'mcp-protocol-version': MODERN_PROTOCOL_VERSION,
           'mcp-method': 'tools/call',
           'mcp-name': 'whoami',
           ...(token ? { authorization: `Bearer ${token}` } : {}),
