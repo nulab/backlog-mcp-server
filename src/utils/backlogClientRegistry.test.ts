@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
 import { getSpaceTool } from '../tools/getSpace.js';

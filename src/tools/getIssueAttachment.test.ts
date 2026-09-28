@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { getIssueAttachmentTool } from './getIssueAttachment.js';

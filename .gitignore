@@ -53,3 +53,4 @@ temp/
 
 # MCPB bundle
 *.mcpb
+.vitest/

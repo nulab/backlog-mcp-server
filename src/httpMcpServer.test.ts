@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vite-plus/test';
 import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';

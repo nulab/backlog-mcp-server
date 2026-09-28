@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
 import { Hono } from 'hono';
 import { createBearerAuthMiddleware } from './bearerAuthMiddleware.js';
 import { reportBacklogAuthError } from './backlogAuthContext.js';

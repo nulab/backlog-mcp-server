@@ -1,5 +1,12 @@
 import { Backlog } from 'backlog-js';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vite-plus/test';
 import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry';
 import { logger } from './utils/logger';

@@ -2,7 +2,7 @@ import { registerTools } from './registerTools';
 import { McpServer } from '@modelcontextprotocol/server';
 import { Backlog } from 'backlog-js';
 import { DescriptionHelper } from './createDescriptionHelper';
-import { describe, it, expect, vi, type Mock } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vite-plus/test';
 import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';

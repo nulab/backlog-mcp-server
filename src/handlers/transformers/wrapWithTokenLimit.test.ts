@@ -1,5 +1,5 @@
 import { wrapWithTokenLimit } from './wrapWithTokenLimit.js';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { SafeResult } from '../../types/result.js';
 
 describe('wrapWithTokenLimit', () => {

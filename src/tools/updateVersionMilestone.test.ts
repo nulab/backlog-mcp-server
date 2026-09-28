@@ -1,5 +1,5 @@
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
-import { vi, describe, expect, it } from 'vitest';
+import { vi, describe, expect, it } from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 

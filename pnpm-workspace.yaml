@@ -8,3 +8,22 @@ minimumReleaseAge: 4320
 # guards against compromised third-party releases only slows us down here.
 minimumReleaseAgeExclude:
   - backlog-js
+
+# Written by `vp migrate`: Vite+ ships its own vite build, and the overrides
+# make every package that asks for vite or vitest resolve to the versions
+# vite-plus was built against.
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.0.0
+  vitest: 5.0.1
+  vite-plus: 1.0.0
+  '@vitest/coverage-v8': 5.0.1
+overrides:
+  vite@*: 'catalog:'
+  vitest@*: 'catalog:'
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: '*'
+    vitest: '*'

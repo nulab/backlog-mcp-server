@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';

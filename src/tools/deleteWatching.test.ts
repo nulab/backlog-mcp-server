@@ -1,5 +1,5 @@
 import { deleteWatchingTool } from './deleteWatching.js';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect } from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
