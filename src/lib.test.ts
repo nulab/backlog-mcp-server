@@ -39,6 +39,7 @@ describe('library entry point', () => {
       'isGrantGone',
       'isTokenRejected',
       'refreshBacklogToken',
+      'runWithAccessToken',
       'verifyBacklogToken',
     ]);
   });

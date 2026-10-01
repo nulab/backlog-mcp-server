@@ -28,6 +28,18 @@ export { createDescriptionHelper } from './createDescriptionHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
+/**
+ * The context `backlogErrorHandler` reads to tell an OAuth failure from an
+ * API-key one. Exported because that handler is: without this, a consumer
+ * calling Backlog with an OAuth token has no way to establish the context, so
+ * a rejected token is reported as "check your API key" and the reader is never
+ * told to re-authenticate (#261).
+ *
+ * `onAuthError` fires the first time Backlog rejects the credential, at the
+ * moment of detection, so a caller can invalidate the token before answering.
+ */
+export { runWithAccessToken } from './auth/backlogAuthContext.js';
+
 export {
   BacklogTokenError,
   buildBacklogAuthorizationUrl,
