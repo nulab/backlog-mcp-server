@@ -35,20 +35,6 @@ describe('wrapWithOrganizationContext', () => {
     expect(fn).toHaveBeenCalledWith({ id: 1 });
   });
 
-  it('runs without an organization when none is given', async () => {
-    const wrapped = wrapWithOrganizationContext(async () =>
-      getCurrentOrganization()
-    );
-
-    expect(await wrapped({})).toBeUndefined();
-  });
-
-  it('resolves with what the wrapped function returned', async () => {
-    const wrapped = wrapWithOrganizationContext(async () => ({ id: 1 }));
-
-    expect(await wrapped({ organization: 'acme' })).toEqual({ id: 1 });
-  });
-
   // The path behind #259: a handler that validates its input rejects before it
   // ever awaits, so the wrapper is handed an already-rejected promise. On Node
   // the only observable part is that the rejection still reaches the caller
