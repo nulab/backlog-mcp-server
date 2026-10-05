@@ -9,7 +9,7 @@ import {
   expect,
   it,
   vi,
-} from 'vitest';
+} from 'vite-plus/test';
 import type { Backlog } from 'backlog-js';
 import { addAttachmentTool } from './addAttachment.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
