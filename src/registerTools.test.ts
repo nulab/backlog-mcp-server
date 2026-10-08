@@ -157,6 +157,44 @@ describe('registerTools', () => {
     );
   });
 
+  it('registers each tool with the annotations its name implies', () => {
+    const mockServer = wrapServerWithToolRegistry({
+      registerTool: vi.fn(),
+    } as unknown as McpServer);
+    const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['issue']);
+
+    registerTools(mockServer, toolsetGroup, {
+      useFields: false,
+      maxTokens: 1000,
+      // A prefix must not reach the hints: they describe the Backlog call, not
+      // what the operator chose to call it.
+      prefix: 'backlog.',
+      useOrganization: false,
+    });
+
+    const annotationsByName = new Map(
+      (mockServer.registerTool as Mock).mock.calls.map((call) => [
+        call[0],
+        call[1].annotations,
+      ])
+    );
+
+    expect(annotationsByName.get('backlog.get_issue')).toMatchObject({
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    });
+    expect(annotationsByName.get('backlog.delete_issue')).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      openWorldHint: false,
+    });
+    // The native-content pipeline registers separately, so it is checked too.
+    expect(annotationsByName.get('backlog.get_issue_attachment')).toMatchObject(
+      { readOnlyHint: true, destructiveHint: false }
+    );
+  });
+
   it('advertises organization on dynamic MCP content tools in multi-org mode', () => {
     const mockServer = wrapServerWithToolRegistry({
       registerTool: vi.fn(),
