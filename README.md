@@ -361,6 +361,7 @@ Tools for managing documents and document trees in Backlog projects.
 
 - `get_document_tree`: Returns the hierarchical tree of documents for a project, including folders and ne
 - `get_documents`: Returns a flat list of documents in a project or folder.
+- `get_document_comments`: Returns the comments on a document, including their replies.
 - `get_document`: Returns detailed information about a specific document, including metadata, content, an
 
 ## Usage Examples

@@ -59,6 +59,7 @@ import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
 import { getDocumentTool } from './getDocument.js';
 import { getDocumentsTool } from './getDocuments.js';
 import { getDocumentTreeTool } from './getDocumentTree.js';
+import { getDocumentCommentsTool } from './getDocumentComments.js';
 import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
 import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
@@ -171,6 +172,7 @@ export const allTools = (
           getDocumentsTool(backlog, helper),
           getDocumentTreeTool(backlog, helper),
           getDocumentTool(backlog, helper),
+          getDocumentCommentsTool(backlog, helper),
           addDocumentTool(backlog, helper),
         ],
       },
