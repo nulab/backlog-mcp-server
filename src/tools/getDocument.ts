@@ -98,14 +98,22 @@ export const getDocumentTool = (
     importantFields: ['id', 'title', 'createdUser'],
     handler: async ({ documentId, start = 0, limit = DEFAULT_LIMIT }) => {
       // eslint-disable-next-line no-unused-vars
-      const { json, ...document } = await backlog.getDocument(documentId);
+      const { json, plain, ...document } =
+        await backlog.getDocument(documentId);
+      // Typed as a string, but not trusted to be one: before slicing, a
+      // missing `plain` was passed through; now it would throw.
+      const text = plain ?? '';
       const end = start + limit;
 
+      // `plain` goes last. When the response is still over the token limit,
+      // `wrapWithTokenLimit` keeps its head and drops the tail; with `plain`
+      // last, the cut lands in the content and `nextStart` survives it, so the
+      // caller still learns there is more to read.
       return {
         ...document,
-        plain: document.plain.slice(start, end),
-        plainLength: document.plain.length,
-        ...(end < document.plain.length && { nextStart: end }),
+        plainLength: text.length,
+        ...(end < text.length && { nextStart: end }),
+        plain: text.slice(start, end),
       };
     },
   };

@@ -140,6 +140,48 @@ describe('getDocumentTool', () => {
     expect(result).not.toHaveProperty('nextStart');
   });
 
+  it('returns the first DEFAULT_LIMIT characters when limit is not given', async () => {
+    vi.mocked(mockBacklog.getDocument!).mockResolvedValueOnce({
+      id: '019347fc760c7b0abff04b44628c94d7',
+      plain: 'a'.repeat(40_000) + 'b'.repeat(10),
+    } as any);
+
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+    });
+
+    expect(result).toMatchObject({
+      plain: 'a'.repeat(40_000),
+      plainLength: 40_010,
+      nextStart: 40_000,
+    });
+  });
+
+  it('puts plain after nextStart so a truncated response keeps it', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+      limit: 7,
+    });
+
+    const keys = Object.keys(result);
+    expect(keys.at(-1)).toBe('plain');
+    expect(keys.indexOf('nextStart')).toBeLessThan(keys.indexOf('plain'));
+  });
+
+  it('treats a missing plain as empty', async () => {
+    vi.mocked(mockBacklog.getDocument!).mockResolvedValueOnce({
+      id: '019347fc760c7b0abff04b44628c94d7',
+      plain: null,
+    } as any);
+
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+    });
+
+    expect(result).toMatchObject({ plain: '', plainLength: 0 });
+    expect(result).not.toHaveProperty('nextStart');
+  });
+
   it('calls backlog.getDocument with correct params', async () => {
     await tool.handler({ documentId: '019347fc760c7b0abff04b44628c94d7' });
 
