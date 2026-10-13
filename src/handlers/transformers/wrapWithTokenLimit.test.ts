@@ -15,7 +15,7 @@ describe('wrapWithTokenLimit', () => {
 
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.data).toBe(JSON.stringify(obj, null, 2));
+      expect(result.data).toBe(JSON.stringify(obj));
     }
   });
 

@@ -124,9 +124,39 @@ describe('composeToolHandler', () => {
     const content = result.content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
-      expect(content.text).toContain('"id": 1');
-      expect(content.text).toContain('"name": "Sample"');
+      expect(content.text).toContain('"id":1');
+      expect(content.text).toContain('"name":"Sample"');
     }
+  });
+
+  it('compacts the result before returning it', async () => {
+    const issueTool: ToolDefinition<any, any> = {
+      ...singleRecordTool,
+      handler: async () => ({
+        id: 1,
+        resolution: null,
+        attachments: [],
+        createdUser: {
+          id: 7,
+          userId: 'alice',
+          name: 'Alice',
+          roleType: 1,
+          mailAddress: 'alice@example.com',
+        },
+      }),
+    };
+    const { handler: composed } = composeToolHandler(issueTool, {
+      useFields: false,
+      errorHandler: dummyErrorHandler,
+      maxTokens: 1000,
+    });
+
+    const result = await composed({ name: 'test' }, dummyExtra);
+
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: '{"id":1,"createdUser":{"id":7,"userId":"alice","name":"Alice"}}',
+    });
   });
 
   it("adds 'organization' to the returned schema when useOrganization is true", async () => {

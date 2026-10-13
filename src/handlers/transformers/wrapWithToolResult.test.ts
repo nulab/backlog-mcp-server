@@ -47,7 +47,7 @@ describe('wrapWithToolResult', () => {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({ id: 1, name: 'Test' }, null, 2),
+          text: JSON.stringify({ id: 1, name: 'Test' }),
         },
       ],
     });

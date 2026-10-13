@@ -538,6 +538,14 @@ This is especially useful if you're using multiple MCP servers or tools in the s
 
 ### Response Optimization & Token Limits
 
+#### Response Compaction
+
+Tool results are compacted before they are returned. This is always on, and applies to every tool except `get_issue_attachment`, which returns the file itself:
+
+- A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that *is* the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
+- Fields that are `null`, an empty string or an empty array are omitted. `0`, `false` and `{}` are kept. This also applies to a field named in `fields`: an empty one is left out rather than returned as empty.
+- JSON is returned without indentation.
+
 #### Field Selection
 
 ```
