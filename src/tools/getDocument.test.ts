@@ -4,6 +4,7 @@ import type { Backlog } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
 import { countTokens } from '../utils/tokenCounter.js';
+import { compactResponse } from '../handlers/transformers/wrapWithCompactResponse.js';
 
 describe('getDocumentTool', () => {
   const mockBacklog: Partial<Backlog> = {
@@ -226,6 +227,47 @@ describe('getDocumentTool', () => {
       expect(result).toMatchObject({ plain: 'x'.repeat(30), nextStart: 30 });
     });
 
+    it('measures the response after compaction, as the limit does', async () => {
+      const profile = {
+        id: 1,
+        userId: 'woody',
+        name: 'woody',
+        roleType: 1,
+        lang: 'en',
+        mailAddress: 'woody@nulab.com',
+        nulabAccount: {
+          nulabId: 'a',
+          name: 'woody',
+          uniqueId: 'b',
+          iconUrl: 'c',
+        },
+        keyword: 'Woody',
+        lastLoginTime: '2025-05-28T22:24:36Z',
+      };
+      vi.mocked(mockBacklog.getDocument!).mockResolvedValueOnce({
+        id: 'doc',
+        createdUser: profile,
+        updatedUser: profile,
+        plain: 'x'.repeat(100),
+      } as any);
+      const maxTokens = countTokens(
+        JSON.stringify(
+          compactResponse({
+            id: 'doc',
+            createdUser: profile,
+            updatedUser: profile,
+            plainLength: 100,
+            plain: 'x'.repeat(100),
+          })
+        )
+      );
+
+      const result = await tool.handler({ documentId: 'doc' }, { maxTokens });
+
+      expect(result).toMatchObject({ plain: 'x'.repeat(100) });
+      expect(result).not.toHaveProperty('nextStart');
+    });
+
     it('returns at least one character even when nothing fits', async () => {
       documentWith('abc');
 
@@ -276,6 +318,21 @@ describe('getDocumentTool', () => {
       const result = await tool.handler({ documentId: 'doc', start: 3 });
 
       expect(result).toMatchObject({ plain: '😀cd' });
+    });
+
+    it('still advances when limit is shorter than a surrogate pair', async () => {
+      vi.mocked(mockBacklog.getDocument!).mockResolvedValueOnce({
+        id: 'doc',
+        plain: text,
+      } as any);
+
+      const result = await tool.handler({
+        documentId: 'doc',
+        start: 2,
+        limit: 1,
+      });
+
+      expect(result).toMatchObject({ plain: '😀', nextStart: 4 });
     });
 
     it('returns a whole surrogate pair when only it is left to make progress', async () => {

@@ -5,6 +5,7 @@ import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { countTokens } from '../utils/tokenCounter.js';
+import { compactResponse } from '../handlers/transformers/wrapWithCompactResponse.js';
 
 /**
  * A document as `get_document` returns it: without `json`.
@@ -118,10 +119,17 @@ export const getDocumentTool = (
         plain: text.slice(from, end),
       });
 
-      const end = toCodePointBoundary(
+      // Moving the end off a surrogate pair can take it back to `from` when
+      // `limit` is smaller than the pair; `nextStart` would then repeat `start`
+      // and reading on would never advance.
+      const boundary = toCodePointBoundary(
         text,
         Math.min(from + limit, text.length)
       );
+      const end =
+        boundary > from || from === text.length
+          ? boundary
+          : from + codePointLength(text, from);
 
       return slice(
         context
@@ -141,7 +149,9 @@ export const getDocumentTool = (
  * the slice: whatever lay between the cut and `nextStart` would be skipped.
  * How many tokens a character costs depends on the text — about one for
  * Japanese, more for markup that JSON escapes — so the slice is measured with
- * the same counter `wrapWithTokenLimit` uses rather than estimated.
+ * the same counter `wrapWithTokenLimit` uses rather than estimated, and after
+ * the same compaction it runs on: measured whole, the user profiles that
+ * compaction strips would leave less room for `plain` than there is.
  *
  * At least one character is returned, even over the limit, so that reading
  * on from `nextStart` always makes progress.
@@ -154,7 +164,7 @@ function fitToTokenLimit(
   maxTokens: number
 ): number {
   const fits = (e: number) =>
-    countTokens(JSON.stringify(slice(e))) <= maxTokens;
+    countTokens(JSON.stringify(compactResponse(slice(e)))) <= maxTokens;
 
   if (fits(end)) {
     return end;
