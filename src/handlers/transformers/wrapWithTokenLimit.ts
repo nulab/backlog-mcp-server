@@ -15,7 +15,7 @@ export function wrapWithTokenLimit<I, O>(
       return result;
     }
 
-    const fullText = JSON.stringify(result.data, null, 2);
+    const fullText = JSON.stringify(result.data);
     const tokenCount = countTokens(fullText);
 
     if (tokenCount > maxTokens) {

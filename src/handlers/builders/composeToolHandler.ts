@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { wrapWithCompactResponse } from '../transformers/wrapWithCompactResponse.js';
 import { wrapWithErrorHandling } from '../transformers/wrapWithErrorHandling.js';
 import { wrapWithFieldPicking } from '../transformers/wrapWithFieldPicking.js';
 import { wrapWithOrganizationContext } from '../transformers/wrapWithOrganizationContext.js';
@@ -64,8 +65,12 @@ export function composeToolHandler(
     errorHandler
   );
 
-  const composed =
+  const picked =
     useFields && fields ? wrapWithFieldPicking(baseHandler) : baseHandler;
+
+  // Compacted before the token limit is measured, so that a response is cut
+  // only when it is still too long after the padding has gone.
+  const composed = wrapWithCompactResponse(picked);
 
   return {
     schema,

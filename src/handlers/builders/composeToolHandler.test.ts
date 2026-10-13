@@ -124,8 +124,8 @@ describe('composeToolHandler', () => {
     const content = result.content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
-      expect(content.text).toContain('"id": 1');
-      expect(content.text).toContain('"name": "Sample"');
+      expect(content.text).toContain('"id":1');
+      expect(content.text).toContain('"name":"Sample"');
     }
   });
 

@@ -538,6 +538,14 @@ This is especially useful if you're using multiple MCP servers or tools in the s
 
 ### Response Optimization & Token Limits
 
+#### Response Compaction
+
+Every tool result is compacted before it is returned. This is always on:
+
+- A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that *is* the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
+- Fields that are `null`, an empty string or an empty array are omitted. `0`, `false` and `{}` are kept.
+- JSON is returned without indentation.
+
 #### Field Selection
 
 ```
