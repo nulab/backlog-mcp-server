@@ -93,6 +93,53 @@ describe('getDocumentTool', () => {
     expect(result).not.toHaveProperty('json');
   });
 
+  it('returns the whole of plain when it fits in the limit', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+    });
+
+    expect(result).toMatchObject({
+      plain: 'This is a test document.',
+      plainLength: 24,
+    });
+    expect(result).not.toHaveProperty('nextStart');
+  });
+
+  it('returns a slice of plain and where the next one starts', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+      start: 5,
+      limit: 7,
+    });
+
+    expect(result).toMatchObject({
+      plain: 'is a te',
+      plainLength: 24,
+      nextStart: 12,
+    });
+  });
+
+  it('omits nextStart on the last slice', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+      start: 12,
+      limit: 12,
+    });
+
+    expect(result).toMatchObject({ plain: 'st document.', plainLength: 24 });
+    expect(result).not.toHaveProperty('nextStart');
+  });
+
+  it('returns empty plain when start is past the end', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+      start: 100,
+    });
+
+    expect(result).toMatchObject({ plain: '', plainLength: 24 });
+    expect(result).not.toHaveProperty('nextStart');
+  });
+
   it('calls backlog.getDocument with correct params', async () => {
     await tool.handler({ documentId: '019347fc760c7b0abff04b44628c94d7' });
 

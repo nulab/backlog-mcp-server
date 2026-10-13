@@ -16,28 +16,69 @@ import { outputFields } from '../types/outputFields.js';
  */
 type DocumentWithoutJson = Omit<Entity.Document.Document, 'json'>;
 
+/**
+ * The document with `plain` cut to the slice that was asked for.
+ *
+ * `plainLength` is the length of the whole of `plain`, so the caller can tell
+ * how much there is. `nextStart` is where the next slice begins and is set only
+ * when the slice stopped short of the end: its absence is what says the
+ * document has been read to the end.
+ */
+type DocumentSlice = DocumentWithoutJson & {
+  plainLength: number;
+  nextStart?: number;
+};
+
+/**
+ * Characters of `plain` returned when `limit` is not given.
+ *
+ * Well under the point where `MAX_TOKENS` (50,000 by default) would cut the
+ * response: the token counter counts each non-ASCII character as a token, so a
+ * Japanese document costs about a token per character.
+ */
+const DEFAULT_LIMIT = 40_000;
+
 const getDocumentSchema = buildToolSchema((t) => ({
   documentId: z
     .string()
     .describe(t('TOOL_GET_DOCUMENT_DOCUMENT_ID', 'Document ID')),
+  start: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_DOCUMENT_START',
+        'Character offset in `plain` to start reading from (default: 0). To read a long document in parts, pass the `nextStart` of the previous response.'
+      )
+    ),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      t(
+        'TOOL_GET_DOCUMENT_LIMIT',
+        `Maximum number of characters of \`plain\` to return (default: ${DEFAULT_LIMIT}).`
+      )
+    ),
 }));
 
 export const getDocumentTool = (
   backlog: Backlog,
   { t }: DescriptionHelper
-): ToolDefinition<
-  ReturnType<typeof getDocumentSchema>,
-  DocumentWithoutJson
-> => {
+): ToolDefinition<ReturnType<typeof getDocumentSchema>, DocumentSlice> => {
   return {
     name: 'get_document',
     description: t(
       'TOOL_GET_DOCUMENT_DESCRIPTION',
-      'Gets information about a document. The content is returned as plain text in `plain`.'
+      'Gets information about a document. The content is returned as plain text in `plain`, up to `limit` characters at a time; when `nextStart` is present, the rest can be read by calling again with `start` set to it.'
     ),
     schema: z.object(getDocumentSchema(t)),
     returnsList: false,
-    outputFields: outputFields<DocumentWithoutJson>()([
+    outputFields: outputFields<DocumentSlice>()([
       'id',
       'projectId',
       'title',
@@ -51,12 +92,21 @@ export const getDocumentTool = (
       'updatedUser',
       'updated',
       'childDocumentIds',
+      'plainLength',
+      'nextStart',
     ]),
     importantFields: ['id', 'title', 'createdUser'],
-    handler: async ({ documentId }) => {
+    handler: async ({ documentId, start = 0, limit = DEFAULT_LIMIT }) => {
       // eslint-disable-next-line no-unused-vars
       const { json, ...document } = await backlog.getDocument(documentId);
-      return document;
+      const end = start + limit;
+
+      return {
+        ...document,
+        plain: document.plain.slice(start, end),
+        plainLength: document.plain.length,
+        ...(end < document.plain.length && { nextStart: end }),
+      };
     },
   };
 };
