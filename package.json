@@ -56,6 +56,9 @@
     "yargs": "^18.2.0",
     "zod": "^4.6.5"
   },
+  "peerDependencies": {
+    "backlog-js": "^0.20.2"
+  },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.4",
