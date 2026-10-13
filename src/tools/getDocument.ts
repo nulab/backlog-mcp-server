@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
+import { countTokens } from '../utils/tokenCounter.js';
 
 /**
  * A document as `get_document` returns it: without `json`.
@@ -32,9 +33,8 @@ type DocumentSlice = DocumentWithoutJson & {
 /**
  * Characters of `plain` returned when `limit` is not given.
  *
- * Well under the point where `MAX_TOKENS` (50,000 by default) would cut the
- * response: the token counter counts each non-ASCII character as a token, so a
- * Japanese document costs about a token per character.
+ * An upper bound, not a promise: the slice is shortened further when the
+ * response would not fit in `MAX_TOKENS` (see `fitToTokenLimit`).
  */
 const DEFAULT_LIMIT = 40_000;
 
@@ -61,7 +61,7 @@ const getDocumentSchema = buildToolSchema((t) => ({
     .describe(
       t(
         'TOOL_GET_DOCUMENT_LIMIT',
-        `Maximum number of characters of \`plain\` to return (default: ${DEFAULT_LIMIT}).`
+        `Maximum number of characters of \`plain\` to return (default: ${DEFAULT_LIMIT}). Fewer may be returned so that the response fits the server's token limit; continue from \`nextStart\`.`
       )
     ),
 }));
@@ -96,25 +96,107 @@ export const getDocumentTool = (
       'nextStart',
     ]),
     importantFields: ['id', 'title', 'createdUser'],
-    handler: async ({ documentId, start = 0, limit = DEFAULT_LIMIT }) => {
+    handler: async (
+      { documentId, start = 0, limit = DEFAULT_LIMIT },
+      context
+    ) => {
       // eslint-disable-next-line no-unused-vars
       const { json, plain, ...document } =
         await backlog.getDocument(documentId);
       // Typed as a string, but not trusted to be one: before slicing, a
       // missing `plain` was passed through; now it would throw.
       const text = plain ?? '';
-      const end = start + limit;
+      const from = toCodePointBoundary(text, Math.min(start, text.length));
 
-      // `plain` goes last. When the response is still over the token limit,
-      // `wrapWithTokenLimit` keeps its head and drops the tail; with `plain`
-      // last, the cut lands in the content and `nextStart` survives it, so the
-      // caller still learns there is more to read.
-      return {
+      // `plain` goes last. If the response is cut anyway, `wrapWithTokenLimit`
+      // keeps its head and drops the tail; with `plain` last, the cut lands in
+      // the content and `nextStart` survives it.
+      const slice = (end: number): DocumentSlice => ({
         ...document,
         plainLength: text.length,
         ...(end < text.length && { nextStart: end }),
-        plain: text.slice(start, end),
-      };
+        plain: text.slice(from, end),
+      });
+
+      const end = toCodePointBoundary(
+        text,
+        Math.min(from + limit, text.length)
+      );
+
+      return slice(
+        context
+          ? fitToTokenLimit(text, from, end, slice, context.maxTokens)
+          : end
+      );
     },
   };
 };
+
+/**
+ * The largest end, no later than `end`, at which the response fits in
+ * `maxTokens`.
+ *
+ * Without this a slice that is over the limit is cut by `wrapWithTokenLimit`
+ * somewhere inside `plain`, while `nextStart` still points past the end of
+ * the slice: whatever lay between the cut and `nextStart` would be skipped.
+ * How many tokens a character costs depends on the text — about one for
+ * Japanese, more for markup that JSON escapes — so the slice is measured with
+ * the same counter `wrapWithTokenLimit` uses rather than estimated.
+ *
+ * At least one character is returned, even over the limit, so that reading
+ * on from `nextStart` always makes progress.
+ */
+function fitToTokenLimit(
+  text: string,
+  from: number,
+  end: number,
+  slice: (end: number) => DocumentSlice,
+  maxTokens: number
+): number {
+  const fits = (e: number) =>
+    countTokens(JSON.stringify(slice(e))) <= maxTokens;
+
+  if (fits(end)) {
+    return end;
+  }
+
+  let lo = from;
+  let hi = end;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (fits(mid)) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  const fitted = toCodePointBoundary(text, lo);
+  return fitted > from
+    ? fitted
+    : Math.min(from + codePointLength(text, from), end);
+}
+
+/**
+ * `index`, moved back by one if it falls between the two halves of a surrogate
+ * pair.
+ *
+ * `slice` counts UTF-16 code units, so a boundary can land inside an emoji or
+ * a rare CJK character. Cutting there leaves each slice with half of the
+ * character, which JSON then carries as a lone `\ud83d`-style escape.
+ */
+function toCodePointBoundary(text: string, index: number): number {
+  return index > 0 &&
+    index < text.length &&
+    isLowSurrogate(text.charCodeAt(index)) &&
+    isHighSurrogate(text.charCodeAt(index - 1))
+    ? index - 1
+    : index;
+}
+
+function codePointLength(text: string, index: number): number {
+  return (text.codePointAt(index) ?? 0) > 0xffff ? 2 : 1;
+}
+
+const isHighSurrogate = (code: number) => code >= 0xd800 && code <= 0xdbff;
+const isLowSurrogate = (code: number) => code >= 0xdc00 && code <= 0xdfff;
