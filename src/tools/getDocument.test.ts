@@ -10,7 +10,7 @@ describe('getDocumentTool', () => {
       projectId: 1,
       title: 'Test Document',
       plain: 'This is a test document.',
-      json: '{}',
+      json: { type: 'doc', content: [] },
       statusId: 1,
       emoji: null,
       attachments: [
@@ -83,6 +83,14 @@ describe('getDocumentTool', () => {
 
     expect(result.title).toContain('Test Document');
     expect(result.plain).toContain('This is a test document.');
+  });
+
+  it('does not return the ProseMirror json', async () => {
+    const result = await tool.handler({
+      documentId: '019347fc760c7b0abff04b44628c94d7',
+    });
+
+    expect(result).not.toHaveProperty('json');
   });
 
   it('calls backlog.getDocument with correct params', async () => {
