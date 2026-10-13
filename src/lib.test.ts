@@ -5,6 +5,8 @@ import * as lib from './lib';
 import { describe, it, expect } from 'vite-plus/test';
 import type { z } from 'zod';
 import type {
+  BacklogClient,
+  BacklogClientOptions,
   BacklogOAuthConfig,
   BacklogTokenData,
   ComposeOptions,
@@ -33,6 +35,7 @@ describe('library entry point', () => {
       'buildToolSchema',
       'composeNativeContentToolHandler',
       'composeToolHandler',
+      'createBacklogClient',
       'createDescriptionHelper',
       'exchangeBacklogCode',
       'isErrorLike',
@@ -55,6 +58,8 @@ describe('library entry point', () => {
   // `typecheck:all` if any of them stops being exported.
   it('exports the documented types', () => {
     const types: [
+      BacklogClient?,
+      BacklogClientOptions?,
       BacklogOAuthConfig?,
       BacklogTokenData?,
       ComposeOptions?,

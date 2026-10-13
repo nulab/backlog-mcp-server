@@ -26,6 +26,7 @@ export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 export { composeNativeContentToolHandler } from './handlers/builders/composeNativeContentToolHandler.js';
 export { createDescriptionHelper } from './createDescriptionHelper.js';
 export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
+export { createBacklogClient } from './backlog/createBacklogClient.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
 /**
@@ -50,6 +51,10 @@ export {
   verifyBacklogToken,
 } from './auth/backlogOAuthClient.js';
 
+export type {
+  BacklogClient,
+  BacklogClientOptions,
+} from './backlog/createBacklogClient.js';
 export type { ComposeOptions } from './handlers/builders/composeToolHandler.js';
 export type { ComposeNativeContentOptions } from './handlers/builders/composeNativeContentToolHandler.js';
 export type { DescriptionHelper } from './createDescriptionHelper.js';
