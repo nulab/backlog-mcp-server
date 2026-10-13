@@ -61,7 +61,7 @@ export function composeToolHandler(
 
   // Step 2: Compose
   const baseHandler: ComposedHandler = wrapWithErrorHandling(
-    wrapWithOrganizationContext(tool.handler),
+    wrapWithOrganizationContext((input) => tool.handler(input, { maxTokens })),
     errorHandler
   );
 

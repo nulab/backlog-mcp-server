@@ -2,6 +2,17 @@ import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { CallToolResult } from '@modelcontextprotocol/server';
 
+/**
+ * What a handler can know about the server it runs in.
+ *
+ * Optional on the handler so that calling one directly — as the unit tests do —
+ * needs nothing extra; `composeToolHandler` always passes it.
+ */
+export type ToolContext = {
+  /** The `MAX_TOKENS` the response will be cut at by `wrapWithTokenLimit`. */
+  maxTokens: number;
+};
+
 export type ToolDefinition<Shape extends z.ZodRawShape, Result> = {
   name: string;
   description: string;
@@ -11,7 +22,8 @@ export type ToolDefinition<Shape extends z.ZodRawShape, Result> = {
     input: z.infer<z.ZodObject<Shape>> & {
       fields?: string[];
       organization?: string;
-    }
+    },
+    context?: ToolContext
   ) => Promise<Result | Result[]>;
   importantFields?: (keyof Result)[];
   /**
