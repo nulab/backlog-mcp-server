@@ -34,8 +34,8 @@ importers:
         specifier: ^2.3.1
         version: 2.3.1
       backlog-js:
-        specifier: ^0.20.2
-        version: 0.20.2
+        specifier: ^1.0.0
+        version: 1.0.0
       env-var:
         specifier: ^7.5.0
         version: 7.5.0
@@ -1418,8 +1418,8 @@ packages:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
 
-  backlog-js@0.20.2:
-    resolution: {integrity: sha512-ALTRNnQfX7xPE8IsbGxPpYBgYWBdB3Y2s1aY59CUh2sTNXrTGIWujYbfhFRVfJl4ZMpnjPfMIiBCS0dqJDmZcA==}
+  backlog-js@1.0.0:
+    resolution: {integrity: sha512-qCxMPLRnx6iqWa4AQb0AezeMvtTRIep9XnTyIqZOr6Hi9rxJH1hvzptZVkJainGEdK0qM+C4O5hlVRFIyqwoiQ==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -2811,7 +2811,7 @@ snapshots:
 
   atomic-sleep@1.0.0: {}
 
-  backlog-js@0.20.2:
+  backlog-js@1.0.0:
     dependencies:
       qs: 6.15.2
 
