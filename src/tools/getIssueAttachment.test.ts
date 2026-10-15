@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssueAttachment } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { getIssueAttachmentTool } from './getIssueAttachment.js';
+
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssueAttachment: vi.fn(),
+}));
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const BMP_MAGIC = [0x42, 0x4d];
@@ -35,28 +41,27 @@ function textOf(content: unknown) {
 }
 
 describe('getIssueAttachmentTool', () => {
-  const getIssueAttachment = vi.fn();
-  const backlog = { getIssueAttachment } as unknown as Backlog;
-  const tool = getIssueAttachmentTool(backlog, createDescriptionHelper());
+  const mockClient = {} as Client;
+  const tool = getIssueAttachmentTool(mockClient, createDescriptionHelper());
 
   beforeEach(() => {
-    getIssueAttachment.mockReset();
+    vi.mocked(getIssueAttachment).mockReset();
   });
 
   it('returns a verified raster image as MCP image content', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([PNG_MAGIC, [0x01, 0x02]]),
       filename: 'shot.png',
       contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/7',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
       attachmentId: 7,
     });
 
-    expect(getIssueAttachment).toHaveBeenCalledWith('PROJ-1', 7);
+    expect(getIssueAttachment).toHaveBeenCalledWith(mockClient, 'PROJ-1', 7);
     expect(JSON.parse(textOf(result.content[0]))).toEqual({
       filename: 'shot.png',
       contentType: 'image/png',
@@ -72,12 +77,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('inlines a raster whose extension is wrong, under the type it really is', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([PNG_MAGIC]),
       filename: 'shot.jpg',
       contentType: 'image/jpeg',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/12',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -96,12 +101,12 @@ describe('getIssueAttachmentTool', () => {
   // webp, and a rejected image block costs the whole result, so BMP goes down
   // the resource path.
   it('returns a valid BMP as a resource, not as image content', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([BMP_MAGIC, [0x00, 0x00]]),
       filename: 'pic.bmp',
       contentType: 'image/bmp',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/13',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -115,12 +120,12 @@ describe('getIssueAttachmentTool', () => {
 
   it('returns a text attachment as text, not as base64', async () => {
     const csv = 'id,name\n1,foo\n';
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([bytesOf(csv)]),
       filename: 'data.csv',
       contentType: 'text/csv',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/14',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -140,12 +145,12 @@ describe('getIssueAttachmentTool', () => {
   // every branch below it is an exact MIME lookup.
   it('reads the type out of a Content-Type that carries parameters', async () => {
     const csv = 'id,name\n1,foo\n';
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([bytesOf(csv)]),
       filename: 'data.csv',
       contentType: 'Text/CSV; charset=UTF-8',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/18',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -160,12 +165,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('goes opaque for a parameterised raster type the bytes contradict', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([[0x25, 0x50, 0x44, 0x46]]),
       filename: 'not-really.png',
       contentType: 'image/png; charset=binary',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/19',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -180,12 +185,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('falls back to a blob when a text-typed attachment is not UTF-8', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([[0xff, 0xfe, 0x00, 0x01]]),
       filename: 'notes.txt',
       contentType: 'text/plain',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/15',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -201,12 +206,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('falls back to a resource when the bytes are not the image the name promises', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([[0x25, 0x50, 0x44, 0x46]]),
       filename: 'not-really.png',
       contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/8',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -230,12 +235,12 @@ describe('getIssueAttachmentTool', () => {
     ['../../etc/passwd', 'passwd'],
     ['a\u0000b.png', 'ab.png'],
   ])('keeps %j usable', async (raw, expected) => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([PNG_MAGIC]),
       filename: raw,
       contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/9',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -246,12 +251,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('falls back to a synthetic name when nothing usable is left', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([[0x00]]),
       filename: '',
       contentType: '',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/11',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -264,12 +269,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it("returns filename, contentType, size and base64 content with format 'base64'", async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([PNG_MAGIC, [0x01, 0x02]]),
       filename: 'shot.png',
       contentType: 'image/png',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/7',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -287,12 +292,12 @@ describe('getIssueAttachmentTool', () => {
   });
 
   it('never echoes the download URL, which carries the API key', async () => {
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamOf([[0x00]]),
       filename: 'notes.txt',
       contentType: 'text/plain',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/12?apiKey=secret',
-    });
+    } as any);
 
     const result = await tool.handler({
       issueKey: 'PROJ-1',
@@ -315,12 +320,12 @@ describe('getIssueAttachmentTool', () => {
       [1, 2, 3],
       [4, 5, 6],
     ]);
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamed,
       filename: 'big.bin',
       contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/13',
-    });
+    } as any);
 
     await expect(
       tool.handler({ issueKey: 'PROJ-1', attachmentId: 13, maxBytes: 4 })
@@ -336,12 +341,12 @@ describe('getIssueAttachmentTool', () => {
       cancel: streamed.cancel,
       releaseLock: streamed.releaseLock,
     });
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamed,
       filename: 'odd.bin',
       contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/16',
-    });
+    } as any);
 
     await expect(
       tool.handler({ issueKey: 'PROJ-1', attachmentId: 16 })
@@ -354,12 +359,12 @@ describe('getIssueAttachmentTool', () => {
 
   it('does not cancel a response that was read to the end', async () => {
     const streamed = streamOf([[0x01, 0x02]]);
-    getIssueAttachment.mockResolvedValue({
+    vi.mocked(getIssueAttachment).mockResolvedValue({
       ...streamed,
       filename: 'small.bin',
       contentType: 'application/octet-stream',
       url: 'https://example.backlog.com/api/v2/issues/PROJ-1/attachments/17',
-    });
+    } as any);
 
     await tool.handler({ issueKey: 'PROJ-1', attachmentId: 17 });
 

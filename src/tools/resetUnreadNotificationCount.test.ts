@@ -1,20 +1,24 @@
 import { resetUnreadNotificationCountTool } from './resetUnreadNotificationCount.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { resetNotificationsMarkAsRead } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  resetNotificationsMarkAsRead: vi.fn(),
+}));
+
 describe('resetUnreadNotificationCountTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    resetNotificationsMarkAsRead: vi
-      .fn<() => Promise<any>>()
-      .mockResolvedValue({
-        count: 0,
-      }),
-  };
+  vi.mocked(resetNotificationsMarkAsRead).mockResolvedValue({
+    count: 0,
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
   const tool = resetUnreadNotificationCountTool(
-    mockBacklog as Backlog,
+    mockClient,
     mockDescriptionHelper
   );
 
@@ -28,9 +32,9 @@ describe('resetUnreadNotificationCountTool', () => {
     expect(result.count).toEqual(0);
   });
 
-  it('calls backlog.resetNotificationsMarkAsRead', async () => {
+  it('calls resetNotificationsMarkAsRead', async () => {
     await tool.handler({});
 
-    expect(mockBacklog.resetNotificationsMarkAsRead).toHaveBeenCalled();
+    expect(resetNotificationsMarkAsRead).toHaveBeenCalledWith(mockClient);
   });
 });

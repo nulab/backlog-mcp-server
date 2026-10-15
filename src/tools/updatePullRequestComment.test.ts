@@ -1,31 +1,34 @@
 import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { patchPullRequestComments } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  patchPullRequestComments: vi.fn(),
+}));
+
 describe('updatePullRequestCommentTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    patchPullRequestComments: vi.fn<() => Promise<any>>().mockResolvedValue({
+  vi.mocked(patchPullRequestComments).mockResolvedValue({
+    id: 1,
+    content: 'Updated comment content',
+    changeLog: [],
+    createdUser: {
       id: 1,
-      content: 'Updated comment content',
-      changeLog: [],
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updated: '2023-01-02T00:00:00Z',
-      stars: [],
-      notifications: [],
-    }),
-  };
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-02T00:00:00Z',
+    stars: [],
+    notifications: [],
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = updatePullRequestCommentTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = updatePullRequestCommentTool(mockClient, mockDescriptionHelper);
 
   it('returns updated comment', async () => {
     const result = await tool.handler({
@@ -40,7 +43,7 @@ describe('updatePullRequestCommentTool', () => {
     expect(result).toHaveProperty('id', 1);
   });
 
-  it('calls backlog.patchPullRequestComments with correct params when using repoName', async () => {
+  it('calls patchPullRequestComments with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
       repoName: 'test-repo', // Changed
@@ -51,7 +54,8 @@ describe('updatePullRequestCommentTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequestComments).toHaveBeenCalledWith(
+    expect(patchPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo',
       1,
@@ -62,7 +66,7 @@ describe('updatePullRequestCommentTool', () => {
     );
   });
 
-  it('calls backlog.patchPullRequestComments with correct params when using projectId and repoName', async () => {
+  it('calls patchPullRequestComments with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
       repoName: 'test-repo', // Changed
@@ -73,7 +77,8 @@ describe('updatePullRequestCommentTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequestComments).toHaveBeenCalledWith(
+    expect(patchPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       'test-repo',
       1,
@@ -84,7 +89,7 @@ describe('updatePullRequestCommentTool', () => {
     );
   });
 
-  it('calls backlog.patchPullRequestComments with correct params when using projectId and repoId', async () => {
+  it('calls patchPullRequestComments with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
       repoId: 200, // Added repoId
@@ -95,7 +100,8 @@ describe('updatePullRequestCommentTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequestComments).toHaveBeenCalledWith(
+    expect(patchPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       '200',
       1,

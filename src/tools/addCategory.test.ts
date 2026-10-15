@@ -1,20 +1,25 @@
 import { addCategoryTool } from './addCategory.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postCategories } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addCategoryTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postCategories: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      name: 'Support',
-      displayOrder: 0,
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postCategories: vi.fn(),
+}));
 
+describe('addCategoryTool', () => {
+  vi.mocked(postCategories).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    name: 'Support',
+    displayOrder: 0,
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addCategoryTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = addCategoryTool(mockClient, mockDescriptionHelper);
 
   it('returns created category', async () => {
     const result = await tool.handler({
@@ -30,24 +35,24 @@ describe('addCategoryTool', () => {
     expect(result.name).toEqual('Support');
   });
 
-  it('calls backlog.postCategories with correct params when using projectKey', async () => {
+  it('calls postCategories with correct params when using projectKey', async () => {
     await tool.handler({
       projectKey: 'TEST',
       name: 'Support',
     });
 
-    expect(mockBacklog.postCategories).toHaveBeenCalledWith('TEST', {
+    expect(postCategories).toHaveBeenCalledWith(mockClient, 'TEST', {
       name: 'Support',
     });
   });
 
-  it('calls backlog.postCategories with correct params when using projectId', async () => {
+  it('calls postCategories with correct params when using projectId', async () => {
     await tool.handler({
       projectId: 100,
       name: 'Development',
     });
 
-    expect(mockBacklog.postCategories).toHaveBeenCalledWith(100, {
+    expect(postCategories).toHaveBeenCalledWith(mockClient, 100, {
       name: 'Development',
     });
   });

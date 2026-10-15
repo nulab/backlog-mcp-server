@@ -1,28 +1,33 @@
 import { addWatchingTool } from './addWatching.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postWatchingListItem } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addWatchingTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postWatchingListItem: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      resourceAlreadyRead: false,
-      note: 'Watching this issue',
-      type: 'issue',
-      issue: {
-        id: 1000,
-        projectId: 100,
-        issueKey: 'TEST-1',
-        summary: 'Test issue',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postWatchingListItem: vi.fn(),
+}));
 
+describe('addWatchingTool', () => {
+  vi.mocked(postWatchingListItem).mockResolvedValue({
+    id: 1,
+    resourceAlreadyRead: false,
+    note: 'Watching this issue',
+    type: 'issue',
+    issue: {
+      id: 1000,
+      projectId: 100,
+      issueKey: 'TEST-1',
+      summary: 'Test issue',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addWatchingTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = addWatchingTool(mockClient, mockDescriptionHelper);
 
   it('returns created watching item as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -37,25 +42,25 @@ describe('addWatchingTool', () => {
     expect(result.note).toBe('Watching this issue');
   });
 
-  it('calls backlog.postWatchingListItem with correct params when using issue key', async () => {
+  it('calls postWatchingListItem with correct params when using issue key', async () => {
     await tool.handler({
       issueIdOrKey: 'TEST-1',
       note: 'Watching this issue',
     });
 
-    expect(mockBacklog.postWatchingListItem).toHaveBeenCalledWith({
+    expect(postWatchingListItem).toHaveBeenCalledWith(mockClient, {
       issueIdOrKey: 'TEST-1',
       note: 'Watching this issue',
     });
   });
 
-  it('calls backlog.postWatchingListItem with correct params when using issue ID', async () => {
+  it('calls postWatchingListItem with correct params when using issue ID', async () => {
     await tool.handler({
       issueIdOrKey: 1,
       note: 'Important issue',
     });
 
-    expect(mockBacklog.postWatchingListItem).toHaveBeenCalledWith({
+    expect(postWatchingListItem).toHaveBeenCalledWith(mockClient, {
       issueIdOrKey: 1,
       note: 'Important issue',
     });

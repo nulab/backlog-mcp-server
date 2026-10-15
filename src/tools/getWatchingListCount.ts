@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getWatchingListCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -12,7 +13,7 @@ const getWatchingListCountSchema = buildToolSchema((t) => ({
 }));
 
 export const getWatchingListCountTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getWatchingListCountSchema>,
@@ -29,6 +30,6 @@ export const getWatchingListCountTool = (
     outputFields: outputFields<Entity.WatchingList.WatchingListCount>()([
       'count',
     ]),
-    handler: async ({ userId }) => backlog.getWatchingListCount(userId),
+    handler: async ({ userId }) => getWatchingListCount(backlog, userId),
   };
 };

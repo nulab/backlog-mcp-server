@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getSpace } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -8,7 +9,7 @@ import { DescriptionHelper } from '../createDescriptionHelper.js';
 const getSpaceSchema = buildToolSchema((_t) => ({}));
 
 export const getSpaceTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof getSpaceSchema>, Entity.Space.Space> => {
   return {
@@ -31,6 +32,6 @@ export const getSpaceTool = (
       'updated',
     ]),
     importantFields: ['spaceKey', 'name', 'lang', 'timezone'],
-    handler: async () => backlog.getSpace(),
+    handler: async () => getSpace(backlog),
   };
 };

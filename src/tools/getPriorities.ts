@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getPriorities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -8,7 +9,7 @@ import { DescriptionHelper } from '../createDescriptionHelper.js';
 const getPrioritiesSchema = buildToolSchema((_t) => ({}));
 
 export const getPrioritiesTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getPrioritiesSchema>,
@@ -23,6 +24,6 @@ export const getPrioritiesTool = (
     schema: z.object(getPrioritiesSchema(t)),
     returnsList: true,
     outputFields: outputFields<Entity.Issue.Priority>()(['id', 'name']),
-    handler: async () => backlog.getPriorities(),
+    handler: async () => getPriorities(backlog),
   };
 };

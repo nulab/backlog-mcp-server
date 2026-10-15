@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
@@ -29,7 +29,7 @@ vi.mock('./tools/organizations.js', () => ({
 }));
 
 describe('createBacklogMcpServer', () => {
-  const mockBacklog = {} as Backlog;
+  const mockBacklog = {} as Client;
   const mockClientRegistry = {} as BacklogClientRegistry;
   const mockDescriptionHelper = createDescriptionHelper();
   const mcpOption = {

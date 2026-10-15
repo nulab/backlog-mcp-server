@@ -1,34 +1,40 @@
 import { getWikiTool } from './getWiki.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getWiki } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getWiki: vi.fn(),
+}));
+
 describe('getWikiTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getWiki: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1234,
-      projectId: 100,
-      name: 'Sample Wiki',
-      content: '# Sample Wiki Content\n\nThis is a sample wiki page.',
-      tags: [
-        { id: 1, name: 'documentation' },
-        { id: 2, name: 'guide' },
-      ],
-      attachments: [],
-      sharedFiles: [],
-      stars: [],
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updated: '2023-01-02T00:00:00Z',
-    }),
-  };
+  vi.mocked(getWiki).mockResolvedValue({
+    id: 1234,
+    projectId: 100,
+    name: 'Sample Wiki',
+    content: '# Sample Wiki Content\n\nThis is a sample wiki page.',
+    tags: [
+      { id: 1, name: 'documentation' },
+      { id: 2, name: 'guide' },
+    ],
+    attachments: [],
+    sharedFiles: [],
+    stars: [],
+    createdUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-02T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getWikiTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getWikiTool(mockClient, mockDescriptionHelper);
 
   it('returns wiki information as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -42,19 +48,19 @@ describe('getWikiTool', () => {
     expect(result.content).toContain('Sample Wiki Content');
   });
 
-  it('calls backlog.getWiki with correct params when using number ID', async () => {
+  it('calls getWiki with correct params when using number ID', async () => {
     await tool.handler({
       wikiId: 1234,
     });
 
-    expect(mockBacklog.getWiki).toHaveBeenCalledWith(1234);
+    expect(getWiki).toHaveBeenCalledWith(mockClient, 1234);
   });
 
-  it('calls backlog.getWiki with correct params when using string ID', async () => {
+  it('calls getWiki with correct params when using string ID', async () => {
     await tool.handler({
       wikiId: '1234',
     });
 
-    expect(mockBacklog.getWiki).toHaveBeenCalledWith(1234);
+    expect(getWiki).toHaveBeenCalledWith(mockClient, 1234);
   });
 });

@@ -1,4 +1,4 @@
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createBacklogMcpServer } from './createBacklogMcpServer.js';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
 import type { MCPOptions } from './types/mcp.js';
@@ -26,7 +26,7 @@ export function reportUnknownOverrideKeys({
 }: {
   overrides: Record<string, string>;
   version: string;
-  backlog: Backlog;
+  backlog: Client;
   clientRegistry: BacklogClientRegistry;
   mcpOption: MCPOptions;
 }): void {

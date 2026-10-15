@@ -1,27 +1,26 @@
-import { vi, describe, it, expect, type Mock } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { vi, describe, it, expect } from 'vite-plus/test';
+import { getCustomFields } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { getCustomFieldsTool } from './getCustomFields';
 import { createDescriptionHelper } from '../createDescriptionHelper';
 
-// Derive the custom field definition type from the public Backlog API instead of
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getCustomFields: vi.fn(),
+}));
+
+// Derive the custom field definition type from the public backlog-js API instead of
 // importing backlog-js internals (deep imports are not exported since 0.17.0).
-type CustomField = Awaited<ReturnType<Backlog['getCustomFields']>>[number];
+type CustomField = Awaited<ReturnType<typeof getCustomFields>>[number];
 
 describe('getCustomFieldsTool', () => {
-  // Define mockBacklog with the specific method we need
-  const mockBacklog: Partial<Backlog> = {
-    // Specify the correct return type for the mock
-    getCustomFields: vi.fn<() => Promise<CustomField[]>>(),
-  };
+  const mockClient = {} as Client;
 
   // Use the actual createDescriptionHelper for consistency
   const mockDescriptionHelper = createDescriptionHelper();
 
-  // Instantiate the tool with the mocked Backlog and real DescriptionHelper
-  const tool = getCustomFieldsTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  // Instantiate the tool with the mock client and real DescriptionHelper
+  const tool = getCustomFieldsTool(mockClient, mockDescriptionHelper);
   const toolHandler = tool.handler; // Get the handler from the instantiated tool
 
   it('should return custom fields for a valid project ID', async () => {
@@ -53,35 +52,30 @@ describe('getCustomFieldsTool', () => {
     ];
 
     // Setup the mockResolvedValue for getCustomFields
-    (
-      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
-    ).mockResolvedValue(mockCustomFieldsData);
+    vi.mocked(getCustomFields).mockResolvedValue(mockCustomFieldsData);
 
     const input = { projectKey: 'TEST_PROJECT' };
     const result = await toolHandler(input);
 
-    expect(mockBacklog.getCustomFields).toHaveBeenCalledWith('TEST_PROJECT');
+    expect(getCustomFields).toHaveBeenCalledWith(mockClient, 'TEST_PROJECT');
     expect(result).toEqual(mockCustomFieldsData);
   });
 
-  it('should call backlog.getCustomFields with correct params when using project ID', async () => {
-    (
-      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
-    ).mockResolvedValue([]); // Return empty for this check
+  it('should call getCustomFields with correct params when using project ID', async () => {
+    vi.mocked(getCustomFields).mockResolvedValue([]); // Return empty for this check
     await toolHandler({ projectId: 123 });
-    expect(mockBacklog.getCustomFields).toHaveBeenCalledWith(123);
+    expect(getCustomFields).toHaveBeenCalledWith(mockClient, 123);
   });
 
   it('should throw an error if getCustomFields fails', async () => {
     const apiError = new Error('API error');
-    (
-      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
-    ).mockRejectedValue(apiError);
+    vi.mocked(getCustomFields).mockRejectedValue(apiError);
 
     const input = { projectKey: 'TEST_PROJECT_FAIL' };
     // Expect the handler to throw the error directly
     await expect(toolHandler(input)).rejects.toThrow(apiError);
-    expect(mockBacklog.getCustomFields).toHaveBeenCalledWith(
+    expect(getCustomFields).toHaveBeenCalledWith(
+      mockClient,
       'TEST_PROJECT_FAIL'
     );
   });
@@ -93,14 +87,13 @@ describe('getCustomFieldsTool', () => {
         { message: 'Invalid request detail', code: 6, moreInfo: 'Some info' },
       ],
     };
-    (
-      mockBacklog.getCustomFields as Mock<() => Promise<CustomField[]>>
-    ).mockRejectedValue(structuredError);
+    vi.mocked(getCustomFields).mockRejectedValue(structuredError);
 
     const input = { projectKey: 'TEST_PROJECT_STRUCTURED_ERROR' };
     // Expect the handler to throw the structured error directly
     await expect(toolHandler(input)).rejects.toEqual(structuredError);
-    expect(mockBacklog.getCustomFields).toHaveBeenCalledWith(
+    expect(getCustomFields).toHaveBeenCalledWith(
+      mockClient,
       'TEST_PROJECT_STRUCTURED_ERROR'
     );
   });

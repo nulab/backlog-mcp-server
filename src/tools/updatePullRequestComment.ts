@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { patchPullRequestComments } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -49,7 +50,7 @@ const updatePullRequestCommentSchema = buildToolSchema((t) => ({
 }));
 
 export const updatePullRequestCommentTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof updatePullRequestCommentSchema>,
@@ -99,7 +100,8 @@ export const updatePullRequestCommentTool = (
       if (!repoResult.ok) {
         throw repoResult.error;
       }
-      return backlog.patchPullRequestComments(
+      return patchPullRequestComments(
+        backlog,
         result.value,
         String(repoResult.value),
         number,

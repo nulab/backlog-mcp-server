@@ -1,6 +1,6 @@
 import { registerTools } from './registerTools';
 import { McpServer } from '@modelcontextprotocol/server';
-import { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { DescriptionHelper } from './createDescriptionHelper';
 import { describe, it, expect, vi, type Mock } from 'vite-plus/test';
 import { allTools } from './tools/tools';
@@ -24,7 +24,7 @@ vi.mock('./handlers/builders/composeNativeContentToolHandler', () => ({
 }));
 
 describe('registerTools', () => {
-  const mockBacklog = {} as Backlog;
+  const mockBacklog = {} as Client;
   const mockHelper = {
     t: vi.fn(),
   } as unknown as DescriptionHelper;

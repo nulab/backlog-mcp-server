@@ -1,25 +1,30 @@
 import { getProjectTool } from './getProject.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getProject } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getProjectTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getProject: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectKey: 'TEST',
-      name: 'Test Project',
-      chartEnabled: true,
-      subtaskingEnabled: true,
-      projectLeaderCanEditProjectLeader: false,
-      textFormattingRule: 'backlog',
-      archived: false,
-      displayOrder: 0,
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getProject: vi.fn(),
+}));
 
+describe('getProjectTool', () => {
+  vi.mocked(getProject).mockResolvedValue({
+    id: 1,
+    projectKey: 'TEST',
+    name: 'Test Project',
+    chartEnabled: true,
+    subtaskingEnabled: true,
+    projectLeaderCanEditProjectLeader: false,
+    textFormattingRule: 'backlog',
+    archived: false,
+    displayOrder: 0,
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getProjectTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getProjectTool(mockClient, mockDescriptionHelper);
 
   it('returns project information as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -33,20 +38,20 @@ describe('getProjectTool', () => {
     expect(result.projectKey).toContain('TEST');
   });
 
-  it('calls backlog.getProject with correct params when using project key', async () => {
+  it('calls getProject with correct params when using project key', async () => {
     await tool.handler({
       projectKey: 'TEST',
     });
 
-    expect(mockBacklog.getProject).toHaveBeenCalledWith('TEST');
+    expect(getProject).toHaveBeenCalledWith(mockClient, 'TEST');
   });
 
-  it('calls backlog.getProject with correct params when using project ID', async () => {
+  it('calls getProject with correct params when using project ID', async () => {
     await tool.handler({
       projectId: 1,
     });
 
-    expect(mockBacklog.getProject).toHaveBeenCalledWith(1);
+    expect(getProject).toHaveBeenCalledWith(mockClient, 1);
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {

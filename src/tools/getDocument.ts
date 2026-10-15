@@ -1,5 +1,6 @@
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getDocument } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
@@ -68,7 +69,7 @@ const getDocumentSchema = buildToolSchema((t) => ({
 }));
 
 export const getDocumentTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof getDocumentSchema>, DocumentSlice> => {
   return {
@@ -102,8 +103,10 @@ export const getDocumentTool = (
       context
     ) => {
       // eslint-disable-next-line no-unused-vars
-      const { json, plain, ...document } =
-        await backlog.getDocument(documentId);
+      const { json, plain, ...document } = await getDocument(
+        backlog,
+        documentId
+      );
       // Typed as a string, but not trusted to be one: before slicing, a
       // missing `plain` was passed through; now it would throw.
       const text = plain ?? '';

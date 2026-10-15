@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolsetGroup } from './toolsetUtils.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
@@ -9,7 +9,7 @@ import { createDescriptionHelper } from '../createDescriptionHelper.js';
  * left in this module, and it had no direct coverage.
  */
 describe('buildToolsetGroup', () => {
-  const backlog = {} as Backlog;
+  const backlog = {} as Client;
   const helper = createDescriptionHelper();
 
   afterEach(() => {

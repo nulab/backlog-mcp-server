@@ -1,73 +1,78 @@
 import { getIssueTool } from './getIssue.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssue } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getIssueTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getIssue: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      issueKey: 'TEST-1',
-      keyId: 1,
-      issueType: {
-        id: 2,
-        projectId: 100,
-        name: 'Bug',
-        color: '#990000',
-        displayOrder: 0,
-      },
-      summary: 'Test Issue',
-      description: 'This is a test issue',
-      priority: {
-        id: 3,
-        name: 'Normal',
-      },
-      status: {
-        id: 1,
-        name: 'Open',
-        projectId: 100,
-        color: '#ff0000',
-        displayOrder: 0,
-      },
-      assignee: {
-        id: 5,
-        userId: 'user',
-        name: 'Test User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'test@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      startDate: '2023-01-01',
-      dueDate: '2023-01-31',
-      estimatedHours: 10,
-      actualHours: 5,
-      createdUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssue: vi.fn(),
+}));
 
+describe('getIssueTool', () => {
+  vi.mocked(getIssue).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    issueKey: 'TEST-1',
+    keyId: 1,
+    issueType: {
+      id: 2,
+      projectId: 100,
+      name: 'Bug',
+      color: '#990000',
+      displayOrder: 0,
+    },
+    summary: 'Test Issue',
+    description: 'This is a test issue',
+    priority: {
+      id: 3,
+      name: 'Normal',
+    },
+    status: {
+      id: 1,
+      name: 'Open',
+      projectId: 100,
+      color: '#ff0000',
+      displayOrder: 0,
+    },
+    assignee: {
+      id: 5,
+      userId: 'user',
+      name: 'Test User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'test@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    startDate: '2023-01-01',
+    dueDate: '2023-01-31',
+    estimatedHours: 10,
+    actualHours: 5,
+    createdUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getIssueTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getIssueTool(mockClient, mockDescriptionHelper);
 
   it('returns issue information as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -81,20 +86,20 @@ describe('getIssueTool', () => {
     expect(result.description).toEqual('This is a test issue');
   });
 
-  it('calls backlog.getIssue with correct params when using issue key', async () => {
+  it('calls getIssue with correct params when using issue key', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
     });
 
-    expect(mockBacklog.getIssue).toHaveBeenCalledWith('TEST-1');
+    expect(getIssue).toHaveBeenCalledWith(mockClient, 'TEST-1');
   });
 
-  it('calls backlog.getIssue with correct params when using issue ID', async () => {
+  it('calls getIssue with correct params when using issue ID', async () => {
     await tool.handler({
       issueId: 1,
     });
 
-    expect(mockBacklog.getIssue).toHaveBeenCalledWith(1); // Expect number
+    expect(getIssue).toHaveBeenCalledWith(mockClient, 1); // Expect number
   });
 
   it('falls back to issue key when issue ID is not positive', async () => {
@@ -103,7 +108,7 @@ describe('getIssueTool', () => {
       issueKey: 'TEST-1',
     });
 
-    expect(mockBacklog.getIssue).toHaveBeenLastCalledWith('TEST-1');
+    expect(getIssue).toHaveBeenLastCalledWith(mockClient, 'TEST-1');
   });
 
   it('throws an error if neither issueId nor issueKey is provided', async () => {

@@ -1,38 +1,44 @@
 import { updateWikiTool } from './updateWiki.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { patchWiki } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  patchWiki: vi.fn(),
+}));
+
 describe('updateWikiTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    patchWiki: vi.fn<() => Promise<any>>().mockResolvedValue({
+  vi.mocked(patchWiki).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    name: 'Updated Wiki Page',
+    content: '# Updated Content\n\nThis wiki has been updated.',
+    createdUser: {
       id: 1,
-      projectId: 100,
-      name: 'Updated Wiki Page',
-      content: '# Updated Content\n\nThis wiki has been updated.',
-      createdUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 2,
-        userId: 'editor',
-        name: 'Editor User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'editor@example.com',
-      },
-      updated: '2023-01-02T00:00:00Z',
-    }),
-  };
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 2,
+      userId: 'editor',
+      name: 'Editor User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'editor@example.com',
+    },
+    updated: '2023-01-02T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = updateWikiTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = updateWikiTool(mockClient, mockDescriptionHelper);
 
   it('returns updated wiki as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -49,7 +55,7 @@ describe('updateWikiTool', () => {
     expect(result.content).toContain('Updated Content');
   });
 
-  it('calls backlog.patchWiki with correct params when all parameters are provided', async () => {
+  it('calls patchWiki with correct params when all parameters are provided', async () => {
     const params = {
       wikiId: 1,
       name: 'Updated Wiki Page',
@@ -59,14 +65,14 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(1, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 1, {
       name: 'Updated Wiki Page',
       content: '# Updated Content\n\nThis wiki has been updated.',
       mailNotify: true,
     });
   });
 
-  it('calls backlog.patchWiki with only name parameter', async () => {
+  it('calls patchWiki with only name parameter', async () => {
     const params = {
       wikiId: 1,
       name: 'New Name Only',
@@ -74,14 +80,14 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(1, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 1, {
       name: 'New Name Only',
       content: undefined,
       mailNotify: undefined,
     });
   });
 
-  it('calls backlog.patchWiki with only content parameter', async () => {
+  it('calls patchWiki with only content parameter', async () => {
     const params = {
       wikiId: 1,
       content: 'New content only',
@@ -89,7 +95,7 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(1, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 1, {
       name: undefined,
       content: 'New content only',
       mailNotify: undefined,
@@ -104,7 +110,7 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(123, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 123, {
       name: 'Updated Wiki',
       content: undefined,
       mailNotify: undefined,
@@ -119,7 +125,7 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(456, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 456, {
       name: 'Updated Wiki',
       content: undefined,
       mailNotify: undefined,
@@ -135,7 +141,7 @@ describe('updateWikiTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchWiki).toHaveBeenCalledWith(1, {
+    expect(patchWiki).toHaveBeenCalledWith(mockClient, 1, {
       name: undefined,
       content: 'Updated content',
       mailNotify: true,

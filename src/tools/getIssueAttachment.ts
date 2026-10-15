@@ -1,4 +1,5 @@
-import { Backlog } from 'backlog-js';
+import { getIssueAttachment } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, NativeContentToolDefinition } from '../types/tool.js';
@@ -355,7 +356,7 @@ function errorResult(message: string) {
 }
 
 export const getIssueAttachmentTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): NativeContentToolDefinition<ReturnType<typeof getIssueAttachmentSchema>> => {
   return {
@@ -375,7 +376,8 @@ export const getIssueAttachmentTool = (
         return errorResult(resolved.error.message);
       }
 
-      const fileData = await backlog.getIssueAttachment(
+      const fileData = await getIssueAttachment(
+        backlog,
         resolved.value,
         attachmentId
       );

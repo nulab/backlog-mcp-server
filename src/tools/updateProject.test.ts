@@ -1,25 +1,31 @@
 import { updateProjectTool } from './updateProject.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { patchProject } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  patchProject: vi.fn(),
+}));
+
 describe('updateProjectTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    patchProject: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectKey: 'UPDATED',
-      name: 'Updated Project',
-      chartEnabled: true,
-      subtaskingEnabled: true,
-      projectLeaderCanEditProjectLeader: false,
-      textFormattingRule: 'markdown',
-      archived: true,
-      displayOrder: 0,
-    }),
-  };
+  vi.mocked(patchProject).mockResolvedValue({
+    id: 1,
+    projectKey: 'UPDATED',
+    name: 'Updated Project',
+    chartEnabled: true,
+    subtaskingEnabled: true,
+    projectLeaderCanEditProjectLeader: false,
+    textFormattingRule: 'markdown',
+    archived: true,
+    displayOrder: 0,
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = updateProjectTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = updateProjectTool(mockClient, mockDescriptionHelper);
 
   it('returns updated project', async () => {
     const result = await tool.handler({
@@ -34,7 +40,7 @@ describe('updateProjectTool', () => {
     expect(result).toHaveProperty('archived', true);
   });
 
-  it('calls backlog.patchProject with correct params when using project key', async () => {
+  it('calls patchProject with correct params when using project key', async () => {
     await tool.handler({
       projectKey: 'TEST',
       name: 'Updated Project',
@@ -43,7 +49,7 @@ describe('updateProjectTool', () => {
       archived: true,
     });
 
-    expect(mockBacklog.patchProject).toHaveBeenCalledWith('TEST', {
+    expect(patchProject).toHaveBeenCalledWith(mockClient, 'TEST', {
       name: 'Updated Project',
       key: 'UPDATED',
       chartEnabled: undefined,
@@ -54,14 +60,14 @@ describe('updateProjectTool', () => {
     });
   });
 
-  it('calls backlog.patchProject with correct params when using project ID', async () => {
+  it('calls patchProject with correct params when using project ID', async () => {
     await tool.handler({
       projectId: 1,
       chartEnabled: true,
       subtaskingEnabled: true,
     });
 
-    expect(mockBacklog.patchProject).toHaveBeenCalledWith(1, {
+    expect(patchProject).toHaveBeenCalledWith(mockClient, 1, {
       name: undefined,
       key: undefined,
       chartEnabled: true,

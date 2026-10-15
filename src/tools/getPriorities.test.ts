@@ -1,28 +1,33 @@
 import { getPrioritiesTool } from './getPriorities.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getPriorities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getPrioritiesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getPriorities: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 2,
-        name: 'High',
-      },
-      {
-        id: 3,
-        name: 'Normal',
-      },
-      {
-        id: 4,
-        name: 'Low',
-      },
-    ]),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getPriorities: vi.fn(),
+}));
 
+describe('getPrioritiesTool', () => {
+  vi.mocked(getPriorities).mockResolvedValue([
+    {
+      id: 2,
+      name: 'High',
+    },
+    {
+      id: 3,
+      name: 'Normal',
+    },
+    {
+      id: 4,
+      name: 'Low',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getPrioritiesTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getPrioritiesTool(mockClient, mockDescriptionHelper);
 
   it('returns priorities list as formatted JSON text', async () => {
     const result = await tool.handler({});
@@ -37,9 +42,9 @@ describe('getPrioritiesTool', () => {
     expect(result[2].name).toContain('Low');
   });
 
-  it('calls backlog.getPriorities', async () => {
+  it('calls getPriorities', async () => {
     await tool.handler({});
 
-    expect(mockBacklog.getPriorities).toHaveBeenCalled();
+    expect(getPriorities).toHaveBeenCalled();
   });
 });

@@ -1,31 +1,36 @@
 import { getCategoriesTool } from './getCategories.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getCategories } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getCategoriesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getCategories: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        name: 'Bug',
-        displayOrder: 0,
-      },
-      {
-        id: 2,
-        name: 'Feature',
-        displayOrder: 1,
-      },
-      {
-        id: 3,
-        name: 'Support',
-        displayOrder: 2,
-      },
-    ]),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getCategories: vi.fn(),
+}));
 
+describe('getCategoriesTool', () => {
+  vi.mocked(getCategories).mockResolvedValue([
+    {
+      id: 1,
+      name: 'Bug',
+      displayOrder: 0,
+    },
+    {
+      id: 2,
+      name: 'Feature',
+      displayOrder: 1,
+    },
+    {
+      id: 3,
+      name: 'Support',
+      displayOrder: 2,
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getCategoriesTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getCategoriesTool(mockClient, mockDescriptionHelper);
 
   it('returns categories list as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -42,20 +47,20 @@ describe('getCategoriesTool', () => {
     expect(result[2].name).toContain('Support');
   });
 
-  it('calls backlog.getCategories with correct params when using project key', async () => {
+  it('calls getCategories with correct params when using project key', async () => {
     await tool.handler({
       projectKey: 'TEST',
     });
 
-    expect(mockBacklog.getCategories).toHaveBeenCalledWith('TEST');
+    expect(getCategories).toHaveBeenCalledWith(mockClient, 'TEST');
   });
 
-  it('calls backlog.getCategories with correct params when using project ID', async () => {
+  it('calls getCategories with correct params when using project ID', async () => {
     await tool.handler({
       projectId: 100,
     });
 
-    expect(mockBacklog.getCategories).toHaveBeenCalledWith(100);
+    expect(getCategories).toHaveBeenCalledWith(mockClient, 100);
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {

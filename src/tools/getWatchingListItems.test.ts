@@ -1,47 +1,50 @@
 import { getWatchingListItemsTool } from './getWatchingListItems.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getWatchingListItems } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getWatchingListItems: vi.fn(),
+}));
+
 describe('getWatchingListItemsTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getWatchingListItems: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        resourceAlreadyRead: false,
-        note: 'Important issue',
-        type: 'issue',
-        issue: {
-          id: 1000,
-          projectId: 100,
-          issueKey: 'TEST-1',
-          summary: 'Test issue',
-        },
-        created: '2023-01-01T00:00:00Z',
-        updated: '2023-01-01T00:00:00Z',
+  vi.mocked(getWatchingListItems).mockResolvedValue([
+    {
+      id: 1,
+      resourceAlreadyRead: false,
+      note: 'Important issue',
+      type: 'issue',
+      issue: {
+        id: 1000,
+        projectId: 100,
+        issueKey: 'TEST-1',
+        summary: 'Test issue',
       },
-      {
-        id: 2,
-        resourceAlreadyRead: true,
-        note: 'Important wiki',
-        type: 'wiki',
-        wiki: {
-          id: 2000,
-          projectId: 100,
-          name: 'Test wiki',
-          content: 'Wiki content',
-        },
-        created: '2023-01-02T00:00:00Z',
-        updated: '2023-01-02T00:00:00Z',
+      created: '2023-01-01T00:00:00Z',
+      updated: '2023-01-01T00:00:00Z',
+    },
+    {
+      id: 2,
+      resourceAlreadyRead: true,
+      note: 'Important wiki',
+      type: 'wiki',
+      wiki: {
+        id: 2000,
+        projectId: 100,
+        name: 'Test wiki',
+        content: 'Wiki content',
       },
-    ]),
-  };
+      created: '2023-01-02T00:00:00Z',
+      updated: '2023-01-02T00:00:00Z',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getWatchingListItemsTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getWatchingListItemsTool(mockClient, mockDescriptionHelper);
 
   it('returns watching list items as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -56,11 +59,11 @@ describe('getWatchingListItemsTool', () => {
     expect(result[1].note).toContain('Important wiki');
   });
 
-  it('calls backlog.getWatchingListItems with correct params', async () => {
+  it('calls getWatchingListItems with correct params', async () => {
     await tool.handler({
       userId: 1,
     });
 
-    expect(mockBacklog.getWatchingListItems).toHaveBeenCalledWith(1);
+    expect(getWatchingListItems).toHaveBeenCalledWith(mockClient, 1);
   });
 });

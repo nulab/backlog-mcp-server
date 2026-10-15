@@ -1,27 +1,29 @@
 import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postVersions } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addVersionMilestoneTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postVersions: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      name: 'Version 1.0.0',
-      description: 'Initial release version',
-      startDate: '2023-01-01T00:00:00Z',
-      releaseDueDate: '2023-03-31T00:00:00Z',
-      archived: false,
-      displayOrder: 1,
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postVersions: vi.fn(),
+}));
 
+describe('addVersionMilestoneTool', () => {
+  vi.mocked(postVersions).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    name: 'Version 1.0.0',
+    description: 'Initial release version',
+    startDate: '2023-01-01T00:00:00Z',
+    releaseDueDate: '2023-03-31T00:00:00Z',
+    archived: false,
+    displayOrder: 1,
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addVersionMilestoneTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = addVersionMilestoneTool(mockClient, mockDescriptionHelper);
 
   it('returns created version milestone as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -41,7 +43,7 @@ describe('addVersionMilestoneTool', () => {
     expect(result.releaseDueDate).toEqual('2023-03-31T00:00:00Z');
   });
 
-  it('calls backlog.postVersions with correct params when using projectKey', async () => {
+  it('calls postVersions with correct params when using projectKey', async () => {
     const params = {
       projectKey: 'TEST',
       name: 'Version 1.0.0',
@@ -52,7 +54,7 @@ describe('addVersionMilestoneTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.postVersions).toHaveBeenCalledWith('TEST', {
+    expect(postVersions).toHaveBeenCalledWith(mockClient, 'TEST', {
       name: 'Version 1.0.0',
       description: 'Initial release version',
       startDate: '2023-01-01T00:00:00Z',
@@ -60,7 +62,7 @@ describe('addVersionMilestoneTool', () => {
     });
   });
 
-  it('calls backlog.postVersions with correct params when using projectId', async () => {
+  it('calls postVersions with correct params when using projectId', async () => {
     const params = {
       projectId: 100,
       name: 'Version 2.0.0',
@@ -71,7 +73,7 @@ describe('addVersionMilestoneTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.postVersions).toHaveBeenCalledWith(100, {
+    expect(postVersions).toHaveBeenCalledWith(mockClient, 100, {
       name: 'Version 2.0.0',
       description: 'Major release',
       startDate: '2023-04-01T00:00:00Z',
@@ -79,7 +81,7 @@ describe('addVersionMilestoneTool', () => {
     });
   });
 
-  it('calls backlog.postVersions with minimal required params', async () => {
+  it('calls postVersions with minimal required params', async () => {
     const params = {
       projectKey: 'TEST',
       name: 'Quick Version',
@@ -87,7 +89,7 @@ describe('addVersionMilestoneTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.postVersions).toHaveBeenCalledWith('TEST', {
+    expect(postVersions).toHaveBeenCalledWith(mockClient, 'TEST', {
       name: 'Quick Version',
     });
   });

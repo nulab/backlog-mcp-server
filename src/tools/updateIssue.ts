@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Backlog, Option } from 'backlog-js';
+import { Option, patchIssue } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import type { Entity } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
@@ -204,7 +205,7 @@ const clearEmptyArrayFields = <T extends Record<string, unknown>>(
 };
 
 export const updateIssueTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof updateIssueSchema>, Entity.Issue.Issue> => {
   return {
@@ -259,7 +260,8 @@ export const updateIssueTool = (
       // The `['']` clear-sentinel is not representable in backlog-js's
       // `number[]` param types, so cast at this single boundary. qs serializes
       // it to `field[]=`, which the Backlog API accepts as "clear this field".
-      return backlog.patchIssue(
+      return patchIssue(
+        backlog,
         result.value,
         finalPayload as Option.Issue.PatchIssueParams
       );

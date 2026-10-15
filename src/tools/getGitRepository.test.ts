@@ -1,40 +1,42 @@
 import { getGitRepositoryTool } from './getGitRepository.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getGitRepository } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getGitRepositoryTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getGitRepository: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      name: 'test-repo',
-      description: 'Test repository',
-      hookUrl: 'https://example.com/hooks/test-repo',
-      httpUrl: 'https://example.com/git/test-repo.git',
-      sshUrl: 'git@example.com:test-repo.git',
-      displayOrder: 0,
-      pushedAt: '2023-01-01T00:00:00Z',
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getGitRepository: vi.fn(),
+}));
 
+describe('getGitRepositoryTool', () => {
+  vi.mocked(getGitRepository).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    name: 'test-repo',
+    description: 'Test repository',
+    hookUrl: 'https://example.com/hooks/test-repo',
+    httpUrl: 'https://example.com/git/test-repo.git',
+    sshUrl: 'git@example.com:test-repo.git',
+    displayOrder: 0,
+    pushedAt: '2023-01-01T00:00:00Z',
+    createdUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getGitRepositoryTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getGitRepositoryTool(mockClient, mockDescriptionHelper);
 
   it('returns git repository information as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -50,34 +52,35 @@ describe('getGitRepositoryTool', () => {
     expect(result.description).toContain('Test repository');
   });
 
-  it('calls backlog.getGitRepository with correct params when using project key and repoName', async () => {
+  it('calls getGitRepository with correct params when using project key and repoName', async () => {
     await tool.handler({
       projectKey: 'TEST',
       repoName: 'test-repo', // Changed
     });
 
-    expect(mockBacklog.getGitRepository).toHaveBeenCalledWith(
+    expect(getGitRepository).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo'
     );
   });
 
-  it('calls backlog.getGitRepository with correct params when using projectId and repoName', async () => {
+  it('calls getGitRepository with correct params when using projectId and repoName', async () => {
     await tool.handler({
       projectId: 100,
       repoName: 'test-repo', // Changed
     });
 
-    expect(mockBacklog.getGitRepository).toHaveBeenCalledWith(100, 'test-repo');
+    expect(getGitRepository).toHaveBeenCalledWith(mockClient, 100, 'test-repo');
   });
 
-  it('calls backlog.getGitRepository with correct params when using projectId and repoId', async () => {
+  it('calls getGitRepository with correct params when using projectId and repoId', async () => {
     await tool.handler({
       projectId: 100,
       repoId: 200, // Added repoId
     });
 
-    expect(mockBacklog.getGitRepository).toHaveBeenCalledWith(100, '200');
+    expect(getGitRepository).toHaveBeenCalledWith(mockClient, 100, '200');
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {

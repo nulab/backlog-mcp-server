@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/server';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import type { DescriptionHelper } from './createDescriptionHelper.js';
 import { registerTools } from './registerTools.js';
 import { organizationTools } from './tools/organizations.js';
@@ -15,7 +15,7 @@ import {
 export type CreateBacklogMcpServerConfig = {
   version: string;
   useFields: boolean;
-  backlog: Backlog;
+  backlog: Client;
   clientRegistry: BacklogClientRegistry;
   descriptionHelper: DescriptionHelper;
   enabledToolsets: string[];
