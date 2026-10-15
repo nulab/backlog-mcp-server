@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getIssueTypes } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -28,7 +29,7 @@ const getIssueTypesSchema = buildToolSchema((t) => ({
 }));
 
 export const getIssueTypesTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getIssueTypesSchema>,
@@ -61,7 +62,7 @@ export const getIssueTypesTool = (
       if (!result.ok) {
         throw result.error;
       }
-      return backlog.getIssueTypes(result.value);
+      return getIssueTypes(backlog, result.value);
     },
   };
 };

@@ -1,31 +1,33 @@
 import { deleteWatchingTool } from './deleteWatching.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { deletehWatchingListItem } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('deleteWatchingTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    deletehWatchingListItem: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      resourceAlreadyRead: false,
-      note: 'Deleted watch',
-      type: 'issue',
-      issue: {
-        id: 1000,
-        projectId: 100,
-        issueKey: 'TEST-1',
-        summary: 'Test issue',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  deletehWatchingListItem: vi.fn(),
+}));
 
+describe('deleteWatchingTool', () => {
+  vi.mocked(deletehWatchingListItem).mockResolvedValue({
+    id: 1,
+    resourceAlreadyRead: false,
+    note: 'Deleted watch',
+    type: 'issue',
+    issue: {
+      id: 1000,
+      projectId: 100,
+      issueKey: 'TEST-1',
+      summary: 'Test issue',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = deleteWatchingTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = deleteWatchingTool(mockClient, mockDescriptionHelper);
 
   it('deletes watching', async () => {
     const result = await tool.handler({
@@ -35,12 +37,12 @@ describe('deleteWatchingTool', () => {
     expect(result).toHaveProperty('id', 1);
   });
 
-  it('calls backlog.deletehWatchingListItem with correct params', async () => {
+  it('calls deletehWatchingListItem with correct params', async () => {
     await tool.handler({
       watchId: 123,
     });
 
-    expect(mockBacklog.deletehWatchingListItem).toHaveBeenCalledWith(123);
+    expect(deletehWatchingListItem).toHaveBeenCalledWith(mockClient, 123);
   });
 
   it('handles deletion of different watch IDs', async () => {
@@ -48,6 +50,6 @@ describe('deleteWatchingTool', () => {
       watchId: 456,
     });
 
-    expect(mockBacklog.deletehWatchingListItem).toHaveBeenCalledWith(456);
+    expect(deletehWatchingListItem).toHaveBeenCalledWith(mockClient, 456);
   });
 });

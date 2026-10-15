@@ -1,57 +1,59 @@
 import { addPullRequestTool } from './addPullRequest.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postPullRequest } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addPullRequestTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postPullRequest: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      repositoryId: 200,
-      number: 1,
-      summary: 'Fix bug in login',
-      description: 'This PR fixes a bug in the login process',
-      base: 'main',
-      branch: 'fix/login-bug',
-      status: {
-        id: 1,
-        name: 'Open',
-      },
-      assignee: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      issue: {
-        id: 1000,
-        issueKey: 'TEST-1',
-        summary: 'Login bug',
-      },
-      baseCommit: 'abc123',
-      branchCommit: 'def456',
-      closeAt: null,
-      mergeAt: null,
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postPullRequest: vi.fn(),
+}));
 
+describe('addPullRequestTool', () => {
+  vi.mocked(postPullRequest).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    repositoryId: 200,
+    number: 1,
+    summary: 'Fix bug in login',
+    description: 'This PR fixes a bug in the login process',
+    base: 'main',
+    branch: 'fix/login-bug',
+    status: {
+      id: 1,
+      name: 'Open',
+    },
+    assignee: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    issue: {
+      id: 1000,
+      issueKey: 'TEST-1',
+      summary: 'Login bug',
+    },
+    baseCommit: 'abc123',
+    branchCommit: 'def456',
+    closeAt: null,
+    mergeAt: null,
+    createdUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addPullRequestTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = addPullRequestTool(mockClient, mockDescriptionHelper);
 
   it('returns created pull request as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -74,7 +76,7 @@ describe('addPullRequestTool', () => {
     );
   });
 
-  it('calls backlog.postPullRequest with correct params when using repoName', async () => {
+  it('calls postPullRequest with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
       repoName: 'test-repo', // Changed
@@ -89,7 +91,8 @@ describe('addPullRequestTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.postPullRequest).toHaveBeenCalledWith(
+    expect(postPullRequest).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo',
       {
@@ -104,7 +107,7 @@ describe('addPullRequestTool', () => {
     );
   });
 
-  it('calls backlog.postPullRequest with correct params when using projectId and repoName', async () => {
+  it('calls postPullRequest with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 1,
       repoName: 'test-repo', // Changed
@@ -116,7 +119,7 @@ describe('addPullRequestTool', () => {
 
     await tool.handler(params as any);
 
-    expect(mockBacklog.postPullRequest).toHaveBeenCalledWith(1, 'test-repo', {
+    expect(postPullRequest).toHaveBeenCalledWith(mockClient, 1, 'test-repo', {
       summary: 'Summary for projectId and repoName',
       description: 'Description for projectId and repoName',
       base: 'main',
@@ -127,7 +130,7 @@ describe('addPullRequestTool', () => {
     });
   });
 
-  it('calls backlog.postPullRequest with correct params when using projectId and repoId', async () => {
+  it('calls postPullRequest with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 1,
       repoId: 200, // Added repoId
@@ -139,7 +142,7 @@ describe('addPullRequestTool', () => {
 
     await tool.handler(params as any);
 
-    expect(mockBacklog.postPullRequest).toHaveBeenCalledWith(1, '200', {
+    expect(postPullRequest).toHaveBeenCalledWith(mockClient, 1, '200', {
       summary: 'Summary for projectId and repoId',
       description: 'Description for projectId and repoId',
       base: 'main',

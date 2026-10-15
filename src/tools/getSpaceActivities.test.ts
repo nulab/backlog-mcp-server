@@ -1,36 +1,39 @@
 import { getSpaceActivitiesTool } from './getSpaceActivities.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getSpaceActivities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getSpaceActivities: vi.fn(),
+}));
+
 describe('getSpaceActivitiesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getSpaceActivities: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 100,
-        project: {
-          id: 1,
-          projectKey: 'TEST',
-          name: 'Test Project',
-        },
-        type: 1,
-        content: { summary: 'Created issue' },
-        notifications: [],
-        createdUser: {
-          id: 10,
-          userId: 'user1',
-          name: 'User One',
-        },
-        created: '2023-01-01T00:00:00Z',
+  vi.mocked(getSpaceActivities).mockResolvedValue([
+    {
+      id: 100,
+      project: {
+        id: 1,
+        projectKey: 'TEST',
+        name: 'Test Project',
       },
-    ]),
-  };
+      type: 1,
+      content: { summary: 'Created issue' },
+      notifications: [],
+      createdUser: {
+        id: 10,
+        userId: 'user1',
+        name: 'User One',
+      },
+      created: '2023-01-01T00:00:00Z',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getSpaceActivitiesTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getSpaceActivitiesTool(mockClient, mockDescriptionHelper);
 
   it('returns activities list', async () => {
     const result = await tool.handler({});
@@ -41,7 +44,7 @@ describe('getSpaceActivitiesTool', () => {
     expect(result[0].type).toEqual(1);
   });
 
-  it('calls backlog.getSpaceActivities with correct params', async () => {
+  it('calls getSpaceActivities with correct params', async () => {
     const params = {
       activityTypeId: [1],
       minId: 10,
@@ -52,7 +55,7 @@ describe('getSpaceActivitiesTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getSpaceActivities).toHaveBeenCalledWith(params);
+    expect(getSpaceActivities).toHaveBeenCalledWith(mockClient, params);
   });
 
   it('rejects count less than 1', () => {

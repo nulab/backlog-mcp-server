@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { postWatchingListItem } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -22,7 +23,7 @@ const addWatchingSchema = buildToolSchema((t) => ({
 }));
 
 export const addWatchingTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addWatchingSchema>,
@@ -47,7 +48,7 @@ export const addWatchingTool = (
       'updated',
     ]),
     handler: async ({ issueIdOrKey, note }) =>
-      backlog.postWatchingListItem({
+      postWatchingListItem(backlog, {
         issueIdOrKey,
         note,
       }),

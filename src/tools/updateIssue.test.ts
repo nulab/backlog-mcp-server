@@ -1,73 +1,79 @@
 import { updateIssueTool } from './updateIssue.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { patchIssue } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  patchIssue: vi.fn(),
+}));
+
 describe('updateIssueTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    patchIssue: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
+  vi.mocked(patchIssue).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    issueKey: 'TEST-1',
+    keyId: 1,
+    issueType: {
+      id: 2,
       projectId: 100,
-      issueKey: 'TEST-1',
-      keyId: 1,
-      issueType: {
-        id: 2,
-        projectId: 100,
-        name: 'Bug',
-        color: '#990000',
-        displayOrder: 0,
-      },
-      summary: 'Updated Issue',
-      description: 'This is an updated issue',
-      priority: {
-        id: 2,
-        name: 'High',
-      },
-      status: {
-        id: 2,
-        name: 'In Progress',
-        projectId: 100,
-        color: '#ff9900',
-        displayOrder: 1,
-      },
-      assignee: {
-        id: 5,
-        userId: 'user',
-        name: 'Test User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'test@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      startDate: '2023-01-01',
-      dueDate: '2023-01-31',
-      estimatedHours: 15,
-      actualHours: 8,
-      createdUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      updated: '2023-01-02T00:00:00Z',
-    }),
-  };
+      name: 'Bug',
+      color: '#990000',
+      displayOrder: 0,
+    },
+    summary: 'Updated Issue',
+    description: 'This is an updated issue',
+    priority: {
+      id: 2,
+      name: 'High',
+    },
+    status: {
+      id: 2,
+      name: 'In Progress',
+      projectId: 100,
+      color: '#ff9900',
+      displayOrder: 1,
+    },
+    assignee: {
+      id: 5,
+      userId: 'user',
+      name: 'Test User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'test@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    startDate: '2023-01-01',
+    dueDate: '2023-01-31',
+    estimatedHours: 15,
+    actualHours: 8,
+    createdUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    updated: '2023-01-02T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = updateIssueTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = updateIssueTool(mockClient, mockDescriptionHelper);
 
   it('returns updated issue', async () => {
     const result = await tool.handler({
@@ -81,7 +87,7 @@ describe('updateIssueTool', () => {
     expect(result).toHaveProperty('issueKey', 'TEST-1');
   });
 
-  it('calls backlog.patchIssue with correct params when using issue key', async () => {
+  it('calls patchIssue with correct params when using issue key', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
       summary: 'Updated Issue',
@@ -89,14 +95,14 @@ describe('updateIssueTool', () => {
       statusId: 2,
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       priorityId: 2,
       statusId: 2,
       summary: 'Updated Issue',
     });
   });
 
-  it('calls backlog.patchIssue with correct params when using issue ID', async () => {
+  it('calls patchIssue with correct params when using issue ID', async () => {
     await tool.handler({
       issueId: 1,
       estimatedHours: 15,
@@ -104,7 +110,7 @@ describe('updateIssueTool', () => {
       comment: 'Updated the estimated and actual hours',
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith(1, {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 1, {
       // Expect number
       estimatedHours: 15,
       actualHours: 8,
@@ -112,13 +118,13 @@ describe('updateIssueTool', () => {
     });
   });
 
-  it('calls backlog.patchIssue with parentIssueId when changing the parent', async () => {
+  it('calls patchIssue with parentIssueId when changing the parent', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
       parentIssueId: 12345,
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       parentIssueId: 12345,
     });
   });
@@ -140,7 +146,8 @@ describe('updateIssueTool', () => {
       ],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith(
+    expect(patchIssue).toHaveBeenCalledWith(
+      mockClient,
       'TEST-1',
       expect.objectContaining({
         summary: 'Custom Field Test',
@@ -160,7 +167,8 @@ describe('updateIssueTool', () => {
       customFields: [{ id: 555, value: [11, 22] }],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith(
+    expect(patchIssue).toHaveBeenCalledWith(
+      mockClient,
       'TEST-1',
       expect.objectContaining({
         customField_555: [11, 22],
@@ -176,7 +184,7 @@ describe('updateIssueTool', () => {
       versionId: [],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       categoryId: [''],
       milestoneId: [''],
       versionId: [''],
@@ -190,7 +198,7 @@ describe('updateIssueTool', () => {
       milestoneId: [],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       categoryId: [10, 20],
       milestoneId: [''],
     });
@@ -203,7 +211,7 @@ describe('updateIssueTool', () => {
       attachmentId: [],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       notifiedUserId: [],
       attachmentId: [],
     });
@@ -215,7 +223,8 @@ describe('updateIssueTool', () => {
       customFields: [{ id: 888, otherValue: '補足情報' }],
     });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith(
+    expect(patchIssue).toHaveBeenCalledWith(
+      mockClient,
       'TEST-1',
       expect.objectContaining({
         customField_888_otherValue: '補足情報',

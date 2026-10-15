@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { postCategories } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -31,7 +32,7 @@ const addCategorySchema = buildToolSchema((t) => ({
 }));
 
 export const addCategoryTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addCategorySchema>,
@@ -61,7 +62,7 @@ export const addCategoryTool = (
       if (!result.ok) {
         throw result.error;
       }
-      return backlog.postCategories(result.value, params);
+      return postCategories(backlog, result.value, params);
     },
   };
 };

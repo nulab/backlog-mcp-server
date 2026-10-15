@@ -1,73 +1,78 @@
 import { addIssueTool } from './addIssue.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postIssue } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addIssueTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postIssue: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      projectId: 100,
-      issueKey: 'TEST-1',
-      keyId: 1,
-      issueType: {
-        id: 2,
-        projectId: 100,
-        name: 'Bug',
-        color: '#990000',
-        displayOrder: 0,
-      },
-      summary: 'Test Issue',
-      description: 'This is a test issue',
-      priority: {
-        id: 3,
-        name: 'Normal',
-      },
-      status: {
-        id: 1,
-        name: 'Open',
-        projectId: 100,
-        color: '#ff0000',
-        displayOrder: 0,
-      },
-      assignee: {
-        id: 5,
-        userId: 'user',
-        name: 'Test User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'test@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      startDate: '2023-01-01',
-      dueDate: '2023-01-31',
-      estimatedHours: 10,
-      actualHours: 5,
-      createdUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      updated: '2023-01-01T00:00:00Z',
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postIssue: vi.fn(),
+}));
 
+describe('addIssueTool', () => {
+  vi.mocked(postIssue).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    issueKey: 'TEST-1',
+    keyId: 1,
+    issueType: {
+      id: 2,
+      projectId: 100,
+      name: 'Bug',
+      color: '#990000',
+      displayOrder: 0,
+    },
+    summary: 'Test Issue',
+    description: 'This is a test issue',
+    priority: {
+      id: 3,
+      name: 'Normal',
+    },
+    status: {
+      id: 1,
+      name: 'Open',
+      projectId: 100,
+      color: '#ff0000',
+      displayOrder: 0,
+    },
+    assignee: {
+      id: 5,
+      userId: 'user',
+      name: 'Test User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'test@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    startDate: '2023-01-01',
+    dueDate: '2023-01-31',
+    estimatedHours: 10,
+    actualHours: 5,
+    createdUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    updated: '2023-01-01T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addIssueTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = addIssueTool(mockClient, mockDescriptionHelper);
 
   it('returns created issue as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -89,7 +94,7 @@ describe('addIssueTool', () => {
     expect(result.description).toContain('This is a test issue');
   });
 
-  it('calls backlog.postIssue with correct params', async () => {
+  it('calls postIssue with correct params', async () => {
     await tool.handler({
       projectId: 100,
       summary: 'Test Issue',
@@ -102,7 +107,7 @@ describe('addIssueTool', () => {
       actualHours: 5,
     });
 
-    expect(mockBacklog.postIssue).toHaveBeenCalledWith({
+    expect(postIssue).toHaveBeenCalledWith(mockClient, {
       projectId: 100,
       summary: 'Test Issue',
       issueTypeId: 2,
@@ -128,7 +133,8 @@ describe('addIssueTool', () => {
       ],
     });
 
-    expect(mockBacklog.postIssue).toHaveBeenCalledWith(
+    expect(postIssue).toHaveBeenCalledWith(
+      mockClient,
       expect.objectContaining({
         projectId: 100,
         summary: 'Custom Field Test',
@@ -151,7 +157,8 @@ describe('addIssueTool', () => {
       customFields: [{ id: 555, value: [10, 20, 30] }],
     });
 
-    expect(mockBacklog.postIssue).toHaveBeenCalledWith(
+    expect(postIssue).toHaveBeenCalledWith(
+      mockClient,
       expect.objectContaining({
         projectId: 100,
         customField_555: [10, 20, 30],
@@ -168,7 +175,8 @@ describe('addIssueTool', () => {
       customFields: [{ id: 777, otherValue: '自由入力' }],
     });
 
-    expect(mockBacklog.postIssue).toHaveBeenCalledWith(
+    expect(postIssue).toHaveBeenCalledWith(
+      mockClient,
       expect.objectContaining({
         projectId: 100,
         customField_777_otherValue: '自由入力',

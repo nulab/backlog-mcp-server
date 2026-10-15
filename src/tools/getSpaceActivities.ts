@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getSpaceActivities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { ActivityTypeSchema } from '../types/zod/activityType.js';
@@ -36,7 +37,7 @@ const getSpaceActivitiesSchema = buildToolSchema((t) => ({
 }));
 
 export const getSpaceActivitiesTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getSpaceActivitiesSchema>,
@@ -60,7 +61,7 @@ export const getSpaceActivitiesTool = (
       'created',
     ]),
     handler: async ({ activityTypeId, minId, maxId, count, order }) =>
-      backlog.getSpaceActivities({
+      getSpaceActivities(backlog, {
         activityTypeId,
         minId,
         maxId,

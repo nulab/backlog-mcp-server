@@ -1,20 +1,21 @@
 import { markNotificationAsReadTool } from './markNotificationAsRead.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { markAsReadNotification } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  markAsReadNotification: vi.fn(),
+}));
+
 describe('markNotificationAsReadTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    markAsReadNotification: vi
-      .fn<() => Promise<void>>()
-      .mockResolvedValue(undefined),
-  };
+  vi.mocked(markAsReadNotification).mockResolvedValue(undefined as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = markNotificationAsReadTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = markNotificationAsReadTool(mockClient, mockDescriptionHelper);
 
   it('returns success message as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -27,11 +28,11 @@ describe('markNotificationAsReadTool', () => {
     expect(result.success).toBe(true);
   });
 
-  it('calls backlog.markAsReadNotification with correct params', async () => {
+  it('calls markAsReadNotification with correct params', async () => {
     await tool.handler({
       id: 123,
     });
 
-    expect(mockBacklog.markAsReadNotification).toHaveBeenCalledWith(123);
+    expect(markAsReadNotification).toHaveBeenCalledWith(mockClient, 123);
   });
 });

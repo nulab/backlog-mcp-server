@@ -5,33 +5,20 @@ import { getSpaceTool } from '../tools/getSpace.js';
 import { createBacklogClientRegistry } from './backlogClientRegistry.js';
 
 vi.mock('backlog-js', () => ({
-  Backlog: class Backlog {
+  createClient: (configure: {
     host: string;
     apiKey: string;
     userAgent?: string;
-
-    constructor({
-      host,
-      apiKey,
-      userAgent,
-    }: {
-      host: string;
-      apiKey: string;
-      userAgent?: string;
-    }) {
-      this.host = host;
-      this.apiKey = apiKey;
-      this.userAgent = userAgent;
-    }
-
-    async getSpace() {
-      return {
-        host: this.host,
-        apiKey: this.apiKey,
-        userAgent: this.userAgent,
-      };
-    }
-  },
+  }) => ({ ...configure }),
+  getSpace: async (client: {
+    host: string;
+    apiKey: string;
+    userAgent?: string;
+  }) => ({
+    host: client.host,
+    apiKey: client.apiKey,
+    userAgent: client.userAgent,
+  }),
 }));
 
 describe('createBacklogClientRegistry', () => {

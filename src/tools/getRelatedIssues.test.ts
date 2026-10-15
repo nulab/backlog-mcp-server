@@ -1,7 +1,13 @@
 import { getRelatedIssuesTool } from './getRelatedIssues.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getRelatedIssues } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
+
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getRelatedIssues: vi.fn(),
+}));
 
 describe('getRelatedIssuesTool', () => {
   const relatedIssue = {
@@ -13,17 +19,12 @@ describe('getRelatedIssuesTool', () => {
     type: 'RELATES',
   };
 
-  const mockBacklog: Partial<Backlog> = {
-    getRelatedIssues: vi
-      .fn<() => Promise<any>>()
-      .mockResolvedValue([relatedIssue]),
-  };
+  vi.mocked(getRelatedIssues).mockResolvedValue([relatedIssue] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getRelatedIssuesTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getRelatedIssuesTool(mockClient, mockDescriptionHelper);
 
   it('returns the related issues with their relation type', async () => {
     const result = await tool.handler({ issueKey: 'TEST-1' });
@@ -36,16 +37,16 @@ describe('getRelatedIssuesTool', () => {
     expect(result[0].type).toEqual('RELATES');
   });
 
-  it('calls backlog.getRelatedIssues with the issue key', async () => {
+  it('calls getRelatedIssues with the issue key', async () => {
     await tool.handler({ issueKey: 'TEST-1' });
 
-    expect(mockBacklog.getRelatedIssues).toHaveBeenCalledWith('TEST-1');
+    expect(getRelatedIssues).toHaveBeenCalledWith(mockClient, 'TEST-1');
   });
 
-  it('calls backlog.getRelatedIssues with the issue ID', async () => {
+  it('calls getRelatedIssues with the issue ID', async () => {
     await tool.handler({ issueId: 1 });
 
-    expect(mockBacklog.getRelatedIssues).toHaveBeenCalledWith(1);
+    expect(getRelatedIssues).toHaveBeenCalledWith(mockClient, 1);
   });
 
   it('throws an error if neither issueId nor issueKey is provided', async () => {

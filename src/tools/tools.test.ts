@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { allTools } from './tools.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
@@ -10,7 +10,7 @@ import { createDescriptionHelper } from '../createDescriptionHelper.js';
  */
 describe('allTools', () => {
   const toolNames = allTools(
-    {} as Backlog,
+    {} as Client,
     createDescriptionHelper()
   ).toolsets.flatMap((toolset) =>
     [...toolset.tools, ...(toolset.nativeContentTools ?? [])].map(

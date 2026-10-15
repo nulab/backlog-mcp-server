@@ -1,72 +1,77 @@
 import { getIssuesTool } from './getIssues.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssues } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssues: vi.fn(),
+}));
+
 describe('getIssuesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getIssues: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        projectId: 100,
-        issueKey: 'TEST-1',
-        keyId: 1,
-        issueType: {
-          id: 2,
-          projectId: 100,
-          name: 'Bug',
-          color: '#990000',
-          displayOrder: 0,
-        },
-        summary: 'Test Issue 1',
-        description: 'This is test issue 1',
-        status: {
-          id: 1,
-          name: 'Open',
-          projectId: 100,
-          color: '#ff0000',
-          displayOrder: 0,
-        },
-        priority: {
-          id: 3,
-          name: 'Normal',
-        },
-        created: '2023-01-01T00:00:00Z',
-        updated: '2023-01-01T00:00:00Z',
-      },
-      {
+  vi.mocked(getIssues).mockResolvedValue([
+    {
+      id: 1,
+      projectId: 100,
+      issueKey: 'TEST-1',
+      keyId: 1,
+      issueType: {
         id: 2,
         projectId: 100,
-        issueKey: 'TEST-2',
-        keyId: 2,
-        issueType: {
-          id: 2,
-          projectId: 100,
-          name: 'Bug',
-          color: '#990000',
-          displayOrder: 0,
-        },
-        summary: 'Test Issue 2',
-        description: 'This is test issue 2',
-        status: {
-          id: 1,
-          name: 'Open',
-          projectId: 100,
-          color: '#ff0000',
-          displayOrder: 0,
-        },
-        priority: {
-          id: 3,
-          name: 'Normal',
-        },
-        created: '2023-01-02T00:00:00Z',
-        updated: '2023-01-02T00:00:00Z',
+        name: 'Bug',
+        color: '#990000',
+        displayOrder: 0,
       },
-    ]),
-  };
+      summary: 'Test Issue 1',
+      description: 'This is test issue 1',
+      status: {
+        id: 1,
+        name: 'Open',
+        projectId: 100,
+        color: '#ff0000',
+        displayOrder: 0,
+      },
+      priority: {
+        id: 3,
+        name: 'Normal',
+      },
+      created: '2023-01-01T00:00:00Z',
+      updated: '2023-01-01T00:00:00Z',
+    },
+    {
+      id: 2,
+      projectId: 100,
+      issueKey: 'TEST-2',
+      keyId: 2,
+      issueType: {
+        id: 2,
+        projectId: 100,
+        name: 'Bug',
+        color: '#990000',
+        displayOrder: 0,
+      },
+      summary: 'Test Issue 2',
+      description: 'This is test issue 2',
+      status: {
+        id: 1,
+        name: 'Open',
+        projectId: 100,
+        color: '#ff0000',
+        displayOrder: 0,
+      },
+      priority: {
+        id: 3,
+        name: 'Normal',
+      },
+      created: '2023-01-02T00:00:00Z',
+      updated: '2023-01-02T00:00:00Z',
+    },
+  ] as any);
 
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getIssuesTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getIssuesTool(mockClient, mockDescriptionHelper);
 
   it('returns issues as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -82,7 +87,7 @@ describe('getIssuesTool', () => {
     expect(result[1].summary).toEqual('Test Issue 2');
   });
 
-  it('calls backlog.getIssues with correct params', async () => {
+  it('calls getIssues with correct params', async () => {
     const params = {
       projectId: [100],
       statusId: [1],
@@ -93,20 +98,20 @@ describe('getIssuesTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith(params);
+    expect(getIssues).toHaveBeenCalledWith(mockClient, params);
   });
 
-  it('calls backlog.getIssues with keyword search', async () => {
+  it('calls getIssues with keyword search', async () => {
     await tool.handler({
       keyword: 'bug',
     });
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+    expect(getIssues).toHaveBeenCalledWith(mockClient, {
       keyword: 'bug',
     });
   });
 
-  it('calls backlog.getIssues with custom fields', async () => {
+  it('calls getIssues with custom fields', async () => {
     await tool.handler({
       projectId: [100],
       customFields: [
@@ -117,7 +122,7 @@ describe('getIssuesTool', () => {
       ],
     });
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+    expect(getIssues).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
       customField_12345: 'test-value',
       customField_67890_min: 10,
@@ -127,34 +132,34 @@ describe('getIssuesTool', () => {
     });
   });
 
-  it('calls backlog.getIssues with custom fields array values', async () => {
+  it('calls getIssues with custom fields array values', async () => {
     await tool.handler({
       customFields: [{ id: 11111, type: 'list', value: [1, 2, 3] }],
     });
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+    expect(getIssues).toHaveBeenCalledWith(mockClient, {
       customField_11111: [1, 2, 3],
     });
   });
 
-  it('calls backlog.getIssues with empty custom fields', async () => {
+  it('calls getIssues with empty custom fields', async () => {
     await tool.handler({
       projectId: [100],
       customFields: [],
     });
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+    expect(getIssues).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
     });
   });
 
-  it('calls backlog.getIssues without custom fields', async () => {
+  it('calls getIssues without custom fields', async () => {
     await tool.handler({
       projectId: [100],
       statusId: [1],
     });
 
-    expect(mockBacklog.getIssues).toHaveBeenCalledWith({
+    expect(getIssues).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
       statusId: [1],
     });

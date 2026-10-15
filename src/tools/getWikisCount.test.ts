@@ -1,17 +1,23 @@
 import { getWikisCountTool } from './getWikisCount.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getWikisCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getWikisCount: vi.fn(),
+}));
+
 describe('getWikisCountTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getWikisCount: vi.fn<() => Promise<any>>().mockResolvedValue({
-      count: 42,
-    }),
-  };
+  vi.mocked(getWikisCount).mockResolvedValue({
+    count: 42,
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getWikisCountTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getWikisCountTool(mockClient, mockDescriptionHelper);
 
   it('returns wiki count as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -24,20 +30,20 @@ describe('getWikisCountTool', () => {
     expect(result.count).toEqual(42);
   });
 
-  it('calls backlog.getWikisCount with correct params when using project key', async () => {
+  it('calls getWikisCount with correct params when using project key', async () => {
     await tool.handler({
       projectKey: 'TEST',
     });
 
-    expect(mockBacklog.getWikisCount).toHaveBeenCalledWith('TEST');
+    expect(getWikisCount).toHaveBeenCalledWith(mockClient, 'TEST');
   });
 
-  it('calls backlog.getWikisCount with correct params when using project ID', async () => {
+  it('calls getWikisCount with correct params when using project ID', async () => {
     await tool.handler({
       projectId: 100,
     });
 
-    expect(mockBacklog.getWikisCount).toHaveBeenCalledWith(100);
+    expect(getWikisCount).toHaveBeenCalledWith(mockClient, 100);
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {

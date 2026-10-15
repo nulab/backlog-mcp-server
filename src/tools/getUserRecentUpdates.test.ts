@@ -1,36 +1,39 @@
 import { getUserRecentUpdatesTool } from './getUserRecentUpdates.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getUserActivities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getUserActivities: vi.fn(),
+}));
+
 describe('getUserRecentUpdatesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getUserActivities: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 100,
-        project: {
-          id: 1,
-          projectKey: 'TEST',
-          name: 'Test Project',
-        },
-        type: 1,
-        content: { summary: 'Created issue' },
-        notifications: [],
-        createdUser: {
-          id: 10,
-          userId: 'user1',
-          name: 'User One',
-        },
-        created: '2023-01-01T00:00:00Z',
+  vi.mocked(getUserActivities).mockResolvedValue([
+    {
+      id: 100,
+      project: {
+        id: 1,
+        projectKey: 'TEST',
+        name: 'Test Project',
       },
-    ]),
-  };
+      type: 1,
+      content: { summary: 'Created issue' },
+      notifications: [],
+      createdUser: {
+        id: 10,
+        userId: 'user1',
+        name: 'User One',
+      },
+      created: '2023-01-01T00:00:00Z',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getUserRecentUpdatesTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getUserRecentUpdatesTool(mockClient, mockDescriptionHelper);
 
   it('returns activities list', async () => {
     const result = await tool.handler({ userId: 10 });
@@ -41,7 +44,7 @@ describe('getUserRecentUpdatesTool', () => {
     expect(result[0].type).toEqual(1);
   });
 
-  it('calls backlog.getUserActivities with correct params', async () => {
+  it('calls getUserActivities with correct params', async () => {
     const params = {
       userId: 10,
       activityTypeId: [1],
@@ -53,7 +56,7 @@ describe('getUserRecentUpdatesTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getUserActivities).toHaveBeenCalledWith(10, {
+    expect(getUserActivities).toHaveBeenCalledWith(mockClient, 10, {
       activityTypeId: [1],
       minId: 10,
       maxId: 20,

@@ -1,20 +1,22 @@
 import { getNotificationsCountTool } from './getNotificationsCount.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getNotificationsCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getNotificationsCountTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getNotificationsCount: vi.fn<() => Promise<any>>().mockResolvedValue({
-      count: 42,
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getNotificationsCount: vi.fn(),
+}));
 
+describe('getNotificationsCountTool', () => {
+  vi.mocked(getNotificationsCount).mockResolvedValue({
+    count: 42,
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getNotificationsCountTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getNotificationsCountTool(mockClient, mockDescriptionHelper);
 
   it('returns notification count as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -29,7 +31,7 @@ describe('getNotificationsCountTool', () => {
     expect(result.count).toEqual(42);
   });
 
-  it('calls backlog.getNotificationsCount with correct params', async () => {
+  it('calls getNotificationsCount with correct params', async () => {
     const params = {
       alreadyRead: true,
       resourceAlreadyRead: false,
@@ -37,6 +39,6 @@ describe('getNotificationsCountTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getNotificationsCount).toHaveBeenCalledWith(params);
+    expect(getNotificationsCount).toHaveBeenCalledWith(mockClient, params);
   });
 });

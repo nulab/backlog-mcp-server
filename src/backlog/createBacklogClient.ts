@@ -1,4 +1,5 @@
-import { Backlog } from 'backlog-js';
+import { createClient } from 'backlog-js';
+import type { Client, ClientConfigure } from 'backlog-js';
 
 /**
  * The Backlog API client the tools are built on.
@@ -6,9 +7,9 @@ import { Backlog } from 'backlog-js';
  * Exported as a type alongside `createBacklogClient` so that a consumer can
  * name what it passes to `allTools` without depending on `backlog-js` itself.
  */
-export type BacklogClient = Backlog;
+export type BacklogClient = Client;
 
-export type BacklogClientOptions = ConstructorParameters<typeof Backlog>[0];
+export type BacklogClientOptions = ClientConfigure;
 
 /**
  * Creates the client to pass to `allTools`.
@@ -23,5 +24,5 @@ export type BacklogClientOptions = ConstructorParameters<typeof Backlog>[0];
 export function createBacklogClient(
   options: BacklogClientOptions
 ): BacklogClient {
-  return new Backlog(options);
+  return createClient(options);
 }

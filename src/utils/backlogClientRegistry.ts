@@ -1,4 +1,5 @@
-import { Backlog } from 'backlog-js';
+import { createClient } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { getCurrentAccessToken } from '../auth/backlogAuthContext.js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
 import packageJson from '../../package.json' with { type: 'json' };
@@ -13,11 +14,11 @@ export type BacklogOrganizationInfo = {
   isDefault: boolean;
 };
 
-export type BacklogClientResolver = (organization?: string) => Backlog;
+export type BacklogClientResolver = (organization?: string) => Client;
 
 export type BacklogClientRegistry = {
   resolveClient: BacklogClientResolver;
-  createScopedClient: () => Backlog;
+  createScopedClient: () => Client;
   listOrganizations: () => BacklogOrganizationInfo[];
   getDefaultOrganization: () => string | undefined;
   /**
@@ -56,7 +57,7 @@ export function createBacklogClientRegistry(
   }
 
   const defaultName = 'default';
-  const client = new Backlog({ host: domain, apiKey, userAgent: USER_AGENT });
+  const client = createClient({ host: domain, apiKey, userAgent: USER_AGENT });
 
   const info: BacklogOrganizationInfo = {
     name: defaultName,
@@ -153,7 +154,7 @@ function createMultiOrganizationRegistryFromEnv(
     );
   }
 
-  const clients = new Map<string, Backlog>();
+  const clients = new Map<string, Client>();
   // At this point, all organizations have been validated to have both domain and apiKey
   const validatedOrganizations = organizations as Map<
     string,
@@ -163,7 +164,7 @@ function createMultiOrganizationRegistryFromEnv(
     ([name, config]) => {
       clients.set(
         name,
-        new Backlog({
+        createClient({
           host: config.domain as string,
           apiKey: config.apiKey as string,
           userAgent: USER_AGENT,
@@ -203,9 +204,9 @@ function createMultiOrganizationRegistryFromEnv(
 }
 
 function resolveKnownClient(
-  clients: Map<string, Backlog>,
+  clients: Map<string, Client>,
   organization: string
-): Backlog {
+): Client {
   const client = clients.get(organization);
 
   if (!client) {
@@ -227,12 +228,12 @@ export function createOAuthBacklogClientRegistry(
     isDefault: true,
   };
 
-  const resolveOAuthClient = (): Backlog => {
+  const resolveOAuthClient = (): Client => {
     const token = getCurrentAccessToken();
     if (!token) {
       throw new Error('No OAuth access token in current request context');
     }
-    return new Backlog({
+    return createClient({
       host: domain,
       accessToken: token,
       userAgent: USER_AGENT,
@@ -249,7 +250,7 @@ export function createOAuthBacklogClientRegistry(
   };
 }
 
-function createBacklogClientProxy(resolveClient: () => Backlog): Backlog {
+function createBacklogClientProxy(resolveClient: () => Client): Client {
   return new Proxy(
     {},
     {
@@ -264,5 +265,5 @@ function createBacklogClientProxy(resolveClient: () => Backlog): Backlog {
         return value;
       },
     }
-  ) as Backlog;
+  ) as Client;
 }

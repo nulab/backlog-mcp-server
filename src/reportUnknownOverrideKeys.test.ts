@@ -1,4 +1,4 @@
-import { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import {
   describe,
   it,
@@ -18,7 +18,7 @@ describe('reportUnknownOverrideKeys', () => {
   // the probe never calls it.
   const args = {
     version: '0.0.0-test',
-    backlog: {} as Backlog,
+    backlog: {} as Client,
     clientRegistry: {} as BacklogClientRegistry,
     mcpOption: {
       useFields: false,

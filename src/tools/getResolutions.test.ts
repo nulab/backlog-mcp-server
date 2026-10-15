@@ -1,35 +1,38 @@
 import { getResolutionsTool } from './getResolutions.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getResolutions } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getResolutions: vi.fn(),
+}));
+
 describe('getResolutionsTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getResolutions: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 0,
-        name: 'Fixed',
-      },
-      {
-        id: 1,
-        name: "Won't Fix",
-      },
-      {
-        id: 2,
-        name: 'Invalid',
-      },
-      {
-        id: 3,
-        name: 'Duplicate',
-      },
-    ]),
-  };
+  vi.mocked(getResolutions).mockResolvedValue([
+    {
+      id: 0,
+      name: 'Fixed',
+    },
+    {
+      id: 1,
+      name: "Won't Fix",
+    },
+    {
+      id: 2,
+      name: 'Invalid',
+    },
+    {
+      id: 3,
+      name: 'Duplicate',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getResolutionsTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getResolutionsTool(mockClient, mockDescriptionHelper);
 
   it('returns resolutions list as formatted JSON text', async () => {
     const result = await tool.handler({});
@@ -44,9 +47,9 @@ describe('getResolutionsTool', () => {
     expect(result[3].name).toContain('Duplicate');
   });
 
-  it('calls backlog.getResolutions', async () => {
+  it('calls getResolutions', async () => {
     await tool.handler({});
 
-    expect(mockBacklog.getResolutions).toHaveBeenCalled();
+    expect(getResolutions).toHaveBeenCalledWith(mockClient);
   });
 });

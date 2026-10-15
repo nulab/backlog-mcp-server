@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import type { DescriptionHelper } from '../createDescriptionHelper';
 import { allTools } from '../tools/tools';
 import { organizationTools } from '../tools/organizations';
 import type { BacklogClientRegistry } from './backlogClientRegistry';
 import { toolAnnotationsFor } from './toolAnnotations';
 
-const mockBacklog = {} as Backlog;
+const mockBacklog = {} as Client;
 const mockHelper = { t: vi.fn() } as unknown as DescriptionHelper;
 const mockRegistry = {
   listOrganizations: () => [],

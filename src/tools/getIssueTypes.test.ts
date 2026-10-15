@@ -1,34 +1,39 @@
 import { getIssueTypesTool } from './getIssueTypes.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssueTypes } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getIssueTypesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getIssueTypes: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        projectId: 100,
-        name: 'Bug',
-        color: '#990000',
-      },
-      {
-        id: 2,
-        projectId: 100,
-        name: 'Task',
-        color: '#7ea800',
-      },
-      {
-        id: 3,
-        projectId: 100,
-        name: 'Request',
-        color: '#ff9200',
-      },
-    ]),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssueTypes: vi.fn(),
+}));
 
+describe('getIssueTypesTool', () => {
+  vi.mocked(getIssueTypes).mockResolvedValue([
+    {
+      id: 1,
+      projectId: 100,
+      name: 'Bug',
+      color: '#990000',
+    },
+    {
+      id: 2,
+      projectId: 100,
+      name: 'Task',
+      color: '#7ea800',
+    },
+    {
+      id: 3,
+      projectId: 100,
+      name: 'Request',
+      color: '#ff9200',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getIssueTypesTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = getIssueTypesTool(mockClient, mockDescriptionHelper);
 
   it('returns issue types list as formatted JSON text', async () => {
     const result = await tool.handler({
@@ -44,20 +49,20 @@ describe('getIssueTypesTool', () => {
     expect(result[2].name).toContain('Request');
   });
 
-  it('calls backlog.getIssueTypes with correct params when using project key', async () => {
+  it('calls getIssueTypes with correct params when using project key', async () => {
     await tool.handler({
       projectKey: 'TEST',
     });
 
-    expect(mockBacklog.getIssueTypes).toHaveBeenCalledWith('TEST');
+    expect(getIssueTypes).toHaveBeenCalledWith(mockClient, 'TEST');
   });
 
-  it('calls backlog.getIssueTypes with correct params when using project ID', async () => {
+  it('calls getIssueTypes with correct params when using project ID', async () => {
     await tool.handler({
       projectId: 100,
     });
 
-    expect(mockBacklog.getIssueTypes).toHaveBeenCalledWith(100);
+    expect(getIssueTypes).toHaveBeenCalledWith(mockClient, 100);
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {

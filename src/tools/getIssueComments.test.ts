@@ -1,51 +1,53 @@
 import { getIssueCommentsTool } from './getIssueComments.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssueComments } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('getIssueCommentsTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getIssueComments: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        content: 'This is the first comment',
-        changeLog: [],
-        createdUser: {
-          id: 1,
-          userId: 'admin',
-          name: 'Admin User',
-          roleType: 1,
-          lang: 'en',
-          mailAddress: 'admin@example.com',
-          lastLoginTime: '2023-01-01T00:00:00Z',
-        },
-        created: '2023-01-01T00:00:00Z',
-        updated: '2023-01-01T00:00:00Z',
-      },
-      {
-        id: 2,
-        content: 'This is the second comment',
-        changeLog: [],
-        createdUser: {
-          id: 5,
-          userId: 'user',
-          name: 'Test User',
-          roleType: 1,
-          lang: 'en',
-          mailAddress: 'test@example.com',
-          lastLoginTime: '2023-01-01T00:00:00Z',
-        },
-        created: '2023-01-02T00:00:00Z',
-        updated: '2023-01-02T00:00:00Z',
-      },
-    ]),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssueComments: vi.fn(),
+}));
 
+describe('getIssueCommentsTool', () => {
+  vi.mocked(getIssueComments).mockResolvedValue([
+    {
+      id: 1,
+      content: 'This is the first comment',
+      changeLog: [],
+      createdUser: {
+        id: 1,
+        userId: 'admin',
+        name: 'Admin User',
+        roleType: 1,
+        lang: 'en',
+        mailAddress: 'admin@example.com',
+        lastLoginTime: '2023-01-01T00:00:00Z',
+      },
+      created: '2023-01-01T00:00:00Z',
+      updated: '2023-01-01T00:00:00Z',
+    },
+    {
+      id: 2,
+      content: 'This is the second comment',
+      changeLog: [],
+      createdUser: {
+        id: 5,
+        userId: 'user',
+        name: 'Test User',
+        roleType: 1,
+        lang: 'en',
+        mailAddress: 'test@example.com',
+        lastLoginTime: '2023-01-01T00:00:00Z',
+      },
+      created: '2023-01-02T00:00:00Z',
+      updated: '2023-01-02T00:00:00Z',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getIssueCommentsTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getIssueCommentsTool(mockClient, mockDescriptionHelper);
 
   it('returns issue comments', async () => {
     const result = await tool.handler({
@@ -61,27 +63,27 @@ describe('getIssueCommentsTool', () => {
     expect(result[1]).toHaveProperty('content', 'This is the second comment');
   });
 
-  it('calls backlog.getIssueComments with correct params when using issue key', async () => {
+  it('calls getIssueComments with correct params when using issue key', async () => {
     await tool.handler({
       issueKey: 'TEST-1',
       count: 10,
       order: 'desc',
     });
 
-    expect(mockBacklog.getIssueComments).toHaveBeenCalledWith('TEST-1', {
+    expect(getIssueComments).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       count: 10,
       order: 'desc',
     });
   });
 
-  it('calls backlog.getIssueComments with correct params when using issue ID and min/max IDs', async () => {
+  it('calls getIssueComments with correct params when using issue ID and min/max IDs', async () => {
     await tool.handler({
       issueId: 1,
       minId: 100,
       maxId: 200,
     });
 
-    expect(mockBacklog.getIssueComments).toHaveBeenCalledWith(1, {
+    expect(getIssueComments).toHaveBeenCalledWith(mockClient, 1, {
       // Expect number
       minId: 100,
       maxId: 200,

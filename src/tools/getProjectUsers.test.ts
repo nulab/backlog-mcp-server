@@ -1,37 +1,40 @@
 import { getProjectUsersTool } from './getProjectUsers.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getProjectUsers } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getProjectUsers: vi.fn(),
+}));
+
 describe('getProjectUsersTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getProjectUsers: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
-        id: 1,
-        userId: 'admin',
-        name: 'Admin User',
-        roleType: 1,
-        lang: 'en',
-        mailAddress: 'admin@example.com',
-        lastLoginTime: '2023-01-01T00:00:00Z',
-      },
-      {
-        id: 2,
-        userId: 'user1',
-        name: 'Regular User',
-        roleType: 2,
-        lang: 'en',
-        mailAddress: 'user1@example.com',
-        lastLoginTime: '2023-01-02T00:00:00Z',
-      },
-    ]),
-  };
+  vi.mocked(getProjectUsers).mockResolvedValue([
+    {
+      id: 1,
+      userId: 'admin',
+      name: 'Admin User',
+      roleType: 1,
+      lang: 'en',
+      mailAddress: 'admin@example.com',
+      lastLoginTime: '2023-01-01T00:00:00Z',
+    },
+    {
+      id: 2,
+      userId: 'user1',
+      name: 'Regular User',
+      roleType: 2,
+      lang: 'en',
+      mailAddress: 'user1@example.com',
+      lastLoginTime: '2023-01-02T00:00:00Z',
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getProjectUsersTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getProjectUsersTool(mockClient, mockDescriptionHelper);
 
   it('returns project users list', async () => {
     const result = await tool.handler({ projectId: 100 });
@@ -44,16 +47,16 @@ describe('getProjectUsersTool', () => {
     expect(result[1].name).toContain('Regular User');
   });
 
-  it('calls backlog.getProjectUsers with the resolved project id', async () => {
+  it('calls getProjectUsers with the resolved project id', async () => {
     await tool.handler({ projectId: 100 });
 
-    expect(mockBacklog.getProjectUsers).toHaveBeenCalledWith(100);
+    expect(getProjectUsers).toHaveBeenCalledWith(mockClient, 100);
   });
 
-  it('calls backlog.getProjectUsers with the project key', async () => {
+  it('calls getProjectUsers with the project key', async () => {
     await tool.handler({ projectKey: 'PROJECT' });
 
-    expect(mockBacklog.getProjectUsers).toHaveBeenCalledWith('PROJECT');
+    expect(getProjectUsers).toHaveBeenCalledWith(mockClient, 'PROJECT');
   });
 
   it('throws when neither projectId nor projectKey is provided', async () => {

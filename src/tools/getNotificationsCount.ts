@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getNotificationsCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -25,7 +26,7 @@ const getNotificationsCountSchema = buildToolSchema((t) => ({
 }));
 
 export const getNotificationsCountTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getNotificationsCountSchema>,
@@ -42,6 +43,6 @@ export const getNotificationsCountTool = (
     outputFields: outputFields<Entity.Notification.NotificationCount>()([
       'count',
     ]),
-    handler: async (params) => backlog.getNotificationsCount(params),
+    handler: async (params) => getNotificationsCount(backlog, params),
   };
 };

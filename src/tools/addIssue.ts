@@ -1,5 +1,6 @@
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { postIssue } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
@@ -115,7 +116,7 @@ const addIssueSchema = buildToolSchema((t) => ({
 }));
 
 export const addIssueTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof addIssueSchema>, Entity.Issue.Issue> => {
   return {
@@ -165,7 +166,7 @@ export const addIssueTool = (
         ...customFieldPayload,
       };
 
-      return backlog.postIssue(finalPayload);
+      return postIssue(backlog, finalPayload);
     },
   };
 };

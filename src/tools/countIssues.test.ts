@@ -1,17 +1,22 @@
 import { countIssuesTool } from './countIssues.js';
 import { vi, describe, it, expect } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { getIssuesCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('countIssuesTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getIssuesCount: vi.fn<() => Promise<any>>().mockResolvedValue({
-      count: 42,
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getIssuesCount: vi.fn(),
+}));
 
+describe('countIssuesTool', () => {
+  vi.mocked(getIssuesCount).mockResolvedValue({
+    count: 42,
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = countIssuesTool(mockBacklog as Backlog, mockDescriptionHelper);
+  const tool = countIssuesTool(mockClient, mockDescriptionHelper);
 
   it('returns issue count', async () => {
     const result = await tool.handler({
@@ -21,7 +26,7 @@ describe('countIssuesTool', () => {
     expect(result).toHaveProperty('count', 42);
   });
 
-  it('calls backlog.getIssuesCount with correct params', async () => {
+  it('calls getIssuesCount with correct params', async () => {
     const params = {
       projectId: [100],
       statusId: [1],
@@ -30,22 +35,22 @@ describe('countIssuesTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith(params);
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, params);
   });
 
-  it('calls backlog.getIssuesCount with date filters', async () => {
+  it('calls getIssuesCount with date filters', async () => {
     await tool.handler({
       createdSince: '2023-01-01',
       createdUntil: '2023-01-31',
     });
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, {
       createdSince: '2023-01-01',
       createdUntil: '2023-01-31',
     });
   });
 
-  it('calls backlog.getIssuesCount with custom fields', async () => {
+  it('calls getIssuesCount with custom fields', async () => {
     await tool.handler({
       projectId: [100],
       customFields: [
@@ -54,7 +59,7 @@ describe('countIssuesTool', () => {
       ],
     });
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
       customField_12345: 'test-value',
       customField_67890_min: 1,
@@ -62,34 +67,34 @@ describe('countIssuesTool', () => {
     });
   });
 
-  it('calls backlog.getIssuesCount with custom fields array values', async () => {
+  it('calls getIssuesCount with custom fields array values', async () => {
     await tool.handler({
       customFields: [{ id: 11111, type: 'list', value: [7, 8] }],
     });
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, {
       customField_11111: [7, 8],
     });
   });
 
-  it('calls backlog.getIssuesCount with empty custom fields', async () => {
+  it('calls getIssuesCount with empty custom fields', async () => {
     await tool.handler({
       projectId: [100],
       customFields: [],
     });
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
     });
   });
 
-  it('calls backlog.getIssuesCount without custom fields', async () => {
+  it('calls getIssuesCount without custom fields', async () => {
     await tool.handler({
       projectId: [100],
       statusId: [1],
     });
 
-    expect(mockBacklog.getIssuesCount).toHaveBeenCalledWith({
+    expect(getIssuesCount).toHaveBeenCalledWith(mockClient, {
       projectId: [100],
       statusId: [1],
     });
