@@ -114,8 +114,14 @@ const updateIssueSchema = buildToolSchema((t) => ({
     .describe(t('TOOL_UPDATE_ISSUE_ATTACHMENT_ID', 'Attachment IDs')),
   parentIssueId: z
     .number()
+    .nullable()
     .optional()
-    .describe(t('TOOL_UPDATE_ISSUE_PARENT_ISSUE_ID', 'Parent issue ID')),
+    .describe(
+      t(
+        'TOOL_UPDATE_ISSUE_PARENT_ISSUE_ID',
+        'Parent issue ID. Pass null to remove the current parent issue. Omit to leave it unchanged.'
+      )
+    ),
   comment: z
     .string()
     .optional()
@@ -255,8 +261,11 @@ export const updateIssueTool = (
 
       const finalPayload = {
         ...clearEmptyArrayFields(params),
+        ...(params.parentIssueId === null ? { parentIssueId: '' } : {}),
         ...customFieldPayload,
       };
+      // An explicit null parentIssueId becomes an empty form value, allowing
+      // Backlog to clear the parent without changing omitted parentIssueId.
       // The `['']` clear-sentinel is not representable in backlog-js's
       // `number[]` param types, so cast at this single boundary. qs serializes
       // it to `field[]=`, which the Backlog API accepts as "clear this field".
