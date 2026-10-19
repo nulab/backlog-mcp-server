@@ -132,7 +132,7 @@ describe('updateIssueTool', () => {
   it('clears the parent when parentIssueId is explicitly null', async () => {
     await tool.handler({ issueKey: 'TEST-1', parentIssueId: null });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       parentIssueId: '',
     });
   });
@@ -140,7 +140,7 @@ describe('updateIssueTool', () => {
   it('omits parentIssueId when updating another field', async () => {
     await tool.handler({ issueKey: 'TEST-1', summary: 'Changed' });
 
-    expect(mockBacklog.patchIssue).toHaveBeenCalledWith('TEST-1', {
+    expect(patchIssue).toHaveBeenCalledWith(mockClient, 'TEST-1', {
       summary: 'Changed',
     });
   });
