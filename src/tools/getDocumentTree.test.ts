@@ -8,11 +8,6 @@ vi.mock('backlog-js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('backlog-js')>()),
   getDocumentTree: vi.fn(),
 }));
-// export const DocumentTreeFullSchema = z.object({
-//   projectId: z.string(),
-//   activeTree: ActiveTrashTreeSchema.optional(),
-//   trashTree: ActiveTrashTreeSchema.optional(),
-// });
 describe('getDocumentTreeTool', () => {
   vi.mocked(getDocumentTree).mockResolvedValue({
     projectId: 1,

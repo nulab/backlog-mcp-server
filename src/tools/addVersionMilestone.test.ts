@@ -96,7 +96,6 @@ describe('addVersionMilestoneTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       name: 'Version without project',
       description: 'This should fail',
     };

@@ -1,9 +1,6 @@
 import { CallToolResult, ServerContext } from '@modelcontextprotocol/server';
 import { isErrorLike, SafeResult } from '../../types/result.js';
 
-/**
- * Convert SafeResult<T> to CallToolResult
- */
 export function wrapWithToolResult<I, T>(
   fn: (input: I) => Promise<SafeResult<string | T>>
 ): (input: I, extra: ServerContext) => Promise<CallToolResult> {

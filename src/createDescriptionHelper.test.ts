@@ -51,9 +51,7 @@ describe('createDescriptionHelper', () => {
     expect(second).toBe('Cached value');
   });
 
-  // The tool layer this helper serves is meant to run on non-Node runtimes, where
-  // `process` may be missing entirely or shimmed without `env`. Neither case is
-  // reachable on Node, so nothing else in the suite exercises these guards.
+  // Non-Node runtimes may lack `process` or shim it without `env`; unreachable elsewhere on Node.
   it('resolves without a process global', () => {
     vi.stubGlobal('process', undefined);
 

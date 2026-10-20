@@ -28,8 +28,6 @@ describe('listOrganizationsTool', () => {
     ]);
   });
 
-  // It reads a registry fixed at startup over three fields. Publishing `fields`
-  // for that costs every client schema and trims nothing.
   it('does not ask for field selection', () => {
     expect(
       listOrganizationsTool(registry, createDescriptionHelper().t)

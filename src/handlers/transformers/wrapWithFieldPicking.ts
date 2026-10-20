@@ -1,18 +1,7 @@
 import { isErrorLike, SafeResult } from '../../types/result.js';
 
-/**
- * Narrows a successful result to the fields the caller asked for.
- *
- * `fields` is a list of top-level names, validated against the tool's own enum
- * before it reaches here, so an unknown name is rejected by the protocol rather
- * than dropped in silence. A missing or empty list returns everything.
- *
- * One level deep on purpose. This used to accept a GraphQL selection set and
- * parse it with the `graphql` package: ~1 MB for a single `parse` call, a grammar
- * that accepted aliases, fragments, arguments and directives and then honoured
- * none of them, and a descent into an array field that returned `{}` and lost the
- * data outright.
- */
+// Top-level names only, on purpose. `fields` is validated against the tool's enum before it
+// gets here, so an unknown name is rejected rather than silently dropped.
 export function wrapWithFieldPicking<I extends { fields?: string[] }, O>(
   fn: (input: I) => Promise<SafeResult<O>>
 ): (input: I) => Promise<SafeResult<O>> {
@@ -40,7 +29,6 @@ export function wrapWithFieldPicking<I extends { fields?: string[] }, O>(
       };
     }
 
-    // A scalar has no fields to narrow.
     return result;
   };
 }

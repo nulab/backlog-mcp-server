@@ -1,33 +1,7 @@
 import { isErrorLike, SafeResult } from '../../types/result.js';
 
-/**
- * Shrinks a successful result before it is serialised for the client.
- *
- * Backlog embeds a whole entity wherever one is referenced. A model needs to
- * know which one, not every field of it, so a nested entity is cut down to
- * what identifies it:
- *
- * - a user (`createdUser`, `assignee`, `stars[].presenter`, a notification's
- *   `sender`) to `id`, `userId` and `name`, dropping its mail address,
- *   language, last login and Nulab account;
- * - a project (each activity's and notification's `project`) to `id`,
- *   `projectKey` and `name`, dropping its settings flags;
- * - an issue (a pull request's or notification's `issue`) to `id`,
- *   `issueKey`, `summary` and `status`.
- *
- * Every nested entity loses `color` and `displayOrder`, which only matter on
- * screen — statuses, issue types, categories, milestones, the items of a
- * custom field — and a nested milestone loses its `description`, which an
- * issue list would otherwise repeat per issue.
- *
- * What is at the top of the result (`get_myself`, `get_project`, an item of
- * `get_users` or `get_issue_types`) is what was asked for and is left whole.
- * So is the issue of a watching list item, which is what the list is about.
- *
- * Fields with nothing in them — `null`, `''`, `[]` — are dropped as well:
- * every issue carries `resolution: null`, `attachments: []`, `stars: []` and
- * the like, and their absence says the same thing in fewer tokens.
- */
+// Cuts nested entities down to what identifies them and drops empty fields to save tokens.
+// The top-level result, and a watching list item's issue, are what was asked for and stay whole.
 export function wrapWithCompactResponse<I, O>(
   fn: (input: I) => Promise<SafeResult<O>>
 ): (input: I) => Promise<SafeResult<O>> {

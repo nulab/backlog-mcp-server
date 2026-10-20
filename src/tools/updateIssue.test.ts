@@ -111,7 +111,6 @@ describe('updateIssueTool', () => {
     });
 
     expect(patchIssue).toHaveBeenCalledWith(mockClient, 1, {
-      // Expect number
       estimatedHours: 15,
       actualHours: 8,
       comment: 'Updated the estimated and actual hours',

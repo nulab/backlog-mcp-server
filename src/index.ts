@@ -111,10 +111,8 @@ const argv = yargs(hideBin(process.argv))
   })
   .option('export-descriptions', {
     type: 'boolean',
-    // Deprecated alias, to be removed in a future release. Kept because the old name is
-    // documented with docker and npx examples, and dropping it outright would
-    // not fail loudly: yargs ignores unknown flags, so the process would fall
-    // through to starting a server and the caller would see a hang.
+    // Deprecated alias. yargs ignores unknown flags, so dropping it would not fail loudly:
+    // the process would start a server and the caller would see a hang.
     alias: 'export-translations',
     describe: 'Export tool and parameter descriptions and exit',
     default: false,
@@ -133,10 +131,8 @@ Available toolsets:
   })
   .parseSync();
 
-// The alias resolves both spellings to the same argv key, so which one was typed
-// is only visible in the raw arguments. Written straight to stderr rather than
-// through `logger`, which drops anything below `error` in production — and stdout
-// carries the JSON-RPC stream, so a notice there would corrupt the protocol.
+// Only the raw arguments show which spelling was typed. Written to stderr directly: `logger`
+// drops anything below `error` in production, and stdout carries the JSON-RPC stream.
 if (
   hideBin(process.argv).some(
     (arg) => arg.split('=')[0] === '--export-translations'
@@ -175,9 +171,7 @@ const mcpOption = {
   useOrganization: clientRegistry.isMultiOrganization,
 };
 
-// Built once and shared by every server the factory produces. Nothing mutates
-// it, so this is purely to avoid rebuilding the whole tool tree per request under
-// the stateless HTTP model.
+// Shared by every server the factory produces so the tool tree is not rebuilt per request.
 const sharedToolsetGroup = buildToolsetGroup(
   backlog,
   descriptionHelper,
@@ -192,8 +186,6 @@ reportUnknownOverrideKeys({
   mcpOption,
 });
 
-// Factory: creates a fresh MCP server with all tools registered.
-// Used once per stdio connection; one fresh instance per HTTP request.
 const createServer = () =>
   createBacklogMcpServer({
     version,
@@ -207,9 +199,8 @@ const createServer = () =>
   });
 
 if (argv.exportDescriptions) {
-  // Description keys are only recorded once a tool asks for them, so build a
-  // server with every toolset enabled before dumping. Without this the dump is
-  // empty, because no tool has been created yet at this point.
+  // Description keys are recorded only once a tool is created, so build a server with
+  // every toolset enabled first or the dump is empty.
   createBacklogMcpServer({
     version,
     useFields,

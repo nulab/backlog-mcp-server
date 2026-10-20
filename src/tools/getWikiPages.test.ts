@@ -89,7 +89,7 @@ describe('getWikiPagesTool', () => {
     });
 
     expect(getWikis).toHaveBeenCalledWith(mockClient, {
-      projectIdOrKey: 'TEST', // This is correct as backlog-js expects projectIdOrKey
+      projectIdOrKey: 'TEST',
       keyword: undefined,
     });
   });
@@ -101,14 +101,13 @@ describe('getWikiPagesTool', () => {
     });
 
     expect(getWikis).toHaveBeenCalledWith(mockClient, {
-      projectIdOrKey: 100, // This is correct as backlog-js expects projectIdOrKey
+      projectIdOrKey: 100,
       keyword: 'api',
     });
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       keyword: 'test',
     };
 

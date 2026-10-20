@@ -5,9 +5,8 @@ import { reportBacklogAuthError } from './backlogAuthContext.js';
 import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-// The error class and `isTokenRejected` are the real ones, because they are
-// what the middleware branches on; `verifyBacklogToken` is the only function
-// this file needs, and leaving the rest out keeps the network unreachable.
+// Only `verifyBacklogToken` is mocked: the middleware branches on the real error
+// class and `isTokenRejected`, and the rest stays out to keep the network unreachable.
 vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
   const { BacklogTokenError, isTokenRejected } =
     await importOriginal<typeof import('./backlogOAuthClient.js')>();
@@ -142,10 +141,8 @@ describe('createBearerAuthMiddleware', () => {
     expect(store.getMcpToken('mcp-token-4')).toBeUndefined();
   });
 
-  // A Backlog outage is not a rejected token. Answered with 401 it would send
-  // every connected client through a fresh authorization whose result would
-  // fail verification just the same, and cost them their stored token on the
-  // way out.
+  // A Backlog outage is not a rejected token: a 401 would send every client through
+  // a re-authorization that fails just the same, costing them their stored token.
   it('returns 503 and keeps the token when Backlog cannot be reached', async () => {
     store.storeMcpToken('mcp-token-5', {
       backlogAccessToken: 'bl-token-5',

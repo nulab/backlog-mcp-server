@@ -8,36 +8,18 @@ import { outputFields } from '../types/outputFields.js';
 import { countTokens } from '../utils/tokenCounter.js';
 import { compactResponse } from '../handlers/transformers/wrapWithCompactResponse.js';
 
-/**
- * A document as `get_document` returns it: without `json`.
- *
- * `json` is the ProseMirror tree of the same content `plain` already carries as
- * text, and it is the bulk of the response — every table cell, paragraph and
- * run of text is wrapped in its own `{"type": ...}` node. A document with a
- * few hundred table cells comes to about ten times its `plain`, enough to trip
- * the token limit on a document whose text alone is well within it.
- */
+// Without `json`: the ProseMirror tree duplicates `plain` at about ten times its size,
+// enough to trip the token limit on a document whose text fits.
 type DocumentWithoutJson = Omit<Entity.Document.Document, 'json'>;
 
-/**
- * The document with `plain` cut to the slice that was asked for.
- *
- * `plainLength` is the length of the whole of `plain`, so the caller can tell
- * how much there is. `nextStart` is where the next slice begins and is set only
- * when the slice stopped short of the end: its absence is what says the
- * document has been read to the end.
- */
+// `nextStart` is set only when the slice stopped short of the end; its absence means
+// the document has been read to the end.
 type DocumentSlice = DocumentWithoutJson & {
   plainLength: number;
   nextStart?: number;
 };
 
-/**
- * Characters of `plain` returned when `limit` is not given.
- *
- * An upper bound, not a promise: the slice is shortened further when the
- * response would not fit in `MAX_TOKENS` (see `fitToTokenLimit`).
- */
+/** Upper bound; the slice is shortened further to fit `MAX_TOKENS` (see `fitToTokenLimit`). */
 const DEFAULT_LIMIT = 40_000;
 
 const getDocumentSchema = buildToolSchema((t) => ({
@@ -107,8 +89,7 @@ export const getDocumentTool = (
         backlog,
         documentId
       );
-      // Typed as a string, but not trusted to be one: before slicing, a
-      // missing `plain` was passed through; now it would throw.
+      // Typed as a string, but not trusted to be one: slicing a missing `plain` would throw.
       const text = plain ?? '';
       const from = toCodePointBoundary(text, Math.min(start, text.length));
 
@@ -143,22 +124,9 @@ export const getDocumentTool = (
   };
 };
 
-/**
- * The largest end, no later than `end`, at which the response fits in
- * `maxTokens`.
- *
- * Without this a slice that is over the limit is cut by `wrapWithTokenLimit`
- * somewhere inside `plain`, while `nextStart` still points past the end of
- * the slice: whatever lay between the cut and `nextStart` would be skipped.
- * How many tokens a character costs depends on the text — about one for
- * Japanese, more for markup that JSON escapes — so the slice is measured with
- * the same counter `wrapWithTokenLimit` uses rather than estimated, and after
- * the same compaction it runs on: measured whole, the user profiles that
- * compaction strips would leave less room for `plain` than there is.
- *
- * At least one character is returned, even over the limit, so that reading
- * on from `nextStart` always makes progress.
- */
+// Without this, `wrapWithTokenLimit` cuts inside `plain` while `nextStart` points past the
+// slice, skipping text. Measured with the same counter after the same compaction. At least
+// one character is returned so reading on from `nextStart` always makes progress.
 function fitToTokenLimit(
   text: string,
   from: number,
@@ -190,14 +158,8 @@ function fitToTokenLimit(
     : Math.min(from + codePointLength(text, from), end);
 }
 
-/**
- * `index`, moved back by one if it falls between the two halves of a surrogate
- * pair.
- *
- * `slice` counts UTF-16 code units, so a boundary can land inside an emoji or
- * a rare CJK character. Cutting there leaves each slice with half of the
- * character, which JSON then carries as a lone `\ud83d`-style escape.
- */
+// `slice` counts UTF-16 code units; cutting inside a surrogate pair leaves a lone
+// `\ud83d`-style escape in the JSON.
 function toCodePointBoundary(text: string, index: number): number {
   return index > 0 &&
     index < text.length &&

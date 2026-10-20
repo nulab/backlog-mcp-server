@@ -3,11 +3,6 @@ import type { Client } from 'backlog-js';
 import { buildToolsetGroup } from './toolsetUtils.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-/**
- * This file used to cover `getToolset` and `enableToolset`, which existed only
- * for `enable_toolset`. Both are gone with it; `buildToolsetGroup` is what is
- * left in this module, and it had no direct coverage.
- */
 describe('buildToolsetGroup', () => {
   const backlog = {} as Client;
   const helper = createDescriptionHelper();

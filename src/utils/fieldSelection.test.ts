@@ -34,8 +34,6 @@ describe('fieldSelection', () => {
   });
 
   it('claims no types, so it cannot claim a wrong one', () => {
-    // The GraphQL type definition this replaced had no ZodArray branch, so
-    // `tags` was published as `String`.
     const description = fieldSelection(schema)!.description;
 
     for (const claim of ['String', 'Int!', 'JSON', 'type ']) {

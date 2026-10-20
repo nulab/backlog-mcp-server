@@ -156,10 +156,8 @@ describe('customFieldFiltersToPayload', () => {
   });
 });
 
-// The payload assertions above cannot catch this class of bug on their own: the
-// suite was green while `customField_401[]` was being produced, because the
-// breakage only appears once `Request.toQueryString` expands the array. Pin the
-// actual request URL instead.
+// Payload assertions alone miss this: the breakage only appears once
+// `Request.toQueryString` expands the array, so pin the request URL.
 describe('list custom field filters on the wire', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

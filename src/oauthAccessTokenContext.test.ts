@@ -12,20 +12,8 @@ import {
   type BacklogMCPServer,
 } from './utils/wrapServerWithToolRegistry.js';
 
-/**
- * Under OAuth, `createOAuthBacklogClientRegistry` resolves the Backlog access
- * token by calling `getCurrentAccessToken()` — an AsyncLocalStorage read — at
- * the moment a tool runs, and throws when it comes back empty. The token is put
- * into that storage by `runWithAccessToken`, which `createBearerAuthMiddleware`
- * scopes around `next()` — so the context spans the whole dispatch below it.
- *
- * So the whole OAuth transport hinges on the ALS context surviving the SDK's
- * dispatch: request → handler → transport → tool. If the SDK ever resolved
- * `fetch` before running the tool (as it would for a streamed response), the
- * context would be gone and *every* OAuth tool call would fail with
- * "No OAuth access token in current request context". These tests pin that
- * boundary for both response modes.
- */
+// OAuth tools read the access token from AsyncLocalStorage at tool time. If the SDK ever
+// resolved `fetch` before running the tool, every OAuth tool call would fail.
 
 const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const MODERN_ENVELOPE = {
@@ -43,7 +31,6 @@ const oauthConfig: BacklogOAuthConfig = {
   serverBaseUrl: 'https://mcp.example.com',
 };
 
-/** A server whose only tool reports what the tool-time ALS read returns. */
 const createServer = (): BacklogMCPServer => {
   const server = wrapServerWithToolRegistry(
     new McpServer({ name: 'probe', version: '0.0.0' })
@@ -106,8 +93,7 @@ describe('OAuth access token reaches the tool through AsyncLocalStorage', () => 
       clientId: 'c1',
       expiresAt: Date.now() + 60_000,
     });
-    // Pre-seed the verification cache so the bearer middleware short-circuits
-    // instead of calling out to Backlog.
+    // Pre-seeded so the bearer middleware does not call out to Backlog.
     tokenStore.cacheVerification(
       MCP_TOKEN,
       {

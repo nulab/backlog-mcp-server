@@ -115,7 +115,7 @@ describe('getPullRequestsTool', () => {
   it('calls getPullRequests with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       statusId: [1, 2],
       assigneeId: [1],
       count: 20,
@@ -138,7 +138,7 @@ describe('getPullRequestsTool', () => {
   it('calls getPullRequests with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       statusId: [1],
     };
 
@@ -157,7 +157,7 @@ describe('getPullRequestsTool', () => {
   it('calls getPullRequests with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       statusId: [1],
     };
 
@@ -175,7 +175,6 @@ describe('getPullRequestsTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       repoName: 'test-repo',
     };
 
@@ -185,7 +184,6 @@ describe('getPullRequestsTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
     };
 
     await expect(tool.handler(params as any)).rejects.toThrow(Error);

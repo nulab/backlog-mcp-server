@@ -18,11 +18,8 @@ type RegisterOptions<TTool extends RegistrableTool> = {
   server: BacklogMCPServer;
   toolsets: { enabled: boolean; tools: TTool[] }[];
   prefix: string;
-  /**
-   * Produces what the tool is registered with. Returning the schema instead of
-   * reading it back off the definition keeps the definition immutable, which is
-   * required now that one toolset group is shared across per-request servers.
-   */
+  // Returns the schema rather than mutating the definition: one toolset group
+  // is shared across per-request servers.
   prepareTool: (tool: TTool) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema: z.ZodObject<any>;

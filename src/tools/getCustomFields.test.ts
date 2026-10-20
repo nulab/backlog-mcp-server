@@ -16,12 +16,10 @@ type CustomField = Awaited<ReturnType<typeof getCustomFields>>[number];
 describe('getCustomFieldsTool', () => {
   const mockClient = {} as Client;
 
-  // Use the actual createDescriptionHelper for consistency
   const mockDescriptionHelper = createDescriptionHelper();
 
-  // Instantiate the tool with the mock client and real DescriptionHelper
   const tool = getCustomFieldsTool(mockClient, mockDescriptionHelper);
-  const toolHandler = tool.handler; // Get the handler from the instantiated tool
+  const toolHandler = tool.handler;
 
   it('should return custom fields for a valid project ID', async () => {
     const mockCustomFieldsData: CustomField[] = [
@@ -51,7 +49,6 @@ describe('getCustomFieldsTool', () => {
       } as CustomField,
     ];
 
-    // Setup the mockResolvedValue for getCustomFields
     vi.mocked(getCustomFields).mockResolvedValue(mockCustomFieldsData);
 
     const input = { projectKey: 'TEST_PROJECT' };
@@ -62,7 +59,7 @@ describe('getCustomFieldsTool', () => {
   });
 
   it('should call getCustomFields with correct params when using project ID', async () => {
-    vi.mocked(getCustomFields).mockResolvedValue([]); // Return empty for this check
+    vi.mocked(getCustomFields).mockResolvedValue([]);
     await toolHandler({ projectId: 123 });
     expect(getCustomFields).toHaveBeenCalledWith(mockClient, 123);
   });
@@ -72,7 +69,6 @@ describe('getCustomFieldsTool', () => {
     vi.mocked(getCustomFields).mockRejectedValue(apiError);
 
     const input = { projectKey: 'TEST_PROJECT_FAIL' };
-    // Expect the handler to throw the error directly
     await expect(toolHandler(input)).rejects.toThrow(apiError);
     expect(getCustomFields).toHaveBeenCalledWith(
       mockClient,
@@ -82,7 +78,7 @@ describe('getCustomFieldsTool', () => {
 
   it('should throw a structured error if API returns structured error', async () => {
     const structuredError = {
-      message: 'Structured error from API', // This is the top-level message
+      message: 'Structured error from API',
       errors: [
         { message: 'Invalid request detail', code: 6, moreInfo: 'Some info' },
       ],
@@ -90,7 +86,6 @@ describe('getCustomFieldsTool', () => {
     vi.mocked(getCustomFields).mockRejectedValue(structuredError);
 
     const input = { projectKey: 'TEST_PROJECT_STRUCTURED_ERROR' };
-    // Expect the handler to throw the structured error directly
     await expect(toolHandler(input)).rejects.toEqual(structuredError);
     expect(getCustomFields).toHaveBeenCalledWith(
       mockClient,
@@ -99,7 +94,7 @@ describe('getCustomFieldsTool', () => {
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
-    const params = {}; // No identifier provided
+    const params = {};
 
     await expect(toolHandler(params as any)).rejects.toThrow(Error);
   });

@@ -62,13 +62,9 @@ export const runHttpMcpServer = async (
   const isLocalhostBind = LOCALHOST_BINDS.includes(host);
   const oauthEnabled = !!(oauthConfig && tokenStore);
 
-  // Registered before the Host and Origin guards so that it stays reachable
-  // under an allow list. A load balancer health check addresses the target
-  // directly and puts its address in `Host` — AWS ALB gives no way to override
-  // it — so a guarded `/health` can only ever answer 403, leaving an operator
-  // to choose between dropping the allow list and treating 403 as healthy.
-  // Exempting it costs nothing: the response is constant and reaches no state,
-  // so there is nothing here for a rebinding page to reach either.
+  // Before the Host/Origin guards: an LB health check (AWS ALB) sends the target
+  // address as `Host`, so a guarded /health could only answer 403. Exempting it
+  // is safe because the response is constant and touches no state.
   app.get('/health', (c) =>
     c.json({ status: 'healthy', timestamp: new Date().toISOString(), version })
   );
@@ -81,12 +77,9 @@ export const runHttpMcpServer = async (
     app.use('*', localhostHostValidation());
   }
 
-  // `Origin` is a separate axis and cannot be derived from the allow list: a
-  // browser client's Origin is its own site, never this server's hostname, so
-  // validating one against the other would reject every legitimate remote
-  // client. Default to the localhost set only for a bare loopback bind (the
-  // desktop case, where a drive-by page is the threat); a deployment that
-  // declares its hosts opts out unless it names its client origins too.
+  // `Origin` can't be checked against the Host allow list: a browser client's
+  // Origin is its own site. Default to localhost origins only for a bare
+  // loopback bind, where a drive-by page is the threat.
   if (allowedOrigins?.length) {
     app.use('*', originValidation(allowedOrigins));
   } else if (isLocalhostBind && !allowedHosts?.length) {
@@ -105,10 +98,8 @@ export const runHttpMcpServer = async (
     );
   }
 
-  // MCP 2026-07-28 removed protocol sessions: every request is self-contained,
-  // so the handler builds a fresh server per request instead of keeping a
-  // transport map keyed by mcp-session-id. `legacy` defaults to 'stateless',
-  // which keeps 2025-era clients working over the same endpoint.
+  // MCP 2026-07-28 removed protocol sessions, so a fresh server is built per
+  // request. `legacy` defaults to 'stateless', which keeps 2025-era clients working.
   const mcpHandler = createMcpHandler(() => createServer(), {
     responseMode: enableJsonResponse ? 'json' : 'auto',
     onerror: (err) => logger.error({ err }, 'MCP handler error'),

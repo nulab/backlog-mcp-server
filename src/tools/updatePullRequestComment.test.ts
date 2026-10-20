@@ -33,7 +33,7 @@ describe('updatePullRequestCommentTool', () => {
   it('returns updated comment', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       commentId: 1,
       content: 'Updated comment content',
@@ -46,7 +46,7 @@ describe('updatePullRequestCommentTool', () => {
   it('calls patchPullRequestComments with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       commentId: 1,
       content: 'Updated comment content',
@@ -69,7 +69,7 @@ describe('updatePullRequestCommentTool', () => {
   it('calls patchPullRequestComments with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       commentId: 1,
       content: 'Updated comment content via projectId',
@@ -92,7 +92,7 @@ describe('updatePullRequestCommentTool', () => {
   it('calls patchPullRequestComments with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
       commentId: 1,
       content: 'Updated comment content via repoId',
@@ -114,8 +114,7 @@ describe('updatePullRequestCommentTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       commentId: 1,
       content: 'Test content',
@@ -127,7 +126,6 @@ describe('updatePullRequestCommentTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
       commentId: 1,
       content: 'Test content',

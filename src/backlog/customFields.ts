@@ -28,9 +28,6 @@ export type CustomFieldFilterInput =
       value: number | number[];
     };
 
-/**
- * Converts Backlog-style customFields array into proper payload format
- */
 export function customFieldsToPayload(
   customFields: CustomFieldInput[] | undefined
 ): Record<string, string | number | string[] | number[] | undefined> {
@@ -92,14 +89,9 @@ export function customFieldFiltersToPayload(
         break;
       }
       case 'list': {
-        // Always an array, single value included. Backlog matches a list custom
-        // field only on the indexed parameters `customField_1[0]=…`, which
-        // `Request.toQueryString` produces from an array under a `customField_`
-        // key. A bare `customField_1=…` is not matched, and neither is the
-        // `customField_1[][0]=…` that a `[]` suffix on this key would produce.
-        // Neither is rejected either — the filter is silently ignored and every
-        // issue comes back, so the caller cannot tell a filtered query from an
-        // unfiltered one.
+        // Always an array: Backlog matches a list custom field only as `customField_1[0]=…`.
+        // `customField_1=…` and `customField_1[][0]=…` are silently ignored and every issue
+        // comes back, so a filtered query is indistinguishable from an unfiltered one.
         const values = (
           Array.isArray(field.value) ? field.value : [field.value]
         ).filter((value) => Number.isFinite(value));

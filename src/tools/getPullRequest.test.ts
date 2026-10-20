@@ -59,7 +59,7 @@ describe('getPullRequestTool', () => {
   it('returns pull request information as formatted JSON text', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed from repoIdOrName
+      repoName: 'test-repo',
       number: 1,
     });
 
@@ -76,7 +76,7 @@ describe('getPullRequestTool', () => {
   it('calls getPullRequest with correct params when using repoName', async () => {
     await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed from repoIdOrName
+      repoName: 'test-repo',
       number: 1,
     });
 
@@ -91,7 +91,7 @@ describe('getPullRequestTool', () => {
   it('calls getPullRequest with correct params when using projectId and repoName', async () => {
     await tool.handler({
       projectId: 100,
-      repoName: 'test-repo', // Changed from repoIdOrName
+      repoName: 'test-repo',
       number: 1,
     });
 
@@ -106,7 +106,7 @@ describe('getPullRequestTool', () => {
   it('calls getPullRequest with correct params when using projectId and repoId', async () => {
     await tool.handler({
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
     });
 
@@ -115,7 +115,6 @@ describe('getPullRequestTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       repoName: 'test-repo',
       number: 1,
     };
@@ -126,7 +125,6 @@ describe('getPullRequestTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
     };
 

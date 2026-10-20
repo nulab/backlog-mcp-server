@@ -24,7 +24,6 @@ describe('composeToolHandler', () => {
     outputFields: ['id', 'name'],
     handler: async () => ({ id: 1, name: 'Sample' }),
     importantFields: ['id', 'name'],
-    // `fields` is only published on tools that return a list
     returnsList: true,
   };
 
@@ -34,9 +33,6 @@ describe('composeToolHandler', () => {
   };
 
   it("leaves 'fields' optional so a call without a selection still works", async () => {
-    // `wrapWithFieldPicking` returns the whole result when `fields` is absent,
-    // and the declared shape has always said optional. Built as a required
-    // string, every call under --optimize-response failed instead.
     const { schema, handler: composed } = composeToolHandler(tool, {
       useFields: true,
       maxTokens: 500,
@@ -48,15 +44,12 @@ describe('composeToolHandler', () => {
     const content = (result as CallToolResult).content[0];
     expect(content.type).toBe('text');
     if (content.type === 'text') {
-      // no selection, so nothing is dropped
       expect(content.text).toContain('id');
       expect(content.text).toContain('name');
     }
   });
 
   it("does not add 'fields' to a tool that returns one record", () => {
-    // The parameter is a fixed cost on every session; a single record has almost
-    // nothing to trim.
     const { schema } = composeToolHandler(singleRecordTool, {
       useFields: true,
       maxTokens: 500,
@@ -176,9 +169,8 @@ describe('composeToolHandler', () => {
     expect(schema.shape).toHaveProperty('organization');
   });
 
-  // One toolset group is shared by every per-request server on the HTTP
-  // transport, so composing must not touch the definition: a mutation would be
-  // re-applied on every request and seen by requests composing concurrently.
+  // The toolset group is shared by every per-request server on the HTTP transport,
+  // so a mutation would leak across requests.
   it('leaves the tool definition untouched', () => {
     const pristine: ToolDefinition<any, any> = {
       ...tool,
@@ -193,8 +185,6 @@ describe('composeToolHandler', () => {
     expect(Object.keys(pristine.schema.shape)).toEqual(['name']);
   });
 
-  // With a single Backlog space the parameter has exactly one legal value, so
-  // repeating it across every tool is ~8 KB of schema the client cannot use.
   it("omits 'organization' when useOrganization is false", async () => {
     const soloTool: ToolDefinition<any, any> = {
       ...tool,
@@ -211,10 +201,6 @@ describe('composeToolHandler', () => {
     expect(schema.shape).toHaveProperty('fields');
   });
 
-  // The consequence of the mutation this replaced: once a `useFields: true`
-  // compose had baked `fields` into the definition, every later compose kept
-  // advertising it — including `useFields: false` ones, which do not apply
-  // field picking, so clients saw a parameter that was silently ignored.
   it('honours useFields per call on a reused definition', () => {
     const reused: ToolDefinition<any, any> = {
       ...tool,
@@ -234,11 +220,7 @@ describe('composeToolHandler', () => {
     expect(withoutFields.schema.shape).not.toHaveProperty('fields');
   });
 
-  // Not advertising the parameter must not turn it into a hazard. The
-  // organization wrapper stays in the chain whatever `useOrganization` says, so
-  // a handler that still receives the field is served rather than erroring.
-  // (Over the wire the schema strips it first, so the single configured space is
-  // used — verified against a running server, not reachable from here.)
+  // Over the wire the schema strips the field first; this covers a handler that still receives it.
   it('tolerates an organization reaching the handler when not advertised', async () => {
     const orgTool: ToolDefinition<any, any> = {
       ...tool,

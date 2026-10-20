@@ -1,6 +1,3 @@
-/**
- * Converts a BacklogError (or unknown error) into Output format for MCP response
- */
 type MaybeBacklogErrorObject = {
   _name?: string;
   _status?: number;
@@ -26,10 +23,7 @@ export type ParsedBacklogAPIError = {
   url?: string;
 };
 
-/**
- * How the rejected request was authenticated. It decides only the wording of an
- * authentication failure: in OAuth mode there is no API key to go and check.
- */
+// Decides only the wording of an auth failure: in OAuth mode there is no API key to check.
 export type BacklogAuthMode = 'apiKey' | 'oauth';
 
 const authErrorMessage = (status: number, authMode: BacklogAuthMode): string =>

@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-/**
- * The activity type ids the Backlog API accepts as a filter.
- *
- * All that is left of backlogOutputDefinition.ts. That file described API
- * responses in parallel with the types backlog-js already ships; tools now take
- * their field names from those types instead. This one is different: it is an
- * input filter, and backlog-js has no enum for it.
- */
+// Defined here because backlog-js has no enum for the activity type filter.
 export const ActivityTypeSchema = z.nativeEnum({
   Undefined: -1,
   IssueCreated: 1,

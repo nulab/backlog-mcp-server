@@ -84,7 +84,6 @@ describe('getIssueCommentsTool', () => {
     });
 
     expect(getIssueComments).toHaveBeenCalledWith(mockClient, 1, {
-      // Expect number
       minId: 100,
       maxId: 200,
     });

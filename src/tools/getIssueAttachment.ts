@@ -7,38 +7,14 @@ import { resolveIdOrKey } from '../utils/resolveIdOrKey.js';
 
 const MEBIBYTE = 1024 * 1024;
 
-/**
- * Both limits are about what survives the transport, not about what Backlog
- * allows. Base64 inflates by 4/3, and the MCP SDK caps a single stdio message
- * at 10 MiB by default, so 7 MiB of raw bytes is the point beyond which a
- * successful download would still fail to reach the client.
- */
+// Limits for what survives the transport: base64 inflates by 4/3, and the MCP SDK caps a
+// stdio message at 10 MiB by default.
 const DEFAULT_MAX_BYTES = 5 * MEBIBYTE;
 const MAX_ATTACHMENT_BYTES = 7 * MEBIBYTE;
 
-/**
- * The raster types this tool returns as MCP `image` content.
- *
- * Narrower than the raster types Backlog serves, and the limit
- * does not come from MCP — `ImageContent.mimeType` is an unconstrained string
- * in the schema. It comes from the far end: a Claude-backed host forwards the
- * block to the Messages API, which documents support for `image/jpeg`,
- * `image/png`, `image/gif` and `image/webp` and nothing else
- * (https://platform.claude.com/docs/en/build-with-claude/vision). An
- * `image/bmp` block is rejected there, and a rejected block costs the caller
- * the metadata as well as the file rather than merely failing to draw.
- *
- * These four are therefore what is safe to inline. A host backed by something
- * other than Claude may well accept more; nothing here asserts otherwise, it
- * just does not rely on it.
- *
- * `image/svg+xml` is absent for an unrelated reason — an SVG can carry script,
- * and it is text, so it goes down the text path below where it can be read
- * rather than executed.
- *
- * Anything not here is returned as an embedded resource, which every client
- * can hold.
- */
+// The Messages API accepts only these four and rejects the whole block otherwise
+// (https://platform.claude.com/docs/en/build-with-claude/vision). SVG is excluded: it can
+// carry script, so it goes down the text path.
 const INLINE_IMAGE_TYPES = new Set([
   'image/gif',
   'image/jpeg',
@@ -46,14 +22,7 @@ const INLINE_IMAGE_TYPES = new Set([
   'image/webp',
 ]);
 
-/**
- * Types whose bytes are meant to be read rather than rendered.
- *
- * These are returned as `resource.text`. Handing a caller base64 of a CSV is
- * the same as handing it nothing: the point of fetching a log or a spreadsheet
- * is the content, and base64 has to be decoded by something that can already
- * read the file.
- */
+// Returned as `resource.text`: base64 of a CSV or a log is useless to the caller.
 const TEXT_TYPES = new Set([
   'application/json',
   'application/xml',
@@ -133,13 +102,8 @@ function isReadableByteStream(body: unknown): body is ReadableByteStream {
   );
 }
 
-/**
- * Reads the whole body, refusing to buffer more than `maxBytes`.
- *
- * The limit is checked per chunk rather than against a `Content-Length`:
- * `backlog-js` does not surface response headers, and a header would be the
- * server's claim rather than what actually arrived.
- */
+// Checked per chunk: `backlog-js` does not surface headers, and `Content-Length` is
+// only the server's claim.
 async function readBody(
   body: unknown,
   maxBytes: number
@@ -173,11 +137,8 @@ async function readBody(
       chunks.push(value);
     }
   } finally {
-    // Leaving the loop before the stream ends leaves the response in flight —
-    // `releaseLock` detaches the reader, it does not abort what is arriving.
-    // Cancelling here rather than at each `throw` covers every way out,
-    // including a `read()` that rejects, and cannot be forgotten by the next
-    // early return added above.
+    // `releaseLock` does not abort the response in flight. Cancelling here covers every
+    // way out, including a `read()` that rejects.
     if (!finished) {
       try {
         await reader.cancel();
@@ -198,13 +159,8 @@ async function readBody(
   return { bytes, size };
 }
 
-/**
- * `btoa` over a string built in 32 KiB slices.
- *
- * `String.fromCharCode(...bytes)` on a multi-megabyte array overflows the call
- * stack, and `Buffer` is not available to this module: `src/lib.ts` exposes the
- * tool layer to consumers that do not run on Node.
- */
+// Sliced: spreading a multi-megabyte array overflows the stack, and `Buffer` is unavailable
+// to the non-Node consumers of `src/lib.ts`.
 function toBase64(bytes: Uint8Array): string {
   const chunks: string[] = [];
   const chunkSize = 0x8000;
@@ -218,14 +174,7 @@ function toBase64(bytes: Uint8Array): string {
   return globalThis.btoa(chunks.join(''));
 }
 
-/**
- * A name safe to put in metadata and a resource URI.
- *
- * `backlog-js` decodes `Content-Disposition` since 0.20.1, so what arrives is
- * already the real name. What is left is that it is the server's string: strip
- * any directory part and control characters rather than pass those on, and
- * fall back to the id when nothing usable remains.
- */
+// The name is the server's string: strip directory parts and control characters.
 function normalizeFilename(rawName: string | undefined, attachmentId: number) {
   const basename = (rawName ?? '').split(/[/\\]/).pop() ?? '';
   const cleaned = Array.from(basename)
@@ -241,16 +190,8 @@ function normalizeFilename(rawName: string | undefined, attachmentId: number) {
     : cleaned;
 }
 
-/**
- * The bare MIME type of a raw `Content-Type` header.
- *
- * `File.FileData.contentType` is the header verbatim — `backlog-js` reads it
- * with `response.headers.get('Content-Type')` and hands it over unparsed — so
- * it may carry parameters and any casing. Every decision below is an exact
- * lookup in `INLINE_IMAGE_TYPES` or `TEXT_TYPES`, and `text/csv;charset=UTF-8`
- * misses both: the CSV would come back as base64, which is the case this tool
- * exists to serve.
- */
+// `contentType` is the raw header and may carry parameters and any casing;
+// `text/csv;charset=UTF-8` would miss the exact lookups below.
 function bareMimeType(rawContentType: string): string {
   return rawContentType.split(';')[0].trim().toLowerCase();
 }
@@ -259,13 +200,7 @@ function startsWith(bytes: Uint8Array, signature: number[]): boolean {
   return signature.every((byte, index) => bytes[index] === byte);
 }
 
-/**
- * Whether the bytes really are the raster format the extension promises.
- *
- * A client renders `image` content without checking it, so an attachment named
- * `.png` that is not a PNG would otherwise become a broken image with no
- * explanation. Mismatches fall back to an embedded resource.
- */
+// A client renders `image` content unchecked, so a mislabelled file would be a broken image.
 function isExpectedImage(bytes: Uint8Array, contentType: string): boolean {
   switch (contentType) {
     case 'image/gif':
@@ -293,14 +228,7 @@ function isExpectedImage(bytes: Uint8Array, contentType: string): boolean {
   }
 }
 
-/**
- * The raster type the bytes actually are, if it is one this tool inlines.
- *
- * A file saved under the wrong extension — a PNG named `.jpg` is the common
- * one — is served happily by Backlog. Trusting the name and giving up would
- * turn it into an opaque blob no client draws, when the bytes needed to
- * identify it are already in hand.
- */
+// Backlog serves a PNG named `.jpg` happily; identify it from the bytes instead of giving up.
 function sniffImageType(bytes: Uint8Array): string | undefined {
   for (const type of INLINE_IMAGE_TYPES) {
     if (isExpectedImage(bytes, type)) {
@@ -310,11 +238,7 @@ function sniffImageType(bytes: Uint8Array): string | undefined {
   return undefined;
 }
 
-/**
- * `undefined` rather than replacement characters when the bytes are not UTF-8,
- * so a binary file under a `.txt` name falls back to a blob instead of
- * arriving as mojibake that reads like a successful download.
- */
+// `undefined` rather than replacement characters, so a binary `.txt` falls back to a blob.
 function decodeUtf8(bytes: Uint8Array): string | undefined {
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
@@ -331,13 +255,7 @@ function getSpaceNamespace(sourceUrl: string): string {
   }
 }
 
-/**
- * A synthetic `backlog://` URI, never the URL the download came from.
- *
- * In API-key mode `backlog-js` puts the key in the query string, and
- * `File.FileData.url` carries it verbatim — echoing it into a resource URI
- * would hand the caller a working credential.
- */
+// Never the download URL: in API-key mode `backlog-js` puts the key in its query string.
 function buildResourceUri(
   sourceUrl: string,
   issueIdOrKey: string | number,
@@ -390,12 +308,8 @@ export const getIssueAttachmentTool = (
         maxBytes ?? DEFAULT_MAX_BYTES
       );
 
-      // What the bytes are beats what the server says, because Backlog derives
-      // `Content-Type` from the extension too — an attachment saved as `.jpg`
-      // whose bytes are a PNG is served as `image/jpeg`. Only when nothing
-      // matches and the server promised a raster does the type become opaque:
-      // saying `image/png` for something that is not one makes a client draw a
-      // broken image with no explanation.
+      // The bytes beat the server's type, which Backlog also derives from the extension. Only a
+      // promised raster that matches nothing becomes opaque, to avoid drawing a broken image.
       const declaredType =
         bareMimeType(fileData.contentType) || 'application/octet-stream';
       const contentType =

@@ -80,7 +80,6 @@ describe('updateProjectTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       name: 'Test Project Name',
     };
 

@@ -23,8 +23,6 @@ describe('parseBacklogAPIError', () => {
       );
     });
 
-    // There is no API key to check in OAuth mode, so the original wording sent
-    // the user somewhere there was nothing to fix.
     it('tells an OAuth deployment to re-authenticate instead', () => {
       const parsed = parseBacklogAPIError(authError, { authMode: 'oauth' });
 

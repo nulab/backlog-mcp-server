@@ -36,8 +36,6 @@ describe('wrapWithFieldPicking', () => {
   });
 
   it('keeps an array field whole, rather than emptying it', async () => {
-    // The GraphQL version descended into arrays and returned `{}`, dropping the
-    // data. Selection is one level deep now, so the array comes back intact.
     const result = await from(fullData)({ fields: ['tags'] });
 
     expect(result).toEqual(ok({ tags: fullData.tags }));

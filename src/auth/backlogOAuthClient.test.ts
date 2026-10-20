@@ -110,9 +110,8 @@ describe('refreshBacklogToken', () => {
     );
   });
 
-  // The status is what tells a revoked grant from a Backlog that is merely
-  // down, and `/token` answers `invalid_grant` or `server_error` on it. Carried
-  // in the message alone the caller would have to parse prose to decide.
+  // The status separates a revoked grant from an outage, which `/token` answers with
+  // `invalid_grant` or `server_error`; the message alone would mean parsing prose.
   it('carries the upstream status on a rejection', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('{"error":"invalid_grant"}', { status: 400 })
@@ -137,9 +136,8 @@ describe('refreshBacklogToken', () => {
     expect((err as BacklogTokenError).status).toBeUndefined();
   });
 
-  // The status cannot separate these two, and they ask `/token` for opposite
-  // answers: a dead grant means re-authorize, a rejected client secret is the
-  // operator's problem and re-authorizing would fail the same way.
+  // Same status, opposite answers: a dead grant means re-authorize, a rejected client
+  // secret is the operator's problem and re-authorizing would fail the same way.
   it.each([
     ['invalid_grant', 400],
     ['invalid_client', 401],
@@ -154,8 +152,6 @@ describe('refreshBacklogToken', () => {
     });
   });
 
-  // A proxy or a WAF can answer the token endpoint with HTML. The status and
-  // the raw text are already in the message, so there is nothing to recover.
   it('leaves the error code absent when the body is not an OAuth error', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('<html>Gateway Timeout</html>', { status: 504 })
@@ -226,10 +222,8 @@ describe('verifyBacklogToken', () => {
   });
 });
 
-// Exported from `src/lib.ts`, so a consumer hosting the same flow branches on
-// these instead of reimplementing the rules. Worth pinning directly: reading
-// `invalid_client` as a dead grant costs every client a pointless
-// authorization, and reading an outage as a rejection costs a live grant.
+// Exported from `src/lib.ts`. Reading `invalid_client` as a dead grant forces a pointless
+// authorization; reading an outage as a rejection discards a live grant.
 describe('isGrantGone', () => {
   it.each([
     [
