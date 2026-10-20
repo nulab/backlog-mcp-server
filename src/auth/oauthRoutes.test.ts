@@ -4,9 +4,7 @@ import { createOAuthRoutes } from './oauthRoutes.js';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-// The error class and the failure predicates are borrowed from the real module:
-// they are what the routes branch on, so stand-ins would make the branch prove
-// nothing. Only the functions that reach the network are mocked.
+// The real error class and failure predicates: the routes branch on them. Only network calls are mocked.
 vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
   const { BacklogTokenError, isGrantGone } =
     await importOriginal<typeof import('./backlogOAuthClient.js')>();
@@ -168,9 +166,8 @@ describe('createOAuthRoutes', () => {
       });
 
       it('treats an all-loopback registration as native when undeclared', async () => {
-        // Local MCP clients do not send application_type. RFC 7591 would default
-        // them to `web` and reject them; a set of redirect URIs that is entirely
-        // loopback can only be a client on the user's machine.
+        // Local MCP clients omit application_type, which RFC 7591 would default to `web`;
+        // all-loopback redirect URIs can only be a client on the user's machine.
         const res = await register({
           redirect_uris: [
             'http://localhost:9999/callback',
@@ -182,9 +179,7 @@ describe('createOAuthRoutes', () => {
       });
 
       it('refuses an undeclared registration that mixes https and loopback', async () => {
-        // The inference above must not become the way around the check: something
-        // that can serve a redirect on its own domain has no need to also collect
-        // codes on the user's machine.
+        // A client that can serve a redirect on its own domain has no need to collect codes on loopback.
         const res = await register({
           redirect_uris: [
             'https://client.example.com/callback',
@@ -214,8 +209,7 @@ describe('createOAuthRoutes', () => {
       });
 
       it('treats a null application_type as not declared', async () => {
-        // Serialisers that emit null for an absent optional field are common,
-        // and this registration is accepted today.
+        // Serialisers commonly emit null for an absent optional field.
         const res = await register({
           application_type: null,
           redirect_uris: ['http://localhost:9999/callback'],
@@ -408,10 +402,8 @@ describe('createOAuthRoutes', () => {
       return { verifier, challenge };
     }
 
-    // Backlog counts `expires_in` from the moment it answered at `/callback`,
-    // not from whenever the client gets round to redeeming the code. Re-basing
-    // it at `/token` hands out an expiry later than the real one, which is how
-    // a spent Backlog token ends up behind a token this server calls live.
+    // Backlog counts `expires_in` from `/callback`, not `/token`; re-basing it would make
+    // a spent Backlog token look live.
     it('does not re-base the Backlog expiry when the code is redeemed later', async () => {
       const { verifier, challenge } = makePkce();
       const REDEEM_DELAY_MS = 120_000;
@@ -436,8 +428,7 @@ describe('createOAuthRoutes', () => {
         const callbackAt = Date.now();
         vi.setSystemTime(callbackAt);
 
-        // `exchangeBacklogCode` is mocked to answer `expires_in: 3600`, so the
-        // real expiry is fixed at this instant plus an hour.
+        // The mocked exchange answers `expires_in: 3600`: the real expiry is this instant plus an hour.
         const callbackRes = await app.request(
           '/callback?code=bl-code&state=bl-state-drift',
           { redirect: 'manual' }
@@ -468,10 +459,8 @@ describe('createOAuthRoutes', () => {
           expires_in: number;
         };
 
-        // What the client is told: what is left, not the original 3600.
         expect(json.expires_in).toBe(3600 - REDEEM_DELAY_MS / 1000);
 
-        // What the server stores: the instant Backlog fixed, unmoved.
         expect(store.getMcpToken(json.access_token)?.expiresAt).toBe(
           realExpiry
         );
@@ -527,9 +516,6 @@ describe('createOAuthRoutes', () => {
       expect(json.access_token).not.toBe('bl-at');
       expect(json.refresh_token).not.toBe('bl-rt');
       expect(json.token_type).toBe('bearer');
-      // The remaining life, so an immediate redemption comes back a second
-      // short of the 3600 Backlog reported. The exact arithmetic is pinned by
-      // 'does not re-base the Backlog expiry when the code is redeemed later'.
       expect(json.expires_in).toBeLessThanOrEqual(3600);
       expect(json.expires_in).toBeGreaterThan(3590);
     });
@@ -819,16 +805,12 @@ describe('createOAuthRoutes', () => {
       });
       expect(res.status).toBe(503);
 
-      // Refresh token should be restored for retry
       const restored = store.consumeMcpRefreshToken('mcp-refresh-retry');
       expect(restored).toBeDefined();
       expect(restored!.backlogRefreshToken).toBe('bl-refresh');
     });
 
-    // The bug this covers: every refresh failure answered 503, so a client
-    // whose grant Backlog had permanently discarded backed off and retried on
-    // a schedule forever, and never reached the re-authorization that was the
-    // only way out.
+    // A grant Backlog has permanently discarded must lead to re-authorization, not endless 503 retries.
     it('answers invalid_grant when Backlog says the grant is gone', async () => {
       const { refreshBacklogToken, BacklogTokenError } =
         await import('./backlogOAuthClient.js');
@@ -870,17 +852,14 @@ describe('createOAuthRoutes', () => {
       expect(res.status).toBe(400);
       expect((await res.json()).error).toBe('invalid_grant');
 
-      // Not restored: Backlog has disowned the token it holds, so keeping it
-      // until its TTL lapses would only hand the next attempt the same
-      // credential.
+      // Not restored: Backlog has disowned it, so the next attempt would get the same dead credential.
       expect(
         store.consumeMcpRefreshToken('mcp-refresh-revoked')
       ).toBeUndefined();
     });
 
-    // `invalid_client` rejects this server's own credentials, not the client's
-    // grant. Answering `invalid_grant` would send every client through an
-    // authorization flow that fails at the same wall.
+    // `invalid_client` rejects this server's credentials, not the grant; `invalid_grant` would
+    // send every client into an authorization that fails the same way.
     it('treats a rejected client secret as transient and restores the token', async () => {
       const { refreshBacklogToken, BacklogTokenError } =
         await import('./backlogOAuthClient.js');

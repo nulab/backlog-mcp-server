@@ -65,7 +65,6 @@ describe('addIssueCommentTool', () => {
     });
 
     expect(postIssueComments).toHaveBeenCalledWith(mockClient, 1, {
-      // Expect number
       content: 'This is a new comment with notifications',
       notifiedUserId: [2, 3],
       attachmentId: undefined,

@@ -32,7 +32,7 @@ describe('addPullRequestCommentTool', () => {
   it('returns created comment as formatted JSON text', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'This looks good to me!',
     });
@@ -46,7 +46,7 @@ describe('addPullRequestCommentTool', () => {
   it('calls postPullRequestComments with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'This looks good to me!',
       notifiedUserId: [2, 3],
@@ -69,7 +69,7 @@ describe('addPullRequestCommentTool', () => {
   it('calls postPullRequestComments with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'Comment via projectId',
     };
@@ -91,7 +91,7 @@ describe('addPullRequestCommentTool', () => {
   it('calls postPullRequestComments with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
       content: 'Comment via repoId',
     };
@@ -112,8 +112,7 @@ describe('addPullRequestCommentTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'Test content',
     };
@@ -124,7 +123,6 @@ describe('addPullRequestCommentTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
       content: 'Test content',
     };

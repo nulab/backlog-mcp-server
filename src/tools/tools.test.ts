@@ -3,11 +3,7 @@ import type { Client } from 'backlog-js';
 import { allTools } from './tools.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-/**
- * The tool list is a public API: renaming an entry breaks every client that
- * refers to it by name, so the convention is worth pinning rather than
- * rediscovering one tool at a time.
- */
+// The tool list is a public API: renaming an entry breaks every client using it.
 describe('allTools', () => {
   const toolNames = allTools(
     {} as Client,

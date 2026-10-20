@@ -112,9 +112,8 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
-  // A single Backlog space leaves `list_organizations` nothing to report, and
-  // the `organization` parameter its description refers to is not published
-  // either, so advertising the tool would only mislead.
+  // With a single space there is nothing to list, and the `organization`
+  // parameter its description refers to is not published either.
   it('does not register list_organizations for a single organization', () => {
     createBacklogMcpServer({
       ...baseConfig,

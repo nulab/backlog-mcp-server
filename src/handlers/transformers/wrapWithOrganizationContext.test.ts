@@ -35,11 +35,8 @@ describe('wrapWithOrganizationContext', () => {
     expect(fn).toHaveBeenCalledWith({ id: 1 });
   });
 
-  // The path behind #259: a handler that validates its input rejects before it
-  // ever awaits, so the wrapper is handed an already-rejected promise. On Node
-  // the only observable part is that the rejection still reaches the caller
-  // unchanged — the premature `unhandledrejection` that `return await` fixes
-  // shows up on workerd, not here.
+  // #259: a validating handler rejects before it awaits. The premature
+  // `unhandledrejection` only shows on workerd; on Node we can only check propagation.
   it('propagates a rejection thrown before the first await', async () => {
     const wrapped = wrapWithOrganizationContext(() => {
       throw new Error('missing issueId or issueKey');

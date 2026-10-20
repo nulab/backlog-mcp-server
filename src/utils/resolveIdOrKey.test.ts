@@ -1,4 +1,4 @@
-import { resolveIdOrKey, resolveIdOrName } from './resolveIdOrKey'; // Added resolveIdOrName and EntityName
+import { resolveIdOrKey, resolveIdOrName } from './resolveIdOrKey';
 import { describe, it, expect } from 'vite-plus/test';
 
 const t = (_key: string, fallback: string) => fallback;
@@ -6,7 +6,7 @@ const t = (_key: string, fallback: string) => fallback;
 describe('resolveIdOrKey', () => {
   it('resolves ID when provided', () => {
     const result = resolveIdOrKey('issue', { id: 123 }, t);
-    expect(result).toEqual({ ok: true, value: 123 }); // Expect number
+    expect(result).toEqual({ ok: true, value: 123 });
   });
 
   it('resolves key when ID is not provided', () => {
@@ -56,7 +56,6 @@ describe('resolveIdOrName', () => {
   });
 
   it("resolves ID for 'git' entity (using name field)", () => {
-    // 'git' might be an alias or specific use case for 'repository' that uses 'name'
     const result = resolveIdOrName('repository', { id: 888 }, t);
     expect(result).toEqual({ ok: true, value: 888 });
   });

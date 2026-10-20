@@ -27,9 +27,8 @@ const loadLogger = async (env: Record<string, string | undefined>) => {
   return logger;
 };
 
-// Same thing, but with pino writing to a file instead of fd 2, so the emitted
-// lines can be asserted on and do not land in the test runner's own output.
-// Only the destination is swapped: the level still comes from the real pino.
+// pino writes to a file instead of fd 2 so lines can be asserted on and stay out of the
+// runner's output. Only the destination is swapped; the level still comes from real pino.
 const loadLoggerCapturingOutput = async (
   env: Record<string, string | undefined>
 ) => {

@@ -5,7 +5,6 @@ import type {
   ToolCallback,
 } from '@modelcontextprotocol/server';
 
-// Extended type that has the MCP core, a set of registered tool names, and a registration function
 export interface BacklogMCPServer extends McpServer {
   __registeredToolNames?: Set<string>;
 
@@ -18,7 +17,6 @@ export interface BacklogMCPServer extends McpServer {
   ) => void;
 }
 
-// This function takes an McpServer instance and extends it with a tool registration mechanism that prevents duplicate tool registrations.
 export function wrapServerWithToolRegistry(
   server: McpServer
 ): BacklogMCPServer {

@@ -13,7 +13,6 @@ import { logger } from '../utils/logger.js';
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-/** Seconds left until `expiresAt`, floored at zero so it is never negative. */
 const remainingSeconds = (expiresAt: number): number =>
   Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
 const LOCALHOST_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
@@ -56,27 +55,9 @@ function isValidRedirectUri(uri: string): boolean {
 const APPLICATION_TYPES = ['web', 'native'] as const;
 type ApplicationType = (typeof APPLICATION_TYPES)[number];
 
-/**
- * Decides which application type a registration is held to.
- *
- * A loopback redirect URI is the standard way for an app on the user's machine
- * to receive the authorization code (RFC 8252), and the wrong thing entirely for
- * an app that has a domain of its own: nobody owns `http://localhost`, so
- * whichever process is listening on that port receives the code.
- *
- * RFC 7591 defaults the field to `web`, which would reject every local MCP
- * client that does not declare itself — and they do not, because nothing has
- * ever checked. So an undeclared registration is judged by what it asks for: a
- * set of redirect URIs that is entirely loopback can only be a native client,
- * and is treated as one.
- *
- * The inference deliberately requires *all* of them. A registration mixing a
- * remote https URI with a loopback one is the shape this check exists to stop:
- * something that can serve a redirect on its own domain has no need to also
- * collect codes on the user's machine. Mixing is only accepted from a client
- * that declares `native` outright, which RFC 8252 does allow (a native app may
- * claim an https URI as well as a loopback one).
- */
+// Security: nobody owns localhost, so only native clients (RFC 8252) may use loopback redirects.
+// Undeclared clients are inferred native only if *all* redirect URIs are loopback, since most local
+// MCP clients omit the field and RFC 7591's `web` default would reject them.
 function resolveApplicationType(
   declared: ApplicationType | undefined,
   redirectUris: string[]
@@ -158,9 +139,7 @@ export function createOAuthRoutes(
       }
     }
 
-    // `null` counts as not declared. Serialisers that emit null for an absent
-    // optional field are common, and rejecting it would break clients this
-    // change is meant to leave alone.
+    // `null` counts as not declared: many serialisers emit null for absent optional fields.
     const declaredApplicationType = body.application_type ?? undefined;
     if (
       declaredApplicationType !== undefined &&
@@ -240,7 +219,6 @@ export function createOAuthRoutes(
     return c.json(client, 201);
   });
 
-  // Authorization Endpoint
   app.get('/authorize', async (c) => {
     const params = Object.fromEntries(
       new URL(c.req.url).searchParams.entries()
@@ -255,7 +233,7 @@ export function createOAuthRoutes(
     const state = params.state;
     const resource = params.resource;
 
-    // Phase 1: Validate client and redirect_uri (errors returned directly)
+    // Until redirect_uri is validated, errors must not be redirected (RFC 6749 §4.1.2.1).
     if (!clientId) {
       return c.json(oauthError('invalid_request', 'Missing client_id'), 400);
     }
@@ -281,7 +259,6 @@ export function createOAuthRoutes(
 
     const effectiveRedirectUri = redirectUri ?? client.redirect_uris[0];
 
-    // Phase 2: Validate other params (errors redirected)
     if (responseType !== 'code') {
       const url = new URL(effectiveRedirectUri);
       url.searchParams.set('error', 'unsupported_response_type');
@@ -324,7 +301,6 @@ export function createOAuthRoutes(
       return c.redirect(url.href, 302);
     }
 
-    // Store pending authorization and redirect to Backlog
     const backlogState = randomUUID();
     store.storePendingAuth(backlogState, {
       mcpClientId: clientId,
@@ -345,7 +321,6 @@ export function createOAuthRoutes(
     return c.redirect(backlogAuthUrl, 302);
   });
 
-  // Backlog OAuth Callback
   app.get('/callback', async (c) => {
     const url = new URL(c.req.url);
     const backlogCode = url.searchParams.get('code');
@@ -408,8 +383,7 @@ export function createOAuthRoutes(
     store.storeAuthCode(mcpCode, {
       mcpClientId: pending.mcpClientId,
       backlogTokens,
-      // Resolved here, against the response just received, rather than at
-      // `/token` where `expires_in` would be counted from the wrong instant.
+      // Resolved now: at `/token`, `expires_in` would be counted from the wrong instant.
       backlogAccessTokenExpiresAt: Date.now() + backlogTokens.expires_in * 1000,
       codeChallenge: pending.codeChallenge,
       redirectUri: pending.redirectUri,
@@ -426,7 +400,6 @@ export function createOAuthRoutes(
     return c.redirect(redirectUrl.href, 302);
   });
 
-  // Token Endpoint
   app.post('/token', async (c) => {
     c.header('Cache-Control', 'no-store');
 
@@ -513,9 +486,7 @@ export function createOAuthRoutes(
       return c.json({
         access_token: mcpAccessToken,
         token_type: 'bearer',
-        // What is left, not what Backlog reported at `/callback`. A client
-        // uses this to decide when to refresh, so handing it the original
-        // duration would have it wait past the real expiry.
+        // Remaining lifetime, not the original duration, or the client would refresh too late.
         expires_in: remainingSeconds(entry.backlogAccessTokenExpiresAt),
         refresh_token: mcpRefreshToken,
       });
@@ -575,15 +546,8 @@ export function createOAuthRoutes(
           refresh_token: mcpRefreshToken,
         });
       } catch (err) {
-        // A dead grant is the one failure the client can act on, and
-        // `isGrantGone` holds the reasoning for which failures those are. The
-        // consumed entry stays consumed here: what it holds is a refresh token
-        // Backlog has already disowned, and keeping it until its TTL lapses
-        // only hands the next attempt the same dead credential.
-        //
-        // Everything else leaves the grant's fate unknown — unreachable, a
-        // timeout, a 5xx, a rejected client secret — so the entry goes back and
-        // the client is told to retry.
+        // A dead grant stays consumed (Backlog already disowned it); any other failure leaves the
+        // grant's fate unknown, so the entry is restored and the client is told to retry.
         if (isGrantGone(err)) {
           logger.warn(
             { err, clientId },

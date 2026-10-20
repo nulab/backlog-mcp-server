@@ -4,8 +4,6 @@ import { getCurrentAccessToken } from '../auth/backlogAuthContext.js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
-// Sent as the User-Agent header on Backlog API requests so that traffic
-// originating from this MCP Server can be identified in access logs / observability tooling.
 const USER_AGENT = `backlog-mcp-server/${packageJson.version}`;
 
 export type BacklogOrganizationInfo = {
@@ -21,13 +19,8 @@ export type BacklogClientRegistry = {
   createScopedClient: () => Client;
   listOrganizations: () => BacklogOrganizationInfo[];
   getDefaultOrganization: () => string | undefined;
-  /**
-   * Whether more than one Backlog space can be addressed. Only then is it worth
-   * spending an `organization` parameter on every tool and publishing
-   * `list_organizations` — with a single space there is nothing to choose.
-   * Keyed on the configured mode, not the organization count, so a multi-org
-   * setup that happens to declare one space still exposes the parameter.
-   */
+  // Keyed on the configured mode, not the organization count, so a multi-org
+  // setup that declares one space still exposes the `organization` parameter.
   isMultiOrganization: boolean;
 };
 

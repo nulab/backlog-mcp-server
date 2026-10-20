@@ -64,10 +64,8 @@ describe('getCategoriesTool', () => {
   });
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
-    const params = {}; // No identifier provided
+    const params = {};
 
-    // Assuming resolveIdOrKey for "project" entity (as categories are project-specific)
-    // throws "Project ID or key is required"
     await expect(tool.handler(params as any)).rejects.toThrow(Error);
   });
 });

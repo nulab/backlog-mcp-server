@@ -12,7 +12,6 @@ const mockRegistry = {
   listOrganizations: () => [],
 } as unknown as BacklogClientRegistry;
 
-/** Every tool name the server can register, from every toolset. */
 const allToolNames = [
   ...allTools(mockBacklog, mockHelper).toolsets,
   ...organizationTools(mockRegistry, mockHelper).toolsets,
@@ -21,14 +20,8 @@ const allToolNames = [
   ...(toolset.nativeContentTools ?? []).map((tool) => tool.name),
 ]);
 
-/**
- * What each writing tool is declared to be. Spelled out rather than derived a
- * second time, so that a change to the verb table has to be restated here —
- * the point of the table is that nobody rewrites these hints by accident.
- *
- * Read-only tools are not listed: the test below requires every name absent
- * from this table to be read-only, which is the stronger statement.
- */
+// Spelled out rather than derived, so a change to the verb table must be restated here.
+// Tools absent from this table must be read-only.
 const WRITE_TOOLS: Record<
   string,
   { destructiveHint: boolean; idempotentHint: boolean }
@@ -66,9 +59,7 @@ const WRITE_TOOLS: Record<
 };
 
 describe('toolAnnotationsFor', () => {
-  // The reason the module exists: an unannotated tool is read by clients as
-  // destructive and open-world, so a tool whose verb nobody answered for has
-  // to fail here rather than ship with those defaults.
+  // Clients treat an unannotated tool as destructive and open-world.
   it.each(allToolNames)(
     '%s sets readOnlyHint, destructiveHint and openWorldHint explicitly',
     (name) => {

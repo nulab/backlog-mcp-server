@@ -173,15 +173,8 @@ const updateIssueSchema = buildToolSchema((t) => ({
     ),
 }));
 
-// Backlog API clears a stored array field (category/version/milestone) only when
-// the parameter is sent as `field[]=` (empty value). backlog-js serializes
-// params via qs with `arrayFormat: 'brackets'`, and an empty array `[]` produces
-// no query string at all, so the API silently ignores it. Converting `[]` to
-// `['']` makes qs emit `field[]=`, which the API interprets as "clear".
-//
-// Only these three are persistent, clearable array fields. notifiedUserId (a
-// one-off notification target) and attachmentId (attachments to add) are action
-// parameters, not stored state, so they are intentionally excluded.
+// Backlog clears an array field only on `field[]=`, but qs emits nothing for `[]`,
+// so `[]` becomes `['']`. notifiedUserId/attachmentId are one-off actions, so excluded.
 const CLEARABLE_ARRAY_FIELDS = [
   'categoryId',
   'versionId',
@@ -190,9 +183,6 @@ const CLEARABLE_ARRAY_FIELDS = [
 
 type ClearableArrayField = (typeof CLEARABLE_ARRAY_FIELDS)[number];
 
-// The conversion replaces a numeric-id array with `['']`, so the return type
-// widens the clearable fields to also allow `['']`. Keeping the cast localized
-// here makes the intended type-unsafety visible instead of hiding it behind `T`.
 type WithClearedArrayFields<T> = Omit<T, ClearableArrayField> & {
   [K in ClearableArrayField]?: T[K & keyof T] | [''];
 };
@@ -264,11 +254,8 @@ export const updateIssueTool = (
         ...(params.parentIssueId === null ? { parentIssueId: '' } : {}),
         ...customFieldPayload,
       };
-      // An explicit null parentIssueId becomes an empty form value, allowing
-      // Backlog to clear the parent without changing omitted parentIssueId.
-      // The `['']` clear-sentinel is not representable in backlog-js's
-      // `number[]` param types, so cast at this single boundary. qs serializes
-      // it to `field[]=`, which the Backlog API accepts as "clear this field".
+      // An explicit null parentIssueId becomes an empty value, which Backlog treats as "clear".
+      // The `['']` sentinel does not fit backlog-js's `number[]` types, hence the cast.
       return patchIssue(
         backlog,
         result.value,

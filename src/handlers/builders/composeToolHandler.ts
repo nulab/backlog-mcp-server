@@ -14,11 +14,8 @@ export interface ComposeOptions {
   useFields: boolean;
   errorHandler?: (err: unknown) => ErrorLike;
   maxTokens: number;
-  /**
-   * Whether to advertise `organization`. Defaults to false: with a single
-   * Backlog space the parameter has exactly one legal value, and repeating it
-   * across every tool costs the client ~8 KB of schema for nothing.
-   */
+  // Defaults to false: with a single Backlog space `organization` has one legal value,
+  // and repeating it across every tool costs the client ~8 KB of schema.
   useOrganization?: boolean;
 }
 
@@ -29,14 +26,8 @@ type ComposedInput = {
 
 type ComposedHandler = (input: ComposedInput) => Promise<SafeResult<unknown>>;
 
-/**
- * Builds the schema and handler a tool is registered with.
- *
- * The returned schema is a fresh object: the tool definition is never mutated.
- * That matters under the stateless HTTP model, where one toolset group is shared
- * by every per-request server — an in-place extension would be re-applied on
- * every request, against a definition other requests are reading concurrently.
- */
+// Never mutates the tool definition: under stateless HTTP one toolset is shared by every
+// per-request server, so an in-place extension would be re-applied concurrently.
 export function composeToolHandler(
   tool: ToolDefinition<any, any>,
   options: ComposeOptions
@@ -48,18 +39,14 @@ export function composeToolHandler(
     useOrganization = false,
   } = options;
 
-  // Step 1: Add `fields` to schema if needed.
-  //
-  // Only on tools that return a list. That is where a response grows without
-  // bound and trimming it pays for the schema every client downloads; a tool
-  // returning one record saves a few hundred bytes at best.
+  // `fields` only on list tools: that is where a response grows without bound and
+  // trimming it pays for the schema every client downloads.
   const fields =
     useFields && tool.returnsList
       ? fieldSelectionSchema(tool.outputFields, tool.importantFields ?? [])
       : undefined;
   const schema = extendSchema(tool.schema, fields, useOrganization);
 
-  // Step 2: Compose
   const baseHandler: ComposedHandler = wrapWithErrorHandling(
     wrapWithOrganizationContext((input) => tool.handler(input, { maxTokens })),
     errorHandler
@@ -100,9 +87,8 @@ function extendSchema<I extends z.ZodRawShape>(
     extension.fields = fields;
   }
 
-  // zod v4 reworked the ZodObject shape generics, so `extend()`'s result no
-  // longer overlaps the declared return type enough for a direct cast. The
-  // shape is correct at runtime; route through `unknown` to keep the assertion.
+  // zod v4's ZodObject generics reject a direct cast of `extend()`'s result; the shape
+  // is correct at runtime, so route through `unknown`.
   return schema.extend(extension) as unknown as z.ZodObject<
     I & { organization?: z.ZodType; fields?: z.ZodType }
   >;

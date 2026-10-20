@@ -1,25 +1,6 @@
-/**
- * Library entry point.
- *
- * `src/index.ts` is the CLI: it parses argv, reads config files and starts a
- * transport. Consumers that only want the tool layer — to host the same tools on
- * a different runtime, for example — cannot import it without running all of that.
- * This module exposes the pieces needed to build a server, and nothing that runs
- * on import.
- *
- * Nothing reachable from here may need a dependency a non-Node runtime lacks —
- * not "no Node built-ins": the two `AsyncLocalStorage` request contexts are
- * reachable, and `node:async_hooks` exists on Workers, Deno and Bun.
- * `loadDescriptionOverrides` reads from disk, so it belongs to the CLI and is
- * absent below; other runtimes pass their own overrides to
- * `createDescriptionHelper`. `lib.test.ts` walks the graph and holds the line.
- *
- * The OAuth exports are the token calls and the two predicates that say what a
- * failure means. The routes and the middleware are absent: they are built
- * against this package's synchronous `TokenStore` and Hono, so a consumer on
- * its own storage cannot reuse them. The judgement travels, the plumbing does
- * not.
- */
+// Library entry point: nothing runs on import, and nothing reachable may need a dependency a
+// non-Node runtime lacks (`lib.test.ts` enforces it). OAuth routes/middleware are absent: they
+// are tied to this package's synchronous `TokenStore` and Hono.
 
 export { allTools } from './tools/tools.js';
 export { composeToolHandler } from './handlers/builders/composeToolHandler.js';
@@ -29,16 +10,8 @@ export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { createBacklogClient } from './backlog/createBacklogClient.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
-/**
- * The context `backlogErrorHandler` reads to tell an OAuth failure from an
- * API-key one. Exported because that handler is: without this, a consumer
- * calling Backlog with an OAuth token has no way to establish the context, so
- * a rejected token is reported as "check your API key" and the reader is never
- * told to re-authenticate (#261).
- *
- * `onAuthError` fires the first time Backlog rejects the credential, at the
- * moment of detection, so a caller can invalidate the token before answering.
- */
+// Exported with `backlogErrorHandler`: without it an OAuth consumer's rejected token reads as
+// "check your API key" and nobody is told to re-authenticate (#261).
 export { runWithAccessToken } from './auth/backlogAuthContext.js';
 
 export {
