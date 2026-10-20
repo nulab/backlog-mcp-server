@@ -544,6 +544,8 @@ This is especially useful if you're using multiple MCP servers or tools in the s
 Tool results are compacted before they are returned. This is always on, and applies to every tool except `get_issue_attachment`, which returns the file itself:
 
 - A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that *is* the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
+- A nested project (each activity's and notification's `project`) is reduced to `id`, `projectKey` and `name`, and a nested issue (a pull request's or notification's `issue`) to `id`, `issueKey`, `summary` and `status`. A project or issue that is the result — `get_project`, `get_issue`, the items of `get_project_list` or `get_issues` — is returned whole, and so is the issue of each item of `get_watching_list_items`.
+- Nested entities (statuses, issue types, categories, milestones, custom field items, …) omit `color` and `displayOrder`, and nested milestones also omit `description`. Tools that list these themselves (`get_issue_types`, `get_categories`, `get_version_milestone_list`, …) return them whole.
 - Fields that are `null`, an empty string or an empty array are omitted. `0`, `false` and `{}` are kept. This also applies to a field named in `fields`: an empty one is left out rather than returned as empty.
 - JSON is returned without indentation.
 

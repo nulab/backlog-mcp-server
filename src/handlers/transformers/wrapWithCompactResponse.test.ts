@@ -19,6 +19,64 @@ const user = {
 
 const compactUser = { id: 7, userId: 'alice', name: 'Alice' };
 
+const project = {
+  id: 3,
+  projectKey: 'PROJ',
+  name: 'Project',
+  chartEnabled: true,
+  useWiki: true,
+  useGit: false,
+  textFormattingRule: 'markdown',
+  archived: false,
+  displayOrder: 2,
+};
+
+const status = {
+  id: 1,
+  projectId: 3,
+  name: 'Open',
+  color: '#ed8077',
+  displayOrder: 1000,
+};
+
+const milestone = {
+  id: 8,
+  projectId: 3,
+  name: 'v1',
+  description: 'First release',
+  archived: false,
+  displayOrder: 0,
+};
+
+const issue = {
+  id: 10,
+  projectId: 3,
+  issueKey: 'PROJ-1',
+  keyId: 1,
+  issueType: { id: 5, projectId: 3, name: 'Bug', color: '#990000' },
+  summary: 'Fix it',
+  description: 'Steps to reproduce',
+  status,
+  assignee: user,
+  milestone: [milestone],
+  dueDate: '2026-02-01',
+};
+
+// What a whole issue keeps: its own fields, with what is nested in it compacted.
+const compactIssue = {
+  id: 10,
+  projectId: 3,
+  issueKey: 'PROJ-1',
+  keyId: 1,
+  issueType: { id: 5, projectId: 3, name: 'Bug' },
+  summary: 'Fix it',
+  description: 'Steps to reproduce',
+  status: { id: 1, projectId: 3, name: 'Open' },
+  assignee: compactUser,
+  milestone: [{ id: 8, projectId: 3, name: 'v1', archived: false }],
+  dueDate: '2026-02-01',
+};
+
 describe('compactResponse', () => {
   it('cuts a nested user down to who it is', () => {
     expect(compactResponse({ id: 1, createdUser: user })).toEqual({
@@ -49,10 +107,77 @@ describe('compactResponse', () => {
     expect(compactResponse([user])).toEqual([user]);
   });
 
-  it('leaves an entity that merely has an id and a name alone', () => {
-    const status = { id: 1, projectId: 2, name: 'Open', color: '#fff' };
+  it('does not take an entity that merely has an id and a name for a user', () => {
+    const priority = { id: 1, name: 'High' };
 
-    expect(compactResponse({ status })).toEqual({ status });
+    expect(compactResponse({ priority })).toEqual({ priority });
+  });
+
+  it('cuts a nested project down to which one it is', () => {
+    expect(compactResponse({ id: 1, project })).toEqual({
+      id: 1,
+      project: { id: 3, projectKey: 'PROJ', name: 'Project' },
+    });
+  });
+
+  it('leaves a top-level project whole', () => {
+    expect(compactResponse(project)).toEqual(project);
+    expect(compactResponse([project])).toEqual([project]);
+  });
+
+  it('cuts a nested issue down to which one it is and its status', () => {
+    const pullRequest = { id: 1, number: 2, issue };
+
+    expect(compactResponse(pullRequest)).toEqual({
+      id: 1,
+      number: 2,
+      issue: {
+        id: 10,
+        issueKey: 'PROJ-1',
+        summary: 'Fix it',
+        status: { id: 1, projectId: 3, name: 'Open' },
+      },
+    });
+  });
+
+  it('leaves a top-level issue whole apart from what is nested in it', () => {
+    expect(compactResponse(issue)).toEqual(compactIssue);
+  });
+
+  it('leaves the issue of a watching list item as whole as a top-level one', () => {
+    const item = {
+      id: 1,
+      resourceAlreadyRead: false,
+      type: 'issue',
+      issue,
+      lastContentUpdated: '2026-01-01T00:00:00Z',
+    };
+
+    expect(compactResponse([item])).toEqual([{ ...item, issue: compactIssue }]);
+  });
+
+  it('drops color and displayOrder from nested entities only', () => {
+    const issueType = {
+      id: 5,
+      projectId: 3,
+      name: 'Bug',
+      color: '#990000',
+      displayOrder: 0,
+    };
+
+    expect(compactResponse({ id: 1, issueType })).toEqual({
+      id: 1,
+      issueType: { id: 5, projectId: 3, name: 'Bug' },
+    });
+    expect(compactResponse([issueType])).toEqual([issueType]);
+  });
+
+  it('drops the description of a nested milestone only', () => {
+    expect(compactResponse({ id: 1, milestone: [milestone] })).toEqual({
+      id: 1,
+      milestone: [{ id: 8, projectId: 3, name: 'v1', archived: false }],
+    });
+    expect(compactResponse([milestone])).toEqual([milestone]);
   });
 
   it('drops null, empty strings and empty arrays', () => {
