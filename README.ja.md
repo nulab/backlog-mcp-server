@@ -430,6 +430,8 @@ PREFIX="backlog_"
 ツールの結果は、返す前に圧縮されます。この処理は常に有効で、ファイルそのものを返す `get_issue_attachment` 以外のすべてのツールに適用されます：
 
 - 結果の中にネストしたユーザー（`createdUser`、`assignee`、`stars[].presenter`、通知の `sender` など）は `id`、`userId`、`name` だけになります。結果そのものがユーザーである場合（`get_myself`、`get_users` や `get_project_users` の各要素）はそのまま返ります。
+- ネストしたプロジェクト（アクティビティや通知の `project`）は `id`、`projectKey`、`name` だけに、ネストした課題（プルリクエストや通知の `issue`）は `id`、`issueKey`、`summary`、`status` だけになります。結果そのものがプロジェクトや課題である場合（`get_project`、`get_issue`、`get_project_list` や `get_issues` の各要素）はそのまま返ります。`get_watching_list_items` の各要素の課題もそのまま返ります。
+- ネストしたエンティティ（ステータス、課題種別、カテゴリー、マイルストーン、カスタムフィールドの選択肢など）からは `color` と `displayOrder` が、ネストしたマイルストーンからはさらに `description` が省略されます。これら自体を一覧で返すツール（`get_issue_types`、`get_categories`、`get_version_milestone_list` など）ではそのまま返ります。
 - 値が `null`、空文字、空配列のフィールドは省略されます。`0`、`false`、`{}` は残ります。`fields` で指定したフィールドも同じで、空の場合は空の値ではなく省略されます。
 - JSON はインデントなしで返ります。
 
