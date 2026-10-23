@@ -38,6 +38,7 @@ describe('library entry point', () => {
       'isTokenRejected',
       'refreshBacklogToken',
       'runWithAccessToken',
+      'toolAnnotationsFor',
       'verifyBacklogToken',
     ]);
   });

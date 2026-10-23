@@ -10,6 +10,7 @@ export { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 export { createBacklogClient } from './backlog/createBacklogClient.js';
 export { buildToolSchema } from './types/tool.js';
 export { isErrorLike } from './types/result.js';
+export { toolAnnotationsFor } from './utils/toolAnnotations.js';
 // Exported with `backlogErrorHandler`: without it an OAuth consumer's rejected token reads as
 // "check your API key" and nobody is told to re-authenticate (#261).
 export { runWithAccessToken } from './auth/backlogAuthContext.js';
