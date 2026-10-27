@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from 'vite-plus/test';
 import type { Client } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
-import { createBacklogMcpServer } from './createBacklogMcpServer.js';
+import {
+  createBacklogMcpServer,
+  MAX_TOOL_INPUT_ELEMENTS,
+} from './createBacklogMcpServer.js';
 import { registerTools } from './registerTools.js';
 import { organizationTools } from './tools/organizations.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -178,6 +181,14 @@ describe('createBacklogMcpServer', () => {
           'tools/list': { ttlMs: 5 * 60 * 1000, cacheScope: 'public' },
         },
       })
+    );
+  });
+
+  it('caps the number of elements a tool input may contain', () => {
+    createBacklogMcpServer(baseConfig);
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS })
     );
   });
 });
