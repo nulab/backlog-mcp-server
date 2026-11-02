@@ -149,7 +149,7 @@ pnpm run build
 MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 ```
 
-- **Endpoint:** `POST` (and `GET` for server-initiated streams) on `http://<host>:<port><path>` (default path `/mcp`).
+- **Endpoint:** `POST` on `http://<host>:<port><path>` (default path `/mcp`). MCP `2026-07-28` has no standalone `GET` stream endpoint; change notifications use a `subscriptions/listen` POST whose response can remain an SSE stream. This server returns `405` for `GET` and `DELETE` on the MCP endpoint.
 - **Protocol:** MCP `2026-07-28`. The protocol is stateless: there is no `initialize` handshake and no `mcp-session-id` header. Clients send their metadata in `_meta` on every request and discover capabilities via `server/discover`. Streamable HTTP also requires the `Mcp-Method` header (and `Mcp-Name` on `tools/call`).
 - **Backward compatibility:** Clients on `2025-11-25` and earlier are still served over the same endpoint, statelessly. Because no session is kept, the 2025 session operations (`GET` / `DELETE` with an `mcp-session-id`) answer `405`.
 - **Security:** Default bind is `127.0.0.1`. On a bare loopback bind, `Host` and `Origin` are both validated against the localhost set (DNS rebinding protection). Behind a reverse proxy, set `--http-allowed-hosts` to the public hostname; that turns off the localhost `Origin` default, since a browser client's `Origin` is its own site and never this server's hostname. Add `--http-allowed-origins` to restrict which client origins may reach the server. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
