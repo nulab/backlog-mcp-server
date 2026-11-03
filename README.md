@@ -310,6 +310,7 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `add_category`: Creates a new category for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
 - `get_issue_types`: Returns list of issue types for a project.
+- `get_statuses`: Returns list of statuses for a project.
 - `get_resolutions`: Returns list of issue resolutions.
 - `get_watching_list_items`: Returns list of watching items for a user.
 - `get_watching_list_count`: Returns count of watching items for a user.
