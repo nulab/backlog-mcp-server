@@ -471,16 +471,19 @@ export function createOAuthRoutes(
 
       const mcpAccessToken = randomBytes(32).toString('hex');
       const mcpRefreshToken = randomBytes(32).toString('hex');
+      const familyId = randomUUID();
 
       store.storeMcpToken(mcpAccessToken, {
         backlogAccessToken: entry.backlogTokens.access_token,
         clientId,
         expiresAt: entry.backlogAccessTokenExpiresAt,
+        familyId,
       });
       store.storeMcpRefreshToken(mcpRefreshToken, {
         backlogRefreshToken: entry.backlogTokens.refresh_token,
         clientId,
         expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
+        familyId,
       });
 
       return c.json({
@@ -527,16 +530,19 @@ export function createOAuthRoutes(
 
         const mcpAccessToken = randomBytes(32).toString('hex');
         const mcpRefreshToken = randomBytes(32).toString('hex');
+        const familyId = refreshEntry.familyId ?? randomUUID();
 
         store.storeMcpToken(mcpAccessToken, {
           backlogAccessToken: tokens.access_token,
           clientId,
           expiresAt: Date.now() + tokens.expires_in * 1000,
+          familyId,
         });
         store.storeMcpRefreshToken(mcpRefreshToken, {
           backlogRefreshToken: tokens.refresh_token,
           clientId,
           expiresAt: Date.now() + REFRESH_TOKEN_TTL_MS,
+          familyId,
         });
 
         return c.json({
