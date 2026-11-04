@@ -5,15 +5,22 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
   vi,
 } from 'vite-plus/test';
-import type { Backlog } from 'backlog-js';
+import { postSpaceAttachment } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { addAttachmentTool } from './addAttachment.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { ATTACHMENT_ROOTS_ENV } from '../utils/attachmentRoots.js';
+
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postSpaceAttachment: vi.fn(),
+}));
 
 const FILE_CONTENT = 'screenshot bytes';
 
@@ -28,15 +35,12 @@ describe('addAttachmentTool', () => {
   let insideFile: string;
   let outsideFile: string;
 
-  const postSpaceAttachment = vi
-    .fn<(form: FormData) => Promise<any>>()
-    .mockResolvedValue({ id: 42, name: 'evidence.png', size: 17 });
-
-  const mockBacklog: Partial<Backlog> = { postSpaceAttachment };
-  const tool = addAttachmentTool(
-    mockBacklog as Backlog,
-    createDescriptionHelper()
-  );
+  const mockPostSpaceAttachment = vi.mocked(postSpaceAttachment);
+  const mockClient = {} as Client;
+  const tool = addAttachmentTool(mockClient, createDescriptionHelper(), {
+    attachmentRootsRequired: false,
+  });
+  const remoteTool = addAttachmentTool(mockClient, createDescriptionHelper());
 
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), 'backlog-mcp-attachment-'));
@@ -55,22 +59,30 @@ describe('addAttachmentTool', () => {
     await rm(root, { recursive: true, force: true });
   });
 
+  beforeEach(() => {
+    mockPostSpaceAttachment.mockReset();
+    mockPostSpaceAttachment.mockResolvedValue({
+      id: 42,
+      name: 'evidence.png',
+      size: 17,
+    } as Awaited<ReturnType<typeof postSpaceAttachment>>);
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
-    postSpaceAttachment.mockClear();
   });
 
   it('uploads the file and returns what Backlog reports', async () => {
     const result = await tool.handler({ filePath: insideFile });
 
     expect(result).toEqual({ id: 42, name: 'evidence.png', size: 17 });
-    expect(postSpaceAttachment).toHaveBeenCalledTimes(1);
+    expect(mockPostSpaceAttachment).toHaveBeenCalledTimes(1);
   });
 
   it('sends the file under the `file` field, named after the basename', async () => {
     await tool.handler({ filePath: insideFile });
 
-    const form = postSpaceAttachment.mock.calls[0][0];
+    const form = mockPostSpaceAttachment.mock.calls[0][1];
     const sent = form.get('file');
 
     expect(sent).toBeInstanceOf(Blob);
@@ -82,14 +94,14 @@ describe('addAttachmentTool', () => {
     await expect(
       tool.handler({ filePath: join(allowed, 'missing.png') })
     ).rejects.toThrow(/Cannot read file/);
-    expect(postSpaceAttachment).not.toHaveBeenCalled();
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
   });
 
   it('refuses a directory', async () => {
     await expect(tool.handler({ filePath: allowed })).rejects.toThrow(
       /Not a regular file/
     );
-    expect(postSpaceAttachment).not.toHaveBeenCalled();
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
   });
 
   it('reads any path when no allowlist is configured', async () => {
@@ -97,6 +109,23 @@ describe('addAttachmentTool', () => {
 
     await expect(
       tool.handler({ filePath: outsideFile })
+    ).resolves.toBeDefined();
+  });
+
+  it('refuses every path when roots are required but not configured', async () => {
+    vi.stubEnv(ATTACHMENT_ROOTS_ENV, '');
+
+    await expect(remoteTool.handler({ filePath: insideFile })).rejects.toThrow(
+      new RegExp(`disabled: set ${ATTACHMENT_ROOTS_ENV}`)
+    );
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
+  });
+
+  it('uploads from a configured root when roots are required', async () => {
+    vi.stubEnv(ATTACHMENT_ROOTS_ENV, allowed);
+
+    await expect(
+      remoteTool.handler({ filePath: insideFile })
     ).resolves.toBeDefined();
   });
 
@@ -112,7 +141,7 @@ describe('addAttachmentTool', () => {
     await expect(tool.handler({ filePath: outsideFile })).rejects.toThrow(
       new RegExp(ATTACHMENT_ROOTS_ENV)
     );
-    expect(postSpaceAttachment).not.toHaveBeenCalled();
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
   });
 
   it('gives a missing file outside the roots the same error as an existing one', async () => {
@@ -123,7 +152,7 @@ describe('addAttachmentTool', () => {
     await expect(
       tool.handler({ filePath: join(outside, 'does-not-exist.png') })
     ).rejects.toThrow(new RegExp(ATTACHMENT_ROOTS_ENV));
-    expect(postSpaceAttachment).not.toHaveBeenCalled();
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
   });
 
   it('gives a directory outside the roots the same error as a file', async () => {
@@ -132,7 +161,7 @@ describe('addAttachmentTool', () => {
     await expect(tool.handler({ filePath: outside })).rejects.toThrow(
       new RegExp(ATTACHMENT_ROOTS_ENV)
     );
-    expect(postSpaceAttachment).not.toHaveBeenCalled();
+    expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
   });
 
   it('still reports a missing file inside the roots as unreadable', async () => {
@@ -152,7 +181,7 @@ describe('addAttachmentTool', () => {
       await expect(tool.handler({ filePath: link })).rejects.toThrow(
         new RegExp(ATTACHMENT_ROOTS_ENV)
       );
-      expect(postSpaceAttachment).not.toHaveBeenCalled();
+      expect(mockPostSpaceAttachment).not.toHaveBeenCalled();
     } finally {
       await rm(link, { force: true });
     }
@@ -174,7 +203,7 @@ describe('addAttachmentTool', () => {
     try {
       await tool.handler({ filePath: link });
 
-      const sent = postSpaceAttachment.mock.calls[0][0].get('file') as File;
+      const sent = mockPostSpaceAttachment.mock.calls[0][1].get('file') as File;
       expect(sent.name).toBe('as-named-by-caller.png');
       expect(await sent.text()).toBe(FILE_CONTENT);
     } finally {

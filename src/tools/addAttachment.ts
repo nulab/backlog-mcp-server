@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import type { Client, Entity } from 'backlog-js';
+import { postSpaceAttachment } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -105,10 +105,17 @@ async function loadAllowedRoots({
  */
 async function resolveUploadPath(
   filePath: string,
-  nodeApis: Awaited<ReturnType<typeof loadFileSystem>>
+  nodeApis: Awaited<ReturnType<typeof loadFileSystem>>,
+  rootsRequired: boolean
 ): Promise<{ realPath: string; uploadName: string }> {
   const { fsPromises, path } = nodeApis;
   const allowedRoots = await loadAllowedRoots(nodeApis);
+  // Security: without an allowlist, a remote caller could read any file the server can.
+  if (allowedRoots === undefined && rootsRequired) {
+    throw new Error(
+      `add_attachment is disabled: set ${ATTACHMENT_ROOTS_ENV} to the directories it may upload from.`
+    );
+  }
   const isAllowed = (candidate: string) =>
     allowedRoots === undefined ||
     allowedRoots.some((root) => isInsideRoot(candidate, root, path.sep));
@@ -143,9 +150,15 @@ async function resolveUploadPath(
   return { realPath, uploadName: path.basename(requested) };
 }
 
+export type AddAttachmentOptions = {
+  // Only a caller sharing the server's machine (stdio) may read without an allowlist.
+  attachmentRootsRequired?: boolean;
+};
+
 export const addAttachmentTool = (
-  backlog: Backlog,
-  { t }: DescriptionHelper
+  backlog: Client,
+  { t }: DescriptionHelper,
+  { attachmentRootsRequired = true }: AddAttachmentOptions = {}
 ): ToolDefinition<
   ReturnType<typeof addAttachmentSchema>,
   Entity.File.FileInfo
@@ -163,7 +176,8 @@ export const addAttachmentTool = (
       const nodeApis = await loadFileSystem();
       const { realPath, uploadName } = await resolveUploadPath(
         filePath,
-        nodeApis
+        nodeApis,
+        attachmentRootsRequired
       );
 
       // `openAsBlob` rather than `readFile`: the Blob is backed by the file, so
@@ -174,7 +188,7 @@ export const addAttachmentTool = (
       const form = new FormData();
       form.append('file', blob, uploadName);
 
-      return backlog.postSpaceAttachment(form);
+      return postSpaceAttachment(backlog, form);
     },
   };
 };

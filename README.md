@@ -610,7 +610,7 @@ The path is resolved **on the machine running the server**, not on the client:
 
 | Variable                    | Description                                                                                                                                                    |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BACKLOG_ATTACHMENT_ROOTS`  | Directories `add_attachment` may read from, separated by the platform's path delimiter (`:` on Unix, `;` on Windows). Unset means no restriction. |
+| `BACKLOG_ATTACHMENT_ROOTS`  | Directories `add_attachment` may read from, separated by the platform's path delimiter (`:` on Unix, `;` on Windows). Unset means no restriction over stdio; over HTTP, `add_attachment` refuses every upload until this is set, because remote callers would otherwise read any file the server can. |
 
 Symlinks are resolved before the check, so a link inside an allowed directory cannot be used to reach a file outside it.
 
