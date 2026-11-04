@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getUserStarsCount } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -30,7 +31,7 @@ const getUserStarsCountSchema = buildToolSchema((t) => ({
 }));
 
 export const getUserStarsCountTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getUserStarsCountSchema>,
@@ -46,6 +47,6 @@ export const getUserStarsCountTool = (
     returnsList: false,
     outputFields: outputFields<Entity.Star.StarCount>()(['count']),
     handler: async ({ userId, since, until }) =>
-      backlog.getUserStarsCount(userId, { since, until }),
+      getUserStarsCount(backlog, userId, { since, until }),
   };
 };

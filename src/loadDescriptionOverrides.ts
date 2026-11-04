@@ -4,30 +4,11 @@ import os from 'os';
 import path from 'path';
 import { logger } from './utils/logger.js';
 
-/**
- * Reads description overrides from a `.backlog-mcp-serverrc` file in the user's
- * home directory.
- *
- * Node-only, and kept separate from `createDescriptionHelper` for that reason:
- * this reads the filesystem and needs a home directory. The CLI calls it and
- * hands the result to the helper.
- *
- * The file is user-authored, so its contents are unknown: anything that is not a
- * string is dropped here rather than passed on. Most overrides end up in a tool
- * description, and a number or an array there would produce an invalid
- * `tools/list` payload.
- *
- * A file that exists but cannot be parsed is reported and then ignored.
- * Overriding descriptions is an add-on, and a trailing comma in an optional file
- * is not a reason to stop serving the tools — from the client's side an
- * exception here looks like "the MCP server will not connect", with nothing
- * pointing at the config file.
- */
+// Non-string values are dropped: they would make an invalid `tools/list` payload.
+// An unparseable file is reported and ignored; failing would look like "the MCP server
+// will not connect" with nothing pointing at the config file.
 
-/**
- * Checked in this order; the first one that exists wins. The extensionless form
- * is parsed as YAML, which also accepts JSON.
- */
+/** First match wins. The extensionless form is parsed as YAML, which also accepts JSON. */
 const SUFFIXES = ['', '.json', '.yaml', '.yml'] as const;
 
 type ReadOutcome =
@@ -35,11 +16,8 @@ type ReadOutcome =
   | { status: 'absent' }
   | { status: 'unreadable'; error: unknown };
 
-/**
- * A missing candidate is not a failure — there are four of them and at most one
- * exists. A candidate that exists but does not parse is, and has to be
- * distinguished from the missing case so it can be reported rather than skipped.
- */
+// A missing candidate is not a failure (at most one of four exists), but one that fails
+// to parse must be told apart so it is reported rather than skipped.
 function readCandidate(filePath: string): ReadOutcome {
   let raw: string;
   try {

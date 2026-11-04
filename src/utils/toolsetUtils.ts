@@ -1,10 +1,10 @@
-import { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { ToolsetGroup } from '../types/toolsets.js';
 import { allTools } from '../tools/tools.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 export const buildToolsetGroup = (
-  backlog: Backlog,
+  backlog: Client,
   helper: DescriptionHelper,
   enabledToolsets: string[]
 ): ToolsetGroup => {

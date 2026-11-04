@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getNotifications } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -27,7 +28,7 @@ const getNotificationsSchema = buildToolSchema((t) => ({
 }));
 
 export const getNotificationsTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getNotificationsSchema>,
@@ -58,7 +59,7 @@ export const getNotificationsTool = (
       'created',
     ]),
     handler: async ({ minId, maxId, count, order }) =>
-      backlog.getNotifications({
+      getNotifications(backlog, {
         minId,
         maxId,
         count,

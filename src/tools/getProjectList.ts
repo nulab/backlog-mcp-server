@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getProjects } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -27,7 +28,7 @@ const getProjectListSchema = buildToolSchema((t) => ({
 }));
 
 export const getProjectListTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getProjectListSchema>,
@@ -63,6 +64,6 @@ export const getProjectListTool = (
     ]),
     importantFields: ['id', 'projectKey', 'name'],
     handler: async ({ archived, all }) =>
-      backlog.getProjects({ archived, all }),
+      getProjects(backlog, { archived, all }),
   };
 };

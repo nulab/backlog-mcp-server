@@ -1,7 +1,11 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+} from 'vite-plus/test';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 
 describe('createTokenStore', () => {
@@ -69,6 +73,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
@@ -86,6 +91,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,
@@ -299,6 +305,7 @@ describe('createTokenStore', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: 'ch',
         redirectUri: 'http://localhost',
         expiresAt: Date.now() + 600_000,

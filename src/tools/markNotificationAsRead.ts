@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Backlog } from 'backlog-js';
+import { markAsReadNotification } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 
@@ -21,7 +22,7 @@ export const MarkNotificationAsReadResultSchema = z.object({
 });
 
 export const markNotificationAsReadTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof markNotificationAsReadSchema>,
@@ -40,7 +41,7 @@ export const markNotificationAsReadTool = (
       'message',
     ]),
     handler: async ({ id }) => {
-      await backlog.markAsReadNotification(id);
+      await markAsReadNotification(backlog, id);
       return {
         success: true,
         message: `Notification ${id} marked as read`,

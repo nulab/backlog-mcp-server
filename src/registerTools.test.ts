@@ -1,8 +1,8 @@
 import { registerTools } from './registerTools';
 import { McpServer } from '@modelcontextprotocol/server';
-import { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { DescriptionHelper } from './createDescriptionHelper';
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vite-plus/test';
 import { allTools } from './tools/tools';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
@@ -24,7 +24,7 @@ vi.mock('./handlers/builders/composeNativeContentToolHandler', () => ({
 }));
 
 describe('registerTools', () => {
-  const mockBacklog = {} as Backlog;
+  const mockBacklog = {} as Client;
   const mockHelper = {
     t: vi.fn(),
   } as unknown as DescriptionHelper;
@@ -41,10 +41,6 @@ describe('registerTools', () => {
   if (issueToolSet == null) {
     throw new Error(`Toolset "issue" not found in allTools. Check test setup.`);
   }
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('registers tools from enabled toolsets only', () => {
     const mockServer = wrapServerWithToolRegistry({
@@ -158,6 +154,44 @@ describe('registerTools', () => {
     expect(composeNativeContentToolHandler).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'get_issue_attachment' }),
       expect.objectContaining({ useOrganization: false })
+    );
+  });
+
+  it('registers each tool with the annotations its name implies', () => {
+    const mockServer = wrapServerWithToolRegistry({
+      registerTool: vi.fn(),
+    } as unknown as McpServer);
+    const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['issue']);
+
+    registerTools(mockServer, toolsetGroup, {
+      useFields: false,
+      maxTokens: 1000,
+      // A prefix must not reach the hints: they describe the Backlog call, not
+      // what the operator chose to call it.
+      prefix: 'backlog.',
+      useOrganization: false,
+    });
+
+    const annotationsByName = new Map(
+      (mockServer.registerTool as Mock).mock.calls.map((call) => [
+        call[0],
+        call[1].annotations,
+      ])
+    );
+
+    expect(annotationsByName.get('backlog.get_issue')).toMatchObject({
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    });
+    expect(annotationsByName.get('backlog.delete_issue')).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      openWorldHint: false,
+    });
+    // The native-content pipeline registers separately, so it is checked too.
+    expect(annotationsByName.get('backlog.get_issue_attachment')).toMatchObject(
+      { readOnlyHint: true, destructiveHint: false }
     );
   });
 

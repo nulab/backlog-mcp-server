@@ -1,7 +1,4 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vite-plus/test';
 import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
@@ -17,8 +14,9 @@ import {
 
 // The 2026-07-28 request envelope, carried in `_meta` on every request now
 // that there is no `initialize` handshake to negotiate it once.
+const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const MODERN_ENVELOPE = {
-  'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+  'io.modelcontextprotocol/protocolVersion': MODERN_PROTOCOL_VERSION,
   'io.modelcontextprotocol/clientCapabilities': {},
 };
 
@@ -38,10 +36,7 @@ type RawResponse = {
   body: string;
 };
 
-/**
- * Raw node:http request. `fetch` treats `Host` as a forbidden header, so the
- * DNS-rebinding cases have to be driven at this level to set it at all.
- */
+// `fetch` forbids setting `Host`, so the DNS-rebinding cases need raw node:http.
 const send = (
   port: number,
   options: {
@@ -61,6 +56,8 @@ const send = (
         headers: {
           'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
+          // Required alongside a modern envelope since server 2.1.0.
+          'mcp-protocol-version': MODERN_PROTOCOL_VERSION,
           ...options.headers,
         },
       },
@@ -260,7 +257,7 @@ describe('runHttpMcpServer', () => {
   });
 
   describe('2025-era session operations', () => {
-    // The protocol is stateless now, so nothing is kept between requests.
+    // The protocol is stateless, so nothing is kept between requests.
     it.each(['GET', 'DELETE'])('answers %s with 405', async (method) => {
       const port = await start();
       const res = await send(port, {
@@ -360,10 +357,8 @@ describe('runHttpMcpServer', () => {
 
       expect(res.status).toBe(401);
       expect(JSON.parse(res.body).error).toBe('invalid_token');
-      // The header, not the status, is what makes this recoverable: the client
-      // reads `resource_metadata` from it to find where to re-authenticate. It
-      // reaches the wire through Hono's `c.res` setter, which merges the
-      // headers of the response it replaces, so it is worth pinning.
+      // The header makes this recoverable (the client reads `resource_metadata` from it), and
+      // it only reaches the wire via Hono's `c.res` setter merging headers, so pin it.
       expect(res.headers['www-authenticate']).toContain(
         `resource_metadata="${oauthConfig.serverBaseUrl}/.well-known/oauth-protected-resource/mcp"`
       );

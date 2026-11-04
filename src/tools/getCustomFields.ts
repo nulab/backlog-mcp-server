@@ -1,5 +1,6 @@
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getCustomFields } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { z } from 'zod';
 import { ToolDefinition, buildToolSchema } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
@@ -28,7 +29,7 @@ const getCustomFieldsInputSchema = buildToolSchema((t) => ({
 }));
 
 export const getCustomFieldsTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getCustomFieldsInputSchema>, // Shape for input schema
@@ -80,7 +81,7 @@ export const getCustomFieldsTool = (
       if (!result.ok) {
         throw result.error;
       }
-      return backlog.getCustomFields(result.value);
+      return getCustomFields(backlog, result.value);
     },
   };
 };

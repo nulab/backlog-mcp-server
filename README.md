@@ -149,7 +149,7 @@ pnpm run build
 MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 ```
 
-- **Endpoint:** `POST` (and `GET` for server-initiated streams) on `http://<host>:<port><path>` (default path `/mcp`).
+- **Endpoint:** `POST` on `http://<host>:<port><path>` (default path `/mcp`). MCP `2026-07-28` has no standalone `GET` stream endpoint; change notifications use a `subscriptions/listen` POST whose response can remain an SSE stream. This server returns `405` for `GET` and `DELETE` on the MCP endpoint.
 - **Protocol:** MCP `2026-07-28`. The protocol is stateless: there is no `initialize` handshake and no `mcp-session-id` header. Clients send their metadata in `_meta` on every request and discover capabilities via `server/discover`. Streamable HTTP also requires the `Mcp-Method` header (and `Mcp-Name` on `tools/call`).
 - **Backward compatibility:** Clients on `2025-11-25` and earlier are still served over the same endpoint, statelessly. Because no session is kept, the 2025 session operations (`GET` / `DELETE` with an `mcp-session-id`) answer `405`.
 - **Security:** Default bind is `127.0.0.1`. On a bare loopback bind, `Host` and `Origin` are both validated against the localhost set (DNS rebinding protection). Behind a reverse proxy, set `--http-allowed-hosts` to the public hostname; that turns off the localhost `Origin` default, since a browser client's `Origin` is its own site and never this server's hostname. Add `--http-allowed-origins` to restrict which client origins may reach the server. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
@@ -308,6 +308,7 @@ Tools for managing issues, their comments, and related items like priorities, ca
 - `remove_related_issue`: Removes the relation between an issue and a related issue.
 - `get_priorities`: Returns list of priorities.
 - `get_categories`: Returns list of categories for a project.
+- `add_category`: Creates a new category for a project.
 - `get_custom_fields`: Returns list of custom fields for a project.
 - `get_issue_types`: Returns list of issue types for a project.
 - `get_resolutions`: Returns list of issue resolutions.
@@ -361,6 +362,7 @@ Tools for managing documents and document trees in Backlog projects.
 
 - `get_document_tree`: Returns the hierarchical tree of documents for a project, including folders and ne
 - `get_documents`: Returns a flat list of documents in a project or folder.
+- `get_document_comments`: Returns the comments on a document, including their replies.
 - `get_document`: Returns detailed information about a specific document, including metadata, content, an
 
 ## Usage Examples
@@ -537,6 +539,16 @@ PREFIX="backlog_"
 This is especially useful if you're using multiple MCP servers or tools in the same environment and want to avoid name collisions. For example, get_project can become backlog_get_project to distinguish it from similarly named tools provided by other services.
 
 ### Response Optimization & Token Limits
+
+#### Response Compaction
+
+Tool results are compacted before they are returned. This is always on, and applies to every tool except `get_issue_attachment`, which returns the file itself:
+
+- A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that *is* the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
+- A nested project (each activity's and notification's `project`) is reduced to `id`, `projectKey` and `name`, and a nested issue (a pull request's or notification's `issue`) to `id`, `issueKey`, `summary` and `status`. A project or issue that is the result — `get_project`, `get_issue`, the items of `get_project_list` or `get_issues` — is returned whole, and so is the issue of each item of `get_watching_list_items`.
+- Nested entities (statuses, issue types, categories, milestones, custom field items, …) omit `color` and `displayOrder`, and nested milestones also omit `description`. Tools that list these themselves (`get_issue_types`, `get_categories`, `get_version_milestone_list`, …) return them whole.
+- Fields that are `null`, an empty string or an empty array are omitted. `0`, `false` and `{}` are kept. This also applies to a field named in `fields`: an empty one is left out rather than returned as empty.
+- JSON is returned without indentation.
 
 #### Field Selection
 

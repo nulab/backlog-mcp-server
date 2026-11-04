@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getIssues } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -144,7 +145,7 @@ const getIssuesSchema = buildToolSchema((t) => ({
 }));
 
 export const getIssuesTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof getIssuesSchema>, Entity.Issue.Issue> => {
   return {
@@ -191,7 +192,7 @@ export const getIssuesTool = (
       'childIssueSummary',
     ]),
     handler: async ({ customFields, ...rest }) => {
-      return backlog.getIssues({
+      return getIssues(backlog, {
         ...rest,
         ...customFieldFiltersToPayload(customFields),
       });

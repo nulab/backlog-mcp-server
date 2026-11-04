@@ -1,7 +1,4 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { parseBacklogAPIError } from './parseBacklogAPIError.js';
 
 const authError = {
@@ -26,8 +23,6 @@ describe('parseBacklogAPIError', () => {
       );
     });
 
-    // There is no API key to check in OAuth mode, so the original wording sent
-    // the user somewhere there was nothing to fix.
     it('tells an OAuth deployment to re-authenticate instead', () => {
       const parsed = parseBacklogAPIError(authError, { authMode: 'oauth' });
 

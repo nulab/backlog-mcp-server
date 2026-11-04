@@ -1,15 +1,10 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { describe, expect, it, vi, afterEach } from 'vite-plus/test';
+import type { Client } from 'backlog-js';
 import { buildToolsetGroup } from './toolsetUtils.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-/**
- * This file used to cover `getToolset` and `enableToolset`, which existed only
- * for `enable_toolset`. Both are gone with it; `buildToolsetGroup` is what is
- * left in this module, and it had no direct coverage.
- */
 describe('buildToolsetGroup', () => {
-  const backlog = {} as Backlog;
+  const backlog = {} as Client;
   const helper = createDescriptionHelper();
 
   afterEach(() => {

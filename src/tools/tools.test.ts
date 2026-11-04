@@ -1,16 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { describe, expect, it } from 'vite-plus/test';
+import type { Client } from 'backlog-js';
 import { allTools } from './tools.js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-/**
- * The tool list is a public API: renaming an entry breaks every client that
- * refers to it by name, so the convention is worth pinning rather than
- * rediscovering one tool at a time.
- */
+// The tool list is a public API: renaming an entry breaks every client using it.
 describe('allTools', () => {
   const toolNames = allTools(
-    {} as Backlog,
+    {} as Client,
     createDescriptionHelper()
   ).toolsets.flatMap((toolset) =>
     [...toolset.tools, ...(toolset.nativeContentTools ?? [])].map(

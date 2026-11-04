@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getPullRequests } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -62,7 +63,7 @@ const getPullRequestsSchema = buildToolSchema((t) => ({
 }));
 
 export const getPullRequestsTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getPullRequestsSchema>,
@@ -117,7 +118,8 @@ export const getPullRequestsTool = (
       if (!repoResult.ok) {
         throw repoResult.error;
       }
-      return backlog.getPullRequests(
+      return getPullRequests(
+        backlog,
         result.value,
         String(repoResult.value),
         params

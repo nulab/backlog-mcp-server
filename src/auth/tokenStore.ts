@@ -1,6 +1,3 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import type { AuthInfo } from '@modelcontextprotocol/server';
 
 export type BacklogTokenData = {
@@ -35,6 +32,9 @@ type PendingAuthorization = {
 type AuthCodeEntry = {
   mcpClientId: string;
   backlogTokens: BacklogTokenData;
+  // Resolved at `/callback`: re-basing `expires_in` at `/token` would push the
+  // expiry past the real one by however long the code waited to be redeemed.
+  backlogAccessTokenExpiresAt: number;
   codeChallenge: string;
   redirectUri: string;
   resource?: string;
@@ -59,7 +59,7 @@ type McpRefreshEntry = {
 };
 
 const PENDING_AUTH_TTL_MS = 10 * 60 * 1000;
-const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+const CLIENT_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 const MAX_CLIENTS = 1000;
 
 export type TokenStore = ReturnType<typeof createTokenStore>;
@@ -154,15 +154,8 @@ export function createTokenStore() {
       return entry;
     },
 
-    /**
-     * Drops an MCP access token and its cached verification, so the next
-     * request on it is rejected by the bearer middleware.
-     *
-     * The refresh token is deliberately left in place: a Backlog 401 says the
-     * access token is spent, not that the grant is gone, so a client should be
-     * able to recover through the refresh grant before falling back to a full
-     * re-authorization.
-     */
+    // Keeps the refresh token: a Backlog 401 means the access token is spent,
+    // not that the grant is gone, so the client can still recover via refresh.
     revokeMcpToken(mcpToken: string): void {
       mcpAccessTokens.delete(mcpToken);
       verificationCache.delete(mcpToken);

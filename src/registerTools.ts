@@ -4,6 +4,7 @@ import { composeNativeContentToolHandler } from './handlers/builders/composeNati
 import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 import { MCPOptions } from './types/mcp.js';
 import { ToolsetGroup } from './types/toolsets.js';
+import { toolAnnotationsFor } from './utils/toolAnnotations.js';
 import { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
 type RegistrableTool = {
@@ -17,11 +18,8 @@ type RegisterOptions<TTool extends RegistrableTool> = {
   server: BacklogMCPServer;
   toolsets: { enabled: boolean; tools: TTool[] }[];
   prefix: string;
-  /**
-   * Produces what the tool is registered with. Returning the schema instead of
-   * reading it back off the definition keeps the definition immutable, which is
-   * required now that one toolset group is shared across per-request servers.
-   */
+  // Returns the schema rather than mutating the definition: one toolset group
+  // is shared across per-request servers.
   prepareTool: (tool: TTool) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema: z.ZodObject<any>;
@@ -86,7 +84,10 @@ function registerToolsets<TTool extends RegistrableTool>({
         toolNameWithPrefix,
         tool.description,
         schema,
-        handler
+        handler,
+        // Derived from the bare name, so that `--prefix` cannot change what a
+        // client is told the tool does.
+        toolAnnotationsFor(tool.name)
       );
     }
   }

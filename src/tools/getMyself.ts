@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getMyself } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -8,7 +9,7 @@ import { DescriptionHelper } from '../createDescriptionHelper.js';
 const getMyselfSchema = buildToolSchema((_t) => ({}));
 
 export const getMyselfTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof getMyselfSchema>, Entity.User.User> => {
   return {
@@ -29,6 +30,6 @@ export const getMyselfTool = (
       'lastLoginTime',
     ]),
     importantFields: ['id', 'userId', 'name', 'roleType'],
-    handler: async () => backlog.getMyself(),
+    handler: async () => getMyself(backlog),
   };
 };

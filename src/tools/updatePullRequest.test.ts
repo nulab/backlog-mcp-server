@@ -1,62 +1,65 @@
 import { updatePullRequestTool } from './updatePullRequest.js';
-import { vi, describe, it, expect } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { vi, describe, it, expect } from 'vite-plus/test';
+import { patchPullRequest } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  patchPullRequest: vi.fn(),
+}));
+
 describe('updatePullRequestTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    patchPullRequest: vi.fn<() => Promise<any>>().mockResolvedValue({
+  vi.mocked(patchPullRequest).mockResolvedValue({
+    id: 1,
+    projectId: 100,
+    repositoryId: 200,
+    number: 1,
+    summary: 'Updated PR title',
+    description: 'Updated PR description',
+    base: 'main',
+    branch: 'fix/login-bug',
+    status: {
+      id: 2,
+      name: 'Closed',
+    },
+    assignee: {
+      id: 2,
+      userId: 'user2',
+      name: 'User Two',
+    },
+    issue: {
+      id: 1001,
+      issueKey: 'TEST-2',
+      summary: 'Another issue',
+    },
+    baseCommit: 'abc123',
+    branchCommit: 'def456',
+    closeAt: '2023-01-02T00:00:00Z',
+    mergeAt: '2023-01-02T00:00:00Z',
+    createdUser: {
       id: 1,
-      projectId: 100,
-      repositoryId: 200,
-      number: 1,
-      summary: 'Updated PR title',
-      description: 'Updated PR description',
-      base: 'main',
-      branch: 'fix/login-bug',
-      status: {
-        id: 2,
-        name: 'Closed',
-      },
-      assignee: {
-        id: 2,
-        userId: 'user2',
-        name: 'User Two',
-      },
-      issue: {
-        id: 1001,
-        issueKey: 'TEST-2',
-        summary: 'Another issue',
-      },
-      baseCommit: 'abc123',
-      branchCommit: 'def456',
-      closeAt: '2023-01-02T00:00:00Z',
-      mergeAt: '2023-01-02T00:00:00Z',
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updatedUser: {
-        id: 2,
-        userId: 'user2',
-        name: 'User Two',
-      },
-      updated: '2023-01-02T00:00:00Z',
-    }),
-  };
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updatedUser: {
+      id: 2,
+      userId: 'user2',
+      name: 'User Two',
+    },
+    updated: '2023-01-02T00:00:00Z',
+  } as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = updatePullRequestTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = updatePullRequestTool(mockClient, mockDescriptionHelper);
 
   it('returns updated pull request', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       summary: 'Updated PR title',
       description: 'Updated PR description',
@@ -72,10 +75,10 @@ describe('updatePullRequestTool', () => {
     expect(result.status).toHaveProperty('name', 'Closed');
   });
 
-  it('calls backlog.patchPullRequest with correct params when using repoName', async () => {
+  it('calls patchPullRequest with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       summary: 'Updated PR title',
       description: 'Updated PR description',
@@ -86,7 +89,8 @@ describe('updatePullRequestTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequest).toHaveBeenCalledWith(
+    expect(patchPullRequest).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo',
       1,
@@ -100,17 +104,18 @@ describe('updatePullRequestTool', () => {
     );
   });
 
-  it('calls backlog.patchPullRequest with correct params when using projectId and repoName', async () => {
+  it('calls patchPullRequest with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       summary: 'Updated PR title via projectId',
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequest).toHaveBeenCalledWith(
+    expect(patchPullRequest).toHaveBeenCalledWith(
+      mockClient,
       100,
       'test-repo',
       1,
@@ -125,17 +130,17 @@ describe('updatePullRequestTool', () => {
     );
   });
 
-  it('calls backlog.patchPullRequest with correct params when using projectId and repoId', async () => {
+  it('calls patchPullRequest with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
       summary: 'Updated PR title via repoId',
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.patchPullRequest).toHaveBeenCalledWith(100, '200', 1, {
+    expect(patchPullRequest).toHaveBeenCalledWith(mockClient, 100, '200', 1, {
       summary: 'Updated PR title via repoId',
       description: undefined,
       issueId: undefined,
@@ -147,8 +152,7 @@ describe('updatePullRequestTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       summary: 'Test Summary',
     };
@@ -159,7 +163,6 @@ describe('updatePullRequestTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
       summary: 'Test Summary',
     };

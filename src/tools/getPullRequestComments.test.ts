@@ -1,52 +1,55 @@
 import { getPullRequestCommentsTool } from './getPullRequestComments.js';
-import { vi, describe, it, expect } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { vi, describe, it, expect } from 'vite-plus/test';
+import { getPullRequestComments } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  getPullRequestComments: vi.fn(),
+}));
+
 describe('getPullRequestCommentsTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    getPullRequestComments: vi.fn<() => Promise<any>>().mockResolvedValue([
-      {
+  vi.mocked(getPullRequestComments).mockResolvedValue([
+    {
+      id: 1,
+      content: 'This looks good to me!',
+      changeLog: [],
+      createdUser: {
         id: 1,
-        content: 'This looks good to me!',
-        changeLog: [],
-        createdUser: {
-          id: 1,
-          userId: 'user1',
-          name: 'User One',
-        },
-        created: '2023-01-01T00:00:00Z',
-        updated: '2023-01-01T00:00:00Z',
-        stars: [],
-        notifications: [],
+        userId: 'user1',
+        name: 'User One',
       },
-      {
+      created: '2023-01-01T00:00:00Z',
+      updated: '2023-01-01T00:00:00Z',
+      stars: [],
+      notifications: [],
+    },
+    {
+      id: 2,
+      content: 'I found a small issue in the code.',
+      changeLog: [],
+      createdUser: {
         id: 2,
-        content: 'I found a small issue in the code.',
-        changeLog: [],
-        createdUser: {
-          id: 2,
-          userId: 'user2',
-          name: 'User Two',
-        },
-        created: '2023-01-02T00:00:00Z',
-        updated: '2023-01-02T00:00:00Z',
-        stars: [],
-        notifications: [],
+        userId: 'user2',
+        name: 'User Two',
       },
-    ]),
-  };
+      created: '2023-01-02T00:00:00Z',
+      updated: '2023-01-02T00:00:00Z',
+      stars: [],
+      notifications: [],
+    },
+  ] as any);
+
+  const mockClient = {} as Client;
 
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = getPullRequestCommentsTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = getPullRequestCommentsTool(mockClient, mockDescriptionHelper);
 
   it('returns pull request comments', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
     });
 
@@ -61,10 +64,10 @@ describe('getPullRequestCommentsTool', () => {
     );
   });
 
-  it('calls backlog.getPullRequestComments with correct params when using repoName', async () => {
+  it('calls getPullRequestComments with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       minId: 100,
       maxId: 200,
@@ -74,7 +77,8 @@ describe('getPullRequestCommentsTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.getPullRequestComments).toHaveBeenCalledWith(
+    expect(getPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo',
       1,
@@ -87,16 +91,17 @@ describe('getPullRequestCommentsTool', () => {
     );
   });
 
-  it('calls backlog.getPullRequestComments with correct params when using projectId and repoName', async () => {
+  it('calls getPullRequestComments with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.getPullRequestComments).toHaveBeenCalledWith(
+    expect(getPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       'test-repo',
       1,
@@ -104,16 +109,17 @@ describe('getPullRequestCommentsTool', () => {
     );
   });
 
-  it('calls backlog.getPullRequestComments with correct params when using projectId and repoId', async () => {
+  it('calls getPullRequestComments with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.getPullRequestComments).toHaveBeenCalledWith(
+    expect(getPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       '200',
       1,
@@ -123,7 +129,6 @@ describe('getPullRequestCommentsTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
       repoName: 'test-repo',
       number: 1,
     };
@@ -134,7 +139,6 @@ describe('getPullRequestCommentsTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
     };
 

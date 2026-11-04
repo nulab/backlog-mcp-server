@@ -1,8 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { describe, it, expect, vi } from 'vite-plus/test';
+import type { Client } from 'backlog-js';
 import { McpServer } from '@modelcontextprotocol/server';
 import { createDescriptionHelper } from './createDescriptionHelper.js';
-import { createBacklogMcpServer } from './createBacklogMcpServer.js';
+import {
+  createBacklogMcpServer,
+  MAX_TOOL_INPUT_ELEMENTS,
+} from './createBacklogMcpServer.js';
 import { registerTools } from './registerTools.js';
 import { organizationTools } from './tools/organizations.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -29,7 +32,7 @@ vi.mock('./tools/organizations.js', () => ({
 }));
 
 describe('createBacklogMcpServer', () => {
-  const mockBacklog = {} as Backlog;
+  const mockBacklog = {} as Client;
   const mockClientRegistry = {} as BacklogClientRegistry;
   const mockDescriptionHelper = createDescriptionHelper();
   const mcpOption = {
@@ -48,10 +51,6 @@ describe('createBacklogMcpServer', () => {
     enabledToolsets: ['all'],
     mcpOption,
   };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('returns a server wrapped with tool registry', () => {
     const server = createBacklogMcpServer(baseConfig);
@@ -116,9 +115,8 @@ describe('createBacklogMcpServer', () => {
     );
   });
 
-  // A single Backlog space leaves `list_organizations` nothing to report, and
-  // the `organization` parameter its description refers to is not published
-  // either, so advertising the tool would only mislead.
+  // With a single space there is nothing to list, and the `organization`
+  // parameter its description refers to is not published either.
   it('does not register list_organizations for a single organization', () => {
     createBacklogMcpServer({
       ...baseConfig,
@@ -183,6 +181,14 @@ describe('createBacklogMcpServer', () => {
           'tools/list': { ttlMs: 5 * 60 * 1000, cacheScope: 'public' },
         },
       })
+    );
+  });
+
+  it('caps the number of elements a tool input may contain', () => {
+    createBacklogMcpServer(baseConfig);
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS })
     );
   });
 });

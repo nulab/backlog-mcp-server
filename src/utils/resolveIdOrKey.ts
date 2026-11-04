@@ -12,13 +12,6 @@ type ResolveIdOrFieldInput<F extends string> = {
   [K in F]?: string;
 };
 
-/**
- * Generic resolver for entity identification by ID or named field (e.g., key, name, slug).
- * @param entity - The entity name, e.g., "project"
- * @param fieldName - The name of the alternative to `id`, e.g., "key", "name", "slug"
- * @param values - An object with `id?: number` and `[fieldName]?: string`
- * @param t - Translator
- */
 function resolveIdOrField<E extends EntityName, F extends string>(
   entity: E,
   fieldName: F,

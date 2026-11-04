@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getUserActivities } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { ActivityTypeSchema } from '../types/zod/activityType.js';
@@ -57,7 +58,7 @@ const getUserRecentUpdatesSchema = buildToolSchema((t) => ({
 }));
 
 export const getUserRecentUpdatesTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getUserRecentUpdatesSchema>,
@@ -82,7 +83,7 @@ export const getUserRecentUpdatesTool = (
     ]),
     importantFields: ['id', 'type', 'content', 'created'],
     handler: async ({ userId, activityTypeId, minId, maxId, count, order }) =>
-      backlog.getUserActivities(userId, {
+      getUserActivities(backlog, userId, {
         activityTypeId,
         minId,
         maxId,

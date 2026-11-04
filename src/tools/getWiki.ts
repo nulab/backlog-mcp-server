@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getWiki } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -12,7 +13,7 @@ const getWikiSchema = buildToolSchema((t) => ({
 }));
 
 export const getWikiTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof getWikiSchema>, Entity.Wiki.Wiki> => {
   return {
@@ -41,7 +42,7 @@ export const getWikiTool = (
     handler: async ({ wikiId }) => {
       const wikiIdNumber =
         typeof wikiId === 'string' ? parseInt(wikiId, 10) : wikiId;
-      return backlog.getWiki(wikiIdNumber);
+      return getWiki(backlog, wikiIdNumber);
     },
   };
 };

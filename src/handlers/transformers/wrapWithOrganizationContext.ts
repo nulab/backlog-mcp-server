@@ -8,7 +8,9 @@ export function wrapWithOrganizationContext<
 ): (input: I) => Promise<O> {
   return async (input: I) => {
     const { organization, ...rest } = input;
-    return runWithOrganization(organization, () =>
+    // `return await`, not `return`: a handler that throws before its first `await` returns a
+    // rejected promise; workerd fires `unhandledrejection` before the caller adopts it.
+    return await runWithOrganization(organization, () =>
       fn(rest as Omit<I, 'organization'>)
     );
   };

@@ -5,7 +5,7 @@ import {
   type CustomFieldInput,
   type CustomFieldFilterInput,
 } from './customFields.js';
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vite-plus/test';
 
 describe('customFieldsToPayload', () => {
   it('returns an empty object when input is undefined', () => {
@@ -156,10 +156,8 @@ describe('customFieldFiltersToPayload', () => {
   });
 });
 
-// The payload assertions above cannot catch this class of bug on their own: the
-// suite was green while `customField_401[]` was being produced, because the
-// breakage only appears once `Request.toQueryString` expands the array. Pin the
-// actual request URL instead.
+// Payload assertions alone miss this: the breakage only appears once
+// `Request.toQueryString` expands the array, so pin the request URL.
 describe('list custom field filters on the wire', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

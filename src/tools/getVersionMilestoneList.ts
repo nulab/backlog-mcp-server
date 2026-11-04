@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { getVersions } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -28,7 +29,7 @@ const getVersionMilestoneListSchema = buildToolSchema((t) => ({
 }));
 
 export const getVersionMilestoneListTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof getVersionMilestoneListSchema>,
@@ -69,7 +70,7 @@ export const getVersionMilestoneListTool = (
       if (!result.ok) {
         throw result.error;
       }
-      return backlog.getVersions(result.value);
+      return getVersions(backlog, result.value);
     },
   };
 };

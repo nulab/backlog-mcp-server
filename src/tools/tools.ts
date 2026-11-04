@@ -1,4 +1,4 @@
-import { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { ToolsetGroup } from '../types/toolsets.js';
 import { addAttachmentTool } from './addAttachment.js';
@@ -11,6 +11,7 @@ import { addWikiTool } from './addWiki.js';
 import { updateWikiTool } from './updateWiki.js';
 import { countIssuesTool } from './countIssues.js';
 import { deleteIssueTool } from './deleteIssue.js';
+import { addCategoryTool } from './addCategory.js';
 import { getCategoriesTool } from './getCategories.js';
 import { getCustomFieldsTool } from './getCustomFields.js';
 import { getGitRepositoriesTool } from './getGitRepositories.js';
@@ -59,6 +60,7 @@ import { updatePullRequestCommentTool } from './updatePullRequestComment.js';
 import { getDocumentTool } from './getDocument.js';
 import { getDocumentsTool } from './getDocuments.js';
 import { getDocumentTreeTool } from './getDocumentTree.js';
+import { getDocumentCommentsTool } from './getDocumentComments.js';
 import { getVersionMilestoneListTool } from './getVersionMilestoneList.js';
 import { addVersionMilestoneTool } from './addVersionMilestone.js';
 import { updateVersionMilestoneTool } from './updateVersionMilestone.js';
@@ -66,7 +68,7 @@ import { deleteVersionTool } from './deleteVersion.js';
 import { addDocumentTool } from './addDocument.js';
 
 export const allTools = (
-  backlog: Backlog,
+  backlog: Client,
   helper: DescriptionHelper
 ): ToolsetGroup => {
   return {
@@ -119,6 +121,7 @@ export const allTools = (
           removeRelatedIssueTool(backlog, helper),
           getPrioritiesTool(backlog, helper),
           getCategoriesTool(backlog, helper),
+          addCategoryTool(backlog, helper),
           getCustomFieldsTool(backlog, helper),
           getIssueTypesTool(backlog, helper),
           getResolutionsTool(backlog, helper),
@@ -171,6 +174,7 @@ export const allTools = (
           getDocumentsTool(backlog, helper),
           getDocumentTreeTool(backlog, helper),
           getDocumentTool(backlog, helper),
+          getDocumentCommentsTool(backlog, helper),
           addDocumentTool(backlog, helper),
         ],
       },

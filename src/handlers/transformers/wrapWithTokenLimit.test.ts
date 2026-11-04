@@ -1,5 +1,5 @@
 import { wrapWithTokenLimit } from './wrapWithTokenLimit.js';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { SafeResult } from '../../types/result.js';
 
 describe('wrapWithTokenLimit', () => {
@@ -15,7 +15,7 @@ describe('wrapWithTokenLimit', () => {
 
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
-      expect(result.data).toBe(JSON.stringify(obj, null, 2));
+      expect(result.data).toBe(JSON.stringify(obj));
     }
   });
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { deleteVersions } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -36,7 +37,7 @@ const deleteVersionSchema = buildToolSchema((t) => ({
 }));
 
 export const deleteVersionTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof deleteVersionSchema>,
@@ -74,7 +75,7 @@ export const deleteVersionTool = (
           t('TOOL_DELETE_VERSION_MISSING_ID', 'Version ID is required')
         );
       }
-      return backlog.deleteVersions(result.value, id);
+      return deleteVersions(backlog, result.value, id);
     },
   };
 };

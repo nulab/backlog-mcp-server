@@ -1,10 +1,10 @@
 import type {
   McpServer,
   StandardSchemaWithJSON,
+  ToolAnnotations,
   ToolCallback,
 } from '@modelcontextprotocol/server';
 
-// Extended type that has the MCP core, a set of registered tool names, and a registration function
 export interface BacklogMCPServer extends McpServer {
   __registeredToolNames?: Set<string>;
 
@@ -12,11 +12,11 @@ export interface BacklogMCPServer extends McpServer {
     name: string,
     description: string,
     schema: StandardSchemaWithJSON,
-    handler: ToolCallback<StandardSchemaWithJSON>
+    handler: ToolCallback<StandardSchemaWithJSON>,
+    annotations?: ToolAnnotations
   ) => void;
 }
 
-// This function takes an McpServer instance and extends it with a tool registration mechanism that prevents duplicate tool registrations.
 export function wrapServerWithToolRegistry(
   server: McpServer
 ): BacklogMCPServer {
@@ -30,14 +30,19 @@ export function wrapServerWithToolRegistry(
     name: string,
     description: string,
     schema: StandardSchemaWithJSON,
-    handler: ToolCallback<StandardSchemaWithJSON>
+    handler: ToolCallback<StandardSchemaWithJSON>,
+    annotations?: ToolAnnotations
   ) => {
     if (s.__registeredToolNames!.has(name)) {
       console.warn(`Skipping duplicate tool registration: ${name}`);
       return;
     }
     s.__registeredToolNames!.add(name);
-    s.registerTool(name, { description, inputSchema: schema }, handler);
+    s.registerTool(
+      name,
+      { description, inputSchema: schema, annotations },
+      handler
+    );
   };
 
   return s;

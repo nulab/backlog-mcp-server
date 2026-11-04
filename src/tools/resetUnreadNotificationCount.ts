@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { resetNotificationsMarkAsRead } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -8,7 +9,7 @@ import { DescriptionHelper } from '../createDescriptionHelper.js';
 const resetUnreadNotificationCountSchema = buildToolSchema((_t) => ({}));
 
 export const resetUnreadNotificationCountTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof resetUnreadNotificationCountSchema>,
@@ -25,6 +26,6 @@ export const resetUnreadNotificationCountTool = (
     outputFields: outputFields<Entity.Notification.NotificationCount>()([
       'count',
     ]),
-    handler: async () => backlog.resetNotificationsMarkAsRead(),
+    handler: async () => resetNotificationsMarkAsRead(backlog),
   };
 };

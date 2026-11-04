@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { postWiki } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -23,7 +24,7 @@ const addWikiSchema = buildToolSchema((t) => ({
 }));
 
 export const addWikiTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<ReturnType<typeof addWikiSchema>, Entity.Wiki.Wiki> => {
   return {
@@ -47,7 +48,7 @@ export const addWikiTool = (
     ]),
     importantFields: ['id', 'name', 'content', 'createdUser'],
     handler: async ({ projectId, name, content, mailNotify }) =>
-      backlog.postWiki({
+      postWiki(backlog, {
         projectId,
         name,
         content,

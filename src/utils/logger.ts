@@ -4,17 +4,12 @@ if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'production';
 }
 
-// Normalised the same way LOG_LEVEL is below. A strict `=== 'production'` makes
-// `Production`, or a stray space picked up from a shell or a container runtime,
-// silently mean "not production" — and that flips the default level *and* the
-// output format, with nothing logged to say so. A typo here is worth less
-// tolerance than a typo in LOG_LEVEL, not more.
+// Normalised like LOG_LEVEL: a strict match would let `Production` or stray
+// whitespace silently flip both the default level and the output format.
 const isProd = process.env.NODE_ENV?.trim().toLowerCase() === 'production';
 
-// pino's levels plus `silent`. Listed here so an unusable LOG_LEVEL is caught
-// while the fallback is still available, rather than by pino throwing during
-// construction — a server that refuses to start is a worse answer to a typo in
-// an environment variable than one that logs at its default level and says so.
+// Validated up front so a bad LOG_LEVEL falls back to the default (and says so)
+// instead of pino throwing during construction.
 const LEVELS = [
   'fatal',
   'error',
@@ -29,14 +24,9 @@ type LogLevel = (typeof LEVELS)[number];
 
 const defaultLevel: LogLevel = isProd ? 'error' : 'debug';
 
-// LOG_LEVEL decides how much is logged; NODE_ENV decides how it is formatted.
-// The two are independent questions, and conflating them bites on the HTTP
-// transport in particular: there the log stream is the only channel an operator
-// has, so raising the level to diagnose something must not also switch the
-// output to colorized, human-formatted lines that a log collector stores
-// verbatim.
-// An empty or blank LOG_LEVEL counts as not set: it is what an unset variable
-// looks like once it has been through a shell or a container runtime.
+// LOG_LEVEL sets verbosity only; NODE_ENV sets format, so raising the level on
+// HTTP must not switch to colorized lines a log collector stores verbatim.
+// A blank LOG_LEVEL counts as unset (shells and container runtimes produce it).
 const normalisedLevel =
   process.env.LOG_LEVEL?.trim().toLowerCase() || undefined;
 const requestedLevel =
@@ -50,10 +40,8 @@ const level: LogLevel = requestedLevel ?? defaultLevel;
 const plainLogger = () =>
   pino({ level }, pino.destination({ dest: 2, sync: false }));
 
-// `pino-pretty` is a development-only dependency, so an installed copy of this
-// package does not have it. pino resolves a transport target eagerly and throws
-// synchronously when it cannot, so asking is cheaper than probing the module
-// graph — and a dev-mode run without pino-pretty still gets its logs.
+// `pino-pretty` is a dev-only dependency; pino throws synchronously when the
+// transport is missing, so fall back to plain logs.
 const prettyLogger = () => {
   try {
     return pino({
@@ -77,9 +65,8 @@ const prettyLogger = () => {
 export const logger = isProd ? plainLogger() : prettyLogger();
 
 if (normalisedLevel && !requestedLevel) {
-  // `logger.error`, not `warn`: the level in force here is the default one,
-  // which on a deployed server swallows anything lower — and this message
-  // exists precisely for the operator whose LOG_LEVEL did not take effect.
+  // `error`, not `warn`: the default level in force on a deployed server would
+  // swallow a warning.
   logger.error(
     { requested: process.env.LOG_LEVEL, effective: level, supported: LEVELS },
     'Unrecognised LOG_LEVEL; falling back to the default level'

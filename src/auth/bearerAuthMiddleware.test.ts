@@ -1,18 +1,19 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
 import { Hono } from 'hono';
 import { createBearerAuthMiddleware } from './bearerAuthMiddleware.js';
 import { reportBacklogAuthError } from './backlogAuthContext.js';
 import { createTokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-vi.mock('./backlogOAuthClient.js', () => ({
-  verifyBacklogToken: vi.fn(),
-}));
+// Only `verifyBacklogToken` is mocked: the middleware branches on the real error
+// class and `isTokenRejected`, and the rest stays out to keep the network unreachable.
+vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
+  const { BacklogTokenError, isTokenRejected } =
+    await importOriginal<typeof import('./backlogOAuthClient.js')>();
+  return { BacklogTokenError, isTokenRejected, verifyBacklogToken: vi.fn() };
+});
 
-import { verifyBacklogToken } from './backlogOAuthClient.js';
+import { BacklogTokenError, verifyBacklogToken } from './backlogOAuthClient.js';
 
 const config: BacklogOAuthConfig = {
   clientId: 'cid',
@@ -26,7 +27,6 @@ describe('createBearerAuthMiddleware', () => {
   let app: Hono;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTokenStore();
     app = new Hono();
     app.use('/mcp', createBearerAuthMiddleware(store, config, '/mcp'));
@@ -103,9 +103,73 @@ describe('createBearerAuthMiddleware', () => {
     );
   });
 
-  it('returns 401 when Backlog token verification fails', async () => {
+  it('returns 401 when Backlog rejects the token', async () => {
     store.storeMcpToken('mcp-token-3', {
       backlogAccessToken: 'bl-bad-token',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
+
+    vi.mocked(verifyBacklogToken).mockRejectedValue(
+      new BacklogTokenError('Backlog token verification failed (401)', 401)
+    );
+
+    const res = await app.request('/mcp', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer mcp-token-3' },
+    });
+    expect(res.status).toBe(401);
+    expect((await res.json()).error).toBe('invalid_token');
+  });
+
+  it('revokes the MCP token when Backlog rejects it', async () => {
+    store.storeMcpToken('mcp-token-4', {
+      backlogAccessToken: 'bl-bad-token',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
+
+    vi.mocked(verifyBacklogToken).mockRejectedValue(
+      new BacklogTokenError('Backlog token verification failed (401)', 401)
+    );
+
+    await app.request('/mcp', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer mcp-token-4' },
+    });
+
+    expect(store.getMcpToken('mcp-token-4')).toBeUndefined();
+  });
+
+  // A Backlog outage is not a rejected token: a 401 would send every client through
+  // a re-authorization that fails just the same, costing them their stored token.
+  it('returns 503 and keeps the token when Backlog cannot be reached', async () => {
+    store.storeMcpToken('mcp-token-5', {
+      backlogAccessToken: 'bl-token-5',
+      clientId: 'c1',
+      expiresAt: Date.now() + 3600_000,
+    });
+
+    vi.mocked(verifyBacklogToken).mockRejectedValue(
+      new BacklogTokenError('Could not reach Backlog to verify the token')
+    );
+
+    const res = await app.request('/mcp', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer mcp-token-5' },
+    });
+
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toBe('temporarily_unavailable');
+    expect(res.headers.get('retry-after')).toBe('30');
+    expect(store.getMcpToken('mcp-token-5')).toBeDefined();
+  });
+
+  // Anything that is not a `BacklogTokenError` carries no status at all, so it
+  // cannot be read as a rejection either.
+  it('returns 503 for a verification failure of unknown shape', async () => {
+    store.storeMcpToken('mcp-token-6', {
+      backlogAccessToken: 'bl-token-6',
       clientId: 'c1',
       expiresAt: Date.now() + 3600_000,
     });
@@ -114,9 +178,11 @@ describe('createBearerAuthMiddleware', () => {
 
     const res = await app.request('/mcp', {
       method: 'POST',
-      headers: { Authorization: 'Bearer mcp-token-3' },
+      headers: { Authorization: 'Bearer mcp-token-6' },
     });
-    expect(res.status).toBe(401);
+
+    expect(res.status).toBe(503);
+    expect(store.getMcpToken('mcp-token-6')).toBeDefined();
   });
 
   // Regression for a Backlog 401 arriving as tool output over transport 200:

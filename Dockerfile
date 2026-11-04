@@ -12,7 +12,9 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN npm install -g corepack@0.36.0 && corepack enable
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml holds the `catalog:` versions package.json refers to, so
+# the frozen install fails without it.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -20,7 +22,7 @@ RUN pnpm run build
 
 # The runtime needs the production dependencies only. The install above had to
 # pull in the dev toolchain so `pnpm run build` could run, and none of it —
-# typescript, vitest, oxlint, tsx — belongs in a published image. Pruning here
+# typescript, vite-plus, tsx — belongs in a published image. Pruning here
 # rather than reinstalling in the runner keeps pnpm and corepack out of the
 # runtime stage entirely.
 #

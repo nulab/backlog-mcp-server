@@ -1,8 +1,5 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import { McpServer } from '@modelcontextprotocol/server';
-import type { Backlog } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import type { DescriptionHelper } from './createDescriptionHelper.js';
 import { registerTools } from './registerTools.js';
 import { organizationTools } from './tools/organizations.js';
@@ -18,17 +15,12 @@ import {
 export type CreateBacklogMcpServerConfig = {
   version: string;
   useFields: boolean;
-  backlog: Backlog;
+  backlog: Client;
   clientRegistry: BacklogClientRegistry;
   descriptionHelper: DescriptionHelper;
   enabledToolsets: string[];
   mcpOption: MCPOptions;
-  /**
-   * A toolset group to register from, instead of building one from
-   * `enabledToolsets`. Callers that produce many servers from one factory pass a
-   * single shared group so the tool tree is built once rather than per request.
-   * Nothing mutates it.
-   */
+  /** Shared by servers from one factory so the tool tree is built once, not per request. Never mutated. */
   toolsetGroup?: ToolsetGroup;
 };
 
@@ -38,10 +30,11 @@ const TOOL_LIST_CACHE_HINT = {
   'tools/list': { ttlMs: 5 * 60 * 1000, cacheScope: 'public' },
 } as const;
 
-/**
- * Builds a fresh MCP server instance with all Backlog tools registered.
- * Used once per stdio connection; one instance per HTTP request for Streamable HTTP.
- */
+// CVE-2026-111768 — the SDK applies no limit by default, so one tools/call with
+// a huge array or object exhausts memory during validation. The largest real
+// inputs are ID lists, which Backlog's own query-string limits keep far below this.
+export const MAX_TOOL_INPUT_ELEMENTS = 1000;
+
 export function createBacklogMcpServer({
   version,
   useFields,
@@ -59,7 +52,10 @@ export function createBacklogMcpServer({
         title: useFields ? 'backlog (field selection enabled)' : 'backlog',
         version,
       },
-      { cacheHints: TOOL_LIST_CACHE_HINT }
+      {
+        cacheHints: TOOL_LIST_CACHE_HINT,
+        maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS,
+      }
     )
   );
 
@@ -68,16 +64,14 @@ export function createBacklogMcpServer({
     buildToolsetGroup(backlog, descriptionHelper, enabledToolsets);
   registerTools(server, toolsetGroup, mcpOption);
 
-  // `list_organizations` only has something to report when more than one space
-  // is configured; the `organization` parameter its description points at is
-  // published under the same condition.
+  // `list_organizations` only matters with more than one space, the same condition
+  // under which the `organization` parameter is published.
   if (mcpOption.useOrganization) {
     registerTools(
       server,
       organizationTools(clientRegistry, descriptionHelper),
-      // `useOrganization: false` regardless of the flag that got us here.
-      // `list_organizations` is what a caller reads to learn what may go in
-      // `organization`; scoping the answer to one organization is circular.
+      // `list_organizations` tells callers what may go in `organization`; scoping it to one
+      // organization would be circular.
       { ...mcpOption, useOrganization: false }
     );
   }

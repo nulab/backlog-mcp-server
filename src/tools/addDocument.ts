@@ -1,5 +1,6 @@
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { addDocument } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { z } from 'zod';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
@@ -32,7 +33,7 @@ const addDocumentSchema = buildToolSchema((t) => ({
 }));
 
 export const addDocumentTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof addDocumentSchema>,
@@ -64,7 +65,7 @@ export const addDocumentTool = (
     ]),
     importantFields: ['id', 'projectId', 'title', 'plain', 'createdUser'],
     handler: async (params) => {
-      return backlog.addDocument(params);
+      return addDocument(backlog, params);
     },
   };
 };

@@ -1,7 +1,4 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import { getBacklogOAuthConfig } from './backlogOAuthConfig.js';
 
 describe('getBacklogOAuthConfig', () => {

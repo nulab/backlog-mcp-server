@@ -1,36 +1,38 @@
 import { addPullRequestCommentTool } from './addPullRequestComment.js';
-import { vi, describe, it, expect } from 'vitest';
-import type { Backlog } from 'backlog-js';
+import { vi, describe, it, expect } from 'vite-plus/test';
+import { postPullRequestComments } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 
-describe('addPullRequestCommentTool', () => {
-  const mockBacklog: Partial<Backlog> = {
-    postPullRequestComments: vi.fn<() => Promise<any>>().mockResolvedValue({
-      id: 1,
-      content: 'This looks good to me!',
-      changeLog: [],
-      createdUser: {
-        id: 1,
-        userId: 'user1',
-        name: 'User One',
-      },
-      created: '2023-01-01T00:00:00Z',
-      updated: '2023-01-01T00:00:00Z',
-      stars: [],
-      notifications: [],
-    }),
-  };
+vi.mock('backlog-js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('backlog-js')>()),
+  postPullRequestComments: vi.fn(),
+}));
 
+describe('addPullRequestCommentTool', () => {
+  vi.mocked(postPullRequestComments).mockResolvedValue({
+    id: 1,
+    content: 'This looks good to me!',
+    changeLog: [],
+    createdUser: {
+      id: 1,
+      userId: 'user1',
+      name: 'User One',
+    },
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-01T00:00:00Z',
+    stars: [],
+    notifications: [],
+  } as any);
+
+  const mockClient = {} as Client;
   const mockDescriptionHelper = createDescriptionHelper();
-  const tool = addPullRequestCommentTool(
-    mockBacklog as Backlog,
-    mockDescriptionHelper
-  );
+  const tool = addPullRequestCommentTool(mockClient, mockDescriptionHelper);
 
   it('returns created comment as formatted JSON text', async () => {
     const result = await tool.handler({
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'This looks good to me!',
     });
@@ -41,10 +43,10 @@ describe('addPullRequestCommentTool', () => {
     expect(result.content).toContain('This looks good to me!');
   });
 
-  it('calls backlog.postPullRequestComments with correct params when using repoName', async () => {
+  it('calls postPullRequestComments with correct params when using repoName', async () => {
     const params = {
       projectKey: 'TEST',
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'This looks good to me!',
       notifiedUserId: [2, 3],
@@ -52,7 +54,8 @@ describe('addPullRequestCommentTool', () => {
 
     await tool.handler(params);
 
-    expect(mockBacklog.postPullRequestComments).toHaveBeenCalledWith(
+    expect(postPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       'TEST',
       'test-repo',
       1,
@@ -63,17 +66,18 @@ describe('addPullRequestCommentTool', () => {
     );
   });
 
-  it('calls backlog.postPullRequestComments with correct params when using projectId and repoName', async () => {
+  it('calls postPullRequestComments with correct params when using projectId and repoName', async () => {
     const params = {
       projectId: 100,
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'Comment via projectId',
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.postPullRequestComments).toHaveBeenCalledWith(
+    expect(postPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       'test-repo',
       1,
@@ -84,17 +88,18 @@ describe('addPullRequestCommentTool', () => {
     );
   });
 
-  it('calls backlog.postPullRequestComments with correct params when using projectId and repoId', async () => {
+  it('calls postPullRequestComments with correct params when using projectId and repoId', async () => {
     const params = {
       projectId: 100,
-      repoId: 200, // Added repoId
+      repoId: 200,
       number: 1,
       content: 'Comment via repoId',
     };
 
     await tool.handler(params);
 
-    expect(mockBacklog.postPullRequestComments).toHaveBeenCalledWith(
+    expect(postPullRequestComments).toHaveBeenCalledWith(
+      mockClient,
       100,
       '200',
       1,
@@ -107,8 +112,7 @@ describe('addPullRequestCommentTool', () => {
 
   it('throws an error if neither projectId nor projectKey is provided', async () => {
     const params = {
-      // projectId and projectKey are missing
-      repoName: 'test-repo', // Changed
+      repoName: 'test-repo',
       number: 1,
       content: 'Test content',
     };
@@ -119,7 +123,6 @@ describe('addPullRequestCommentTool', () => {
   it('throws an error if neither repoId nor repoName is provided', async () => {
     const params = {
       projectKey: 'TEST',
-      // repoId and repoName are missing
       number: 1,
       content: 'Test content',
     };

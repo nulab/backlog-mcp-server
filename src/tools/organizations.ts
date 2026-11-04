@@ -41,14 +41,8 @@ export function listOrganizationsTool(
     ),
     schema: z.object({}),
     outputFields: ['name', 'domain', 'isDefault'],
-    /**
-     * False even though the handler returns an array.
-     *
-     * `returnsList` decides whether `--optimize-response` publishes a `fields`
-     * parameter, and that pays off where a response grows without bound. This
-     * one is bounded by how many spaces the operator configured, over three
-     * fields — a `fields` enum would cost every client schema to trim nothing.
-     */
+    // False despite returning an array: the list is bounded by the configured spaces,
+    // so a `fields` enum would cost every client schema to trim nothing.
     returnsList: false,
     handler: async () => registry.listOrganizations().map(toToolOutput),
   };

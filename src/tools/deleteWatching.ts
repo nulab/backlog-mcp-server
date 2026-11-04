@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Entity } from 'backlog-js';
-import { Backlog } from 'backlog-js';
+import { deletehWatchingListItem } from 'backlog-js';
+import type { Client } from 'backlog-js';
 import { buildToolSchema, ToolDefinition } from '../types/tool.js';
 import { outputFields } from '../types/outputFields.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
@@ -12,7 +13,7 @@ const deleteWatchingSchema = buildToolSchema((t) => ({
 }));
 
 export const deleteWatchingTool = (
-  backlog: Backlog,
+  backlog: Client,
   { t }: DescriptionHelper
 ): ToolDefinition<
   ReturnType<typeof deleteWatchingSchema>,
@@ -36,6 +37,6 @@ export const deleteWatchingTool = (
       'created',
       'updated',
     ]),
-    handler: async ({ watchId }) => backlog.deletehWatchingListItem(watchId),
+    handler: async ({ watchId }) => deletehWatchingListItem(backlog, watchId),
   };
 };

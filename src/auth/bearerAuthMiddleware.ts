@@ -1,10 +1,7 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
 import type { MiddlewareHandler } from 'hono';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
-import { verifyBacklogToken } from './backlogOAuthClient.js';
+import { isTokenRejected, verifyBacklogToken } from './backlogOAuthClient.js';
 import {
   hasBacklogAuthErrorBeenReported,
   runWithAccessToken,
@@ -78,21 +75,38 @@ export function createBearerAuthMiddleware(
         } satisfies AuthInfo;
         store.cacheVerification(mcpToken, authInfo, CACHE_TTL_MS);
       } catch (err) {
-        logger.warn({ err }, 'Bearer token verification failed');
+        // Only a Backlog rejection means re-authenticate; see `isTokenRejected`.
+        if (!isTokenRejected(err)) {
+          logger.error(
+            { err },
+            'Could not verify the bearer token with Backlog'
+          );
+          c.header('Retry-After', '30');
+          return c.json(
+            {
+              error: 'temporarily_unavailable',
+              error_description: 'Could not verify the token with Backlog',
+            },
+            503
+          );
+        }
+
+        // Drop the spent token so the next request fails `getMcpToken` and the
+        // client refreshes instead of replaying a credential that cannot work.
+        logger.warn(
+          { err, clientId: tokenEntry.clientId },
+          'Backlog rejected the stored access token during verification; revoking the MCP token'
+        );
+        store.revokeMcpToken(mcpToken);
         return unauthorized('Token verification failed');
       }
     }
 
     c.set('authInfo', authInfo);
 
-    // The stored token is the only credential a downstream Backlog call has, so
-    // Backlog rejecting it is an authentication event and not a tool failure.
-    // Dropping the entry here is what lets the client recover: the next request
-    // fails the `getMcpToken` check above and is told to re-authenticate.
-    //
-    // Invalidation happens the moment the failure is reported rather than after
-    // `next()` settles, because a response that upgraded to SSE resolves before
-    // its handler has run.
+    // A Backlog rejection is an auth event, not a tool failure: revoke so the
+    // client re-authenticates. Done on report, not after `next()` settles,
+    // because an SSE response resolves before its handler has run.
     const onAuthError = () => {
       logger.warn(
         { clientId: tokenEntry.clientId },

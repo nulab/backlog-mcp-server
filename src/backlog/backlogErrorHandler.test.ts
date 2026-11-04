@@ -1,7 +1,4 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vite-plus/test';
 import { runWithAccessToken } from '../auth/backlogAuthContext.js';
 import { backlogErrorHandler } from './backlogErrorHandler.js';
 

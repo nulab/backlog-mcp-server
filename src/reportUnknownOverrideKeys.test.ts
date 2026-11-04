@@ -1,5 +1,12 @@
-import { Backlog } from 'backlog-js';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { Client } from 'backlog-js';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vite-plus/test';
 import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys';
 import type { BacklogClientRegistry } from './utils/backlogClientRegistry';
 import { logger } from './utils/logger';
@@ -11,7 +18,7 @@ describe('reportUnknownOverrideKeys', () => {
   // the probe never calls it.
   const args = {
     version: '0.0.0-test',
-    backlog: {} as Backlog,
+    backlog: {} as Client,
     clientRegistry: {} as BacklogClientRegistry,
     mcpOption: {
       useFields: false,
@@ -75,10 +82,8 @@ describe('reportUnknownOverrideKeys', () => {
   });
 
   it('accepts keys the real server does not publish', () => {
-    // The probe enables every toolset and forces multi-organization on purpose:
-    // a key belonging to a toolset this process has disabled, or to
-    // list_organizations on a single-organization setup, is still a valid key,
-    // and reporting it would be a false alarm.
+    // The probe enables every toolset and forces multi-organization: keys of a disabled toolset
+    // or of list_organizations on a single-organization setup are still valid.
     reportUnknownOverrideKeys({
       ...args,
       overrides: {

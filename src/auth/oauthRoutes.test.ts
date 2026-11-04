@@ -1,30 +1,34 @@
-// Copyright (c) 2025 Nulab inc.
-// Licensed under the MIT License.
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vite-plus/test';
 import { createHash } from 'node:crypto';
 import { createOAuthRoutes } from './oauthRoutes.js';
 import { createTokenStore, type TokenStore } from './tokenStore.js';
 import type { BacklogOAuthConfig } from './backlogOAuthConfig.js';
 
-vi.mock('./backlogOAuthClient.js', () => ({
-  buildBacklogAuthorizationUrl: vi.fn(
-    (_config: unknown, _redirect: unknown, state: string) =>
-      `https://example.backlog.com/OAuth2AccessRequest.action?state=${state}`
-  ),
-  exchangeBacklogCode: vi.fn().mockResolvedValue({
-    access_token: 'bl-access',
-    token_type: 'bearer',
-    expires_in: 3600,
-    refresh_token: 'bl-refresh',
-  }),
-  refreshBacklogToken: vi.fn().mockResolvedValue({
-    access_token: 'bl-new-access',
-    token_type: 'bearer',
-    expires_in: 3600,
-    refresh_token: 'bl-new-refresh',
-  }),
-}));
+// The real error class and failure predicates: the routes branch on them. Only network calls are mocked.
+vi.mock('./backlogOAuthClient.js', async (importOriginal) => {
+  const { BacklogTokenError, isGrantGone } =
+    await importOriginal<typeof import('./backlogOAuthClient.js')>();
+  return {
+    BacklogTokenError,
+    isGrantGone,
+    buildBacklogAuthorizationUrl: vi.fn(
+      (_config: unknown, _redirect: unknown, state: string) =>
+        `https://example.backlog.com/OAuth2AccessRequest.action?state=${state}`
+    ),
+    exchangeBacklogCode: vi.fn().mockResolvedValue({
+      access_token: 'bl-access',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'bl-refresh',
+    }),
+    refreshBacklogToken: vi.fn().mockResolvedValue({
+      access_token: 'bl-new-access',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'bl-new-refresh',
+    }),
+  };
+});
 
 const config: BacklogOAuthConfig = {
   clientId: 'bl-client-id',
@@ -38,7 +42,6 @@ describe('createOAuthRoutes', () => {
   let app: ReturnType<typeof createOAuthRoutes>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTokenStore();
     app = createOAuthRoutes(config, store, '/mcp');
   });
@@ -163,9 +166,8 @@ describe('createOAuthRoutes', () => {
       });
 
       it('treats an all-loopback registration as native when undeclared', async () => {
-        // Local MCP clients do not send application_type. RFC 7591 would default
-        // them to `web` and reject them; a set of redirect URIs that is entirely
-        // loopback can only be a client on the user's machine.
+        // Local MCP clients omit application_type, which RFC 7591 would default to `web`;
+        // all-loopback redirect URIs can only be a client on the user's machine.
         const res = await register({
           redirect_uris: [
             'http://localhost:9999/callback',
@@ -177,9 +179,7 @@ describe('createOAuthRoutes', () => {
       });
 
       it('refuses an undeclared registration that mixes https and loopback', async () => {
-        // The inference above must not become the way around the check: something
-        // that can serve a redirect on its own domain has no need to also collect
-        // codes on the user's machine.
+        // A client that can serve a redirect on its own domain has no need to collect codes on loopback.
         const res = await register({
           redirect_uris: [
             'https://client.example.com/callback',
@@ -209,8 +209,7 @@ describe('createOAuthRoutes', () => {
       });
 
       it('treats a null application_type as not declared', async () => {
-        // Serialisers that emit null for an absent optional field are common,
-        // and this registration is accepted today.
+        // Serialisers commonly emit null for an absent optional field.
         const res = await register({
           application_type: null,
           redirect_uris: ['http://localhost:9999/callback'],
@@ -403,6 +402,73 @@ describe('createOAuthRoutes', () => {
       return { verifier, challenge };
     }
 
+    // Backlog counts `expires_in` from `/callback`, not `/token`; re-basing it would make
+    // a spent Backlog token look live.
+    it('does not re-base the Backlog expiry when the code is redeemed later', async () => {
+      const { verifier, challenge } = makePkce();
+      const REDEEM_DELAY_MS = 120_000;
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+      store.storePendingAuth('bl-state-drift', {
+        mcpClientId: 'c1',
+        codeChallenge: challenge,
+        redirectUri: 'https://client.example.com/cb',
+        scopes: [],
+        createdAt: Date.now(),
+      });
+
+      vi.useFakeTimers();
+      try {
+        const callbackAt = Date.now();
+        vi.setSystemTime(callbackAt);
+
+        // The mocked exchange answers `expires_in: 3600`: the real expiry is this instant plus an hour.
+        const callbackRes = await app.request(
+          '/callback?code=bl-code&state=bl-state-drift',
+          { redirect: 'manual' }
+        );
+        const mcpCode = new URL(
+          callbackRes.headers.get('location')!
+        ).searchParams.get('code')!;
+        const realExpiry = callbackAt + 3600 * 1000;
+
+        vi.setSystemTime(callbackAt + REDEEM_DELAY_MS);
+
+        const res = await app.request('/token', {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: 'c1',
+            client_secret: 's1',
+            code: mcpCode,
+            code_verifier: verifier,
+            redirect_uri: 'https://client.example.com/cb',
+          }).toString(),
+        });
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as {
+          access_token: string;
+          expires_in: number;
+        };
+
+        expect(json.expires_in).toBe(3600 - REDEEM_DELAY_MS / 1000);
+
+        expect(store.getMcpToken(json.access_token)?.expiresAt).toBe(
+          realExpiry
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('exchanges authorization code for opaque MCP tokens', async () => {
       const { verifier, challenge } = makePkce();
 
@@ -422,6 +488,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
@@ -449,7 +516,8 @@ describe('createOAuthRoutes', () => {
       expect(json.access_token).not.toBe('bl-at');
       expect(json.refresh_token).not.toBe('bl-rt');
       expect(json.token_type).toBe('bearer');
-      expect(json.expires_in).toBe(3600);
+      expect(json.expires_in).toBeLessThanOrEqual(3600);
+      expect(json.expires_in).toBeGreaterThan(3590);
     });
 
     it('rejects mismatched resource in token exchange', async () => {
@@ -471,6 +539,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         resource: 'https://mcp.example.com/mcp',
@@ -549,6 +618,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'bl-rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: challenge,
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
@@ -590,6 +660,7 @@ describe('createOAuthRoutes', () => {
           expires_in: 3600,
           refresh_token: 'rt',
         },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
         codeChallenge: 'correct-challenge',
         redirectUri: 'https://client.example.com/cb',
         expiresAt: Date.now() + 600_000,
@@ -734,10 +805,101 @@ describe('createOAuthRoutes', () => {
       });
       expect(res.status).toBe(503);
 
-      // Refresh token should be restored for retry
       const restored = store.consumeMcpRefreshToken('mcp-refresh-retry');
       expect(restored).toBeDefined();
       expect(restored!.backlogRefreshToken).toBe('bl-refresh');
+    });
+
+    // A grant Backlog has permanently discarded must lead to re-authorization, not endless 503 retries.
+    it('answers invalid_grant when Backlog says the grant is gone', async () => {
+      const { refreshBacklogToken, BacklogTokenError } =
+        await import('./backlogOAuthClient.js');
+      (refreshBacklogToken as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new BacklogTokenError(
+          'Backlog token refresh failed (400): {"error":"invalid_grant"}',
+          400,
+          'invalid_grant'
+        )
+      );
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-revoked', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-revoked',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toBe('invalid_grant');
+
+      // Not restored: Backlog has disowned it, so the next attempt would get the same dead credential.
+      expect(
+        store.consumeMcpRefreshToken('mcp-refresh-revoked')
+      ).toBeUndefined();
+    });
+
+    // `invalid_client` rejects this server's credentials, not the grant; `invalid_grant` would
+    // send every client into an authorization that fails the same way.
+    it('treats a rejected client secret as transient and restores the token', async () => {
+      const { refreshBacklogToken, BacklogTokenError } =
+        await import('./backlogOAuthClient.js');
+      (refreshBacklogToken as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new BacklogTokenError(
+          'Backlog token refresh failed (401): {"error":"invalid_client"}',
+          401,
+          'invalid_client'
+        )
+      );
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeMcpRefreshToken('mcp-refresh-401', {
+        backlogRefreshToken: 'bl-refresh',
+        clientId: 'c1',
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: 'c1',
+        client_secret: 's1',
+        refresh_token: 'mcp-refresh-401',
+      });
+
+      const res = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      expect(res.status).toBe(503);
+      expect(store.consumeMcpRefreshToken('mcp-refresh-401')).toBeDefined();
     });
 
     it('rejects unsupported grant_type', async () => {
