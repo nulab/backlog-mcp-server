@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { createDescriptionHelper } from '../createDescriptionHelper.js';
 import { composeToolHandler } from '../handlers/builders/composeToolHandler.js';
 import { getSpaceTool } from '../tools/getSpace.js';
-import { createBacklogClientRegistry } from './backlogClientRegistry.js';
+import { runWithAccessToken } from '../auth/backlogAuthContext.js';
+import { runWithBacklogHost } from '../auth/backlogHost.js';
+import {
+  createBacklogClientRegistry,
+  createTokenPassthroughBacklogClientRegistry,
+} from './backlogClientRegistry.js';
 
 vi.mock('backlog-js', () => ({
   createClient: (configure: {
@@ -237,5 +242,58 @@ describe('createBacklogClientRegistry', () => {
       expect(content.text).toContain('primary-key');
       expect(content.text).not.toContain('single.backlog.com');
     }
+  });
+});
+
+describe('createTokenPassthroughBacklogClientRegistry', () => {
+  it('builds the client from the token and space of the current request', async () => {
+    const registry = createTokenPassthroughBacklogClientRegistry();
+
+    const client = await runWithBacklogHost('acme.backlog.com', () =>
+      runWithAccessToken('user-token', async () => registry.resolveClient())
+    );
+
+    expect(client).toMatchObject({
+      host: 'acme.backlog.com',
+      accessToken: 'user-token',
+    });
+  });
+
+  it('keeps concurrent requests on their own space and token', async () => {
+    const scoped =
+      createTokenPassthroughBacklogClientRegistry().createScopedClient();
+    const hostOf = (host: string, token: string) =>
+      runWithBacklogHost(host, () =>
+        runWithAccessToken(token, async () => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          return [
+            Reflect.get(scoped, 'host'),
+            Reflect.get(scoped, 'accessToken'),
+          ];
+        })
+      );
+
+    const results = await Promise.all([
+      hostOf('a.backlog.com', 'token-a'),
+      hostOf('b.backlog.jp', 'token-b'),
+    ]);
+
+    expect(results).toEqual([
+      ['a.backlog.com', 'token-a'],
+      ['b.backlog.jp', 'token-b'],
+    ]);
+  });
+
+  it('refuses to build a client outside a request', () => {
+    const registry = createTokenPassthroughBacklogClientRegistry();
+    expect(() => registry.resolveClient()).toThrow(
+      'No Backlog access token or space in current request context'
+    );
+  });
+
+  it('does not publish the organization parameter', () => {
+    expect(
+      createTokenPassthroughBacklogClientRegistry().isMultiOrganization
+    ).toBe(false);
   });
 });

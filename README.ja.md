@@ -201,6 +201,34 @@ MCP認可仕様に対応するMCPクライアントは、これらのエンド�
 > - OAuthモードは現在、単一のBacklog組織のみをサポートしています。複数組織設定との併用はできません。
 > - クライアント登録やトークンはメモリ内に保持されるため、サーバー再起動時に失われます。
 
+### トークンパススルー（OAuth ゲートウェイの背後で動かす場合）
+
+サーバーの前段にあるゲートウェイ（社内の MCP ハブなど）が各ユーザーの Backlog OAuth 認可を保持している場合に使います。ゲートウェイはリクエストごとにユーザーの Backlog アクセストークンを転送し、サーバーはそのトークンで Backlog を呼び出します。API キーも組み込みの OAuth サーバーも使いません。デフォルトでは無効で、HTTP トランスポートでのみ利用できます。
+
+```bash
+BACKLOG_TOKEN_PASSTHROUGH=true \
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333 \
+  --http-allowed-hosts mcp.internal.example.com
+```
+
+MCP エンドポイントへの各リクエストには次のヘッダーが必要です。
+
+| ヘッダー         | 値                                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `Authorization`  | `Bearer <Backlog アクセストークン>`                                                                   |
+| `X-Backlog-Host` | ユーザーのスペース（例: `your-space.backlog.com`）。`BACKLOG_DOMAIN` を設定した場合は省略可（既定値） |
+
+トークンが他のホストへ送られないよう、`X-Backlog-Host` は `<space>.backlog.com`、`<space>.backlog.jp`、`<space>.backlogtool.com`、または `BACKLOG_DOMAIN` と完全一致する値のみ受け付けます。
+
+| レスポンス            | 意味                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `401` `invalid_token` | Bearer トークンがない、または Backlog が拒否した。トークンを更新して再試行してください |
+| `400` `invalid_host`  | `X-Backlog-Host` がない（`BACKLOG_DOMAIN` も未設定）か、Backlog のスペースではない     |
+
+トークンは事前検証しません。不正なトークンは最初の Backlog 呼び出しで拒否され、ツールの出力ではなく上記の `401` として返されます。ツール実行後でもステータスを `401` に変えられるよう、このモードのレスポンスは常に JSON です。
+
+> **注意:** `BACKLOG_OAUTH_CLIENT_ID` とは併用できません。また、スペースはリクエストごとに決まるため、複数組織設定は適用されません。
+
 ## ツール設定
 
 `--enable-toolsets` コマンドラインフラグまたは `ENABLE_TOOLSETS` 環境変数を使用して、特定の **ツールセット** を選択的に有効または無効にすることができます。これにより、AIエージェントが利用できるツールをより細かく制御し、コンテキストサイズを削減するのに役立ちます。
@@ -555,6 +583,7 @@ pnpm test
 サーバーはいくつかのコマンドラインオプションをサポートしています：
 
 - `--export-descriptions`: ツール一覧の構築時に解決される説明キーと値をエクスポート。旧名は `--export-translations` で、非推奨エイリアスとして当面動作しますが、将来のリリースで削除されます
+- `--backlog-token-passthrough`: HTTP のみ。各リクエストの `Authorization: Bearer` ヘッダーの Backlog アクセストークンと `X-Backlog-Host` のスペースを使用。環境変数 `BACKLOG_TOKEN_PASSTHROUGH=true` でも指定可
 - `--optimize-response`: 各ツールに、返す結果フィールドを選ぶ `fields` パラメータを追加する
 - `--max-tokens=NUMBER`: レスポンスの最大トークン制限を設定
 - `--prefix=STRING`: すべてのツール名に付加するオプションの文字列プレフィックス（デフォルト：""）

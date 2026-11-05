@@ -12,6 +12,7 @@ import { createMcpHandler } from '@modelcontextprotocol/server';
 import { Hono } from 'hono';
 import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
 import type { TokenStore } from './auth/tokenStore.js';
+import type { TokenPassthroughOptions } from './auth/tokenPassthroughMiddleware.js';
 import { logger } from './utils/logger.js';
 import type { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
@@ -26,6 +27,7 @@ type RunHttpMcpServerOptions = {
   createServer: () => BacklogMCPServer;
   oauthConfig?: BacklogOAuthConfig;
   tokenStore?: TokenStore;
+  tokenPassthrough?: TokenPassthroughOptions;
 };
 
 type HttpMcpServerHandle = {
@@ -49,7 +51,14 @@ export const runHttpMcpServer = async (
     createServer,
     oauthConfig,
     tokenStore,
+    tokenPassthrough,
   } = options;
+
+  if (oauthConfig && tokenPassthrough) {
+    throw new Error(
+      'Token passthrough cannot be combined with the built-in OAuth server.'
+    );
+  }
 
   if ((host === '0.0.0.0' || host === '::') && !allowedHosts?.length) {
     logger.warn(
@@ -98,10 +107,18 @@ export const runHttpMcpServer = async (
     );
   }
 
+  if (tokenPassthrough) {
+    const { createTokenPassthroughMiddleware } =
+      await import('./auth/tokenPassthroughMiddleware.js');
+    app.use(mcpPath, createTokenPassthroughMiddleware(tokenPassthrough));
+  }
+
   // MCP 2026-07-28 removed protocol sessions, so a fresh server is built per
   // request. `legacy` defaults to 'stateless', which keeps 2025-era clients working.
+  // Passthrough forces JSON: an SSE response commits 200 before the tool runs, so a
+  // token Backlog rejects could not become the 401 the gateway refreshes on.
   const mcpHandler = createMcpHandler(() => createServer(), {
-    responseMode: enableJsonResponse ? 'json' : 'auto',
+    responseMode: enableJsonResponse || tokenPassthrough ? 'json' : 'auto',
     onerror: (err) => logger.error({ err }, 'MCP handler error'),
   });
 

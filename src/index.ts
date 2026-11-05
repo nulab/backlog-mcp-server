@@ -13,6 +13,7 @@ import { reportUnknownOverrideKeys } from './reportUnknownOverrideKeys.js';
 import {
   createBacklogClientRegistry,
   createOAuthBacklogClientRegistry,
+  createTokenPassthroughBacklogClientRegistry,
 } from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
 import { buildToolsetGroup } from './utils/toolsetUtils.js';
@@ -93,6 +94,12 @@ const argv = yargs(hideBin(process.argv))
       'Comma-separated allowed Origin header hostnames for browser-based clients. Defaults to the localhost set on a loopback bind, and to no Origin check otherwise',
     default: env.get('MCP_HTTP_ALLOWED_ORIGINS').default('').asString(),
   })
+  .option('backlog-token-passthrough', {
+    type: 'boolean',
+    describe:
+      "HTTP only. Use the Backlog access token from each request (Authorization: Bearer) and the space from X-Backlog-Host, falling back to BACKLOG_DOMAIN. For running behind a gateway that holds each user's Backlog OAuth grant",
+    default: env.get('BACKLOG_TOKEN_PASSTHROUGH').default('false').asBool(),
+  })
   .option('max-tokens', {
     type: 'number',
     describe: 'Maximum number of tokens allowed in the response',
@@ -143,9 +150,22 @@ if (
   );
 }
 
-const clientRegistry = oauthConfig
-  ? createOAuthBacklogClientRegistry(oauthConfig.backlogDomain)
-  : createBacklogClientRegistry();
+const tokenPassthrough = argv.backlogTokenPassthrough;
+
+if (tokenPassthrough && oauthConfig) {
+  throw new Error(
+    'BACKLOG_TOKEN_PASSTHROUGH cannot be combined with BACKLOG_OAUTH_CLIENT_ID.'
+  );
+}
+if (tokenPassthrough && argv.transport !== 'http' && !argv.exportDescriptions) {
+  throw new Error('BACKLOG_TOKEN_PASSTHROUGH requires the HTTP transport.');
+}
+
+const clientRegistry = tokenPassthrough
+  ? createTokenPassthroughBacklogClientRegistry()
+  : oauthConfig
+    ? createOAuthBacklogClientRegistry(oauthConfig.backlogDomain)
+    : createBacklogClientRegistry();
 const backlog = clientRegistry.createScopedClient();
 
 const tokenStore = oauthConfig ? createTokenStore() : undefined;
@@ -254,6 +274,9 @@ async function main() {
       createServer,
       oauthConfig,
       tokenStore,
+      tokenPassthrough: tokenPassthrough
+        ? { defaultHost: process.env.BACKLOG_DOMAIN }
+        : undefined,
     });
 
     process.once('SIGINT', () => {
@@ -274,10 +297,13 @@ async function main() {
         port: argv.httpPort,
         path: httpPath,
         oauth: !!oauthConfig,
+        tokenPassthrough,
       },
       oauthConfig
         ? 'Backlog MCP Server listening (Streamable HTTP + OAuth)'
-        : 'Backlog MCP Server listening (Streamable HTTP)'
+        : tokenPassthrough
+          ? 'Backlog MCP Server listening (Streamable HTTP + token passthrough)'
+          : 'Backlog MCP Server listening (Streamable HTTP)'
     );
     return;
   }
