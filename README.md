@@ -228,6 +228,34 @@ without declaring itself, is rejected with `invalid_client_metadata`.
 > - OAuth mode currently supports a single Backlog organization. It is not compatible with the multi-organization configuration.
 > - Client registrations and tokens are stored in memory and will be lost on server restart.
 
+### Token Passthrough (behind an OAuth gateway)
+
+Use this when a gateway in front of the server already holds each user's Backlog OAuth grant (for example an internal MCP hub). The gateway forwards the user's Backlog access token on every request, and the server calls Backlog with it. No API key and no built-in OAuth server are involved. The mode is off by default and only applies to the HTTP transport.
+
+```bash
+BACKLOG_TOKEN_PASSTHROUGH=true \
+node build/index.js --transport http --http-host 0.0.0.0 --http-port 3333 \
+  --http-allowed-hosts mcp.internal.example.com
+```
+
+Every request to the MCP endpoint must carry:
+
+| Header           | Value                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `Authorization`  | `Bearer <Backlog access token>`                                                                          |
+| `X-Backlog-Host` | The user's space, e.g. `your-space.backlog.com`. Optional when `BACKLOG_DOMAIN` is set (used as default) |
+
+`X-Backlog-Host` must be `<space>.backlog.com`, `<space>.backlog.jp`, `<space>.backlogtool.com`, or exactly `BACKLOG_DOMAIN`, so the token is never sent to any other host.
+
+| Response              | Meaning                                                                   |
+| --------------------- | ------------------------------------------------------------------------- |
+| `401` `invalid_token` | No Bearer token, or Backlog rejected it. Refresh the token and retry      |
+| `400` `invalid_host`  | `X-Backlog-Host` missing (and no `BACKLOG_DOMAIN`) or not a Backlog space |
+
+The token is not verified up front; Backlog rejects a bad one on the first call, and that rejection is returned as the `401` above rather than as tool output. Responses are always JSON in this mode so the status can still change to `401` after the tool runs.
+
+> **Note:** Cannot be combined with `BACKLOG_OAUTH_CLIENT_ID`, and the multi-organization configuration does not apply: the space comes from each request.
+
 ## Tool Configuration
 
 You can selectively enable or disable specific **toolsets** using the `--enable-toolsets` command-line flag or the `ENABLE_TOOLSETS` environment variable. This allows better control over which tools are available to the AI agent and helps reduce context size.
@@ -678,6 +706,7 @@ The server supports several command line options:
 - `--http-json-response`: Prefer JSON responses over SSE. Applies to `2026-07-28` clients only; the backward-compatible `2025-11-25` path is served with the SDK's default response shaping.
 - `--http-allowed-hosts`: Comma-separated allowed `Host` hostnames (port-agnostic). Needed when binding to all interfaces, or on a loopback bind behind a reverse proxy.
 - `--http-allowed-origins`: Comma-separated allowed `Origin` hostnames for browser-based clients. Defaults to the localhost set on a bare loopback bind, and to no `Origin` check otherwise.
+- `--backlog-token-passthrough`: HTTP only. Use the Backlog access token from each request's `Authorization: Bearer` header and the space from `X-Backlog-Host`. See [Token Passthrough](#token-passthrough-behind-an-oauth-gateway). Also `BACKLOG_TOKEN_PASSTHROUGH=true`.
 - `--export-descriptions`: Export the description keys and values resolved when building the tool list. Was named `--export-translations`; that spelling still works as a deprecated alias and will be removed in a future release
 - `--optimize-response`: Add a `fields` parameter to each tool for selecting which result fields to return
 - `--max-tokens=NUMBER`: Set maximum token limit for responses
