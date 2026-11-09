@@ -35,6 +35,7 @@ import { getPullRequestCommentsTool } from './getPullRequestComments.js';
 import { getPullRequestsTool } from './getPullRequests.js';
 import { getPullRequestsCountTool } from './getPullRequestsCount.js';
 import { getResolutionsTool } from './getResolutions.js';
+import { getStatusesTool } from './getStatuses.js';
 import { getSpaceTool } from './getSpace.js';
 import { getSpaceActivitiesTool } from './getSpaceActivities.js';
 import { getUserStarsCountTool } from './getUserStarsCount.js';
@@ -122,6 +123,7 @@ export const allTools = (
           addCategoryTool(backlog, helper),
           getCustomFieldsTool(backlog, helper),
           getIssueTypesTool(backlog, helper),
+          getStatusesTool(backlog, helper),
           getResolutionsTool(backlog, helper),
           getWatchingListItemsTool(backlog, helper),
           getWatchingListCountTool(backlog, helper),
