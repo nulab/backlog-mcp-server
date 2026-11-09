@@ -277,6 +277,7 @@ Tools for managing Backlog space settings and general information.
 - `get_space`: Returns information about the Backlog space.
 - `get_users`: Returns list of users in the Backlog space.
 - `get_myself`: Returns information about the authenticated user.
+- `add_attachment`: Uploads a file and returns its attachment id, for use in the `attachmentId` array of `add_issue`, `update_issue` or `add_issue_comment`. See [Attachment uploads](#attachment-uploads).
 
 ### Toolset: `project`
 
@@ -543,7 +544,7 @@ This is especially useful if you're using multiple MCP servers or tools in the s
 
 Tool results are compacted before they are returned. This is always on, and applies to every tool except `get_issue_attachment`, which returns the file itself:
 
-- A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that *is* the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
+- A user nested in a result (`createdUser`, `assignee`, `stars[].presenter`, a notification's `sender`, …) is reduced to `id`, `userId` and `name`. A user that _is_ the result — `get_myself`, the items of `get_users` or `get_project_users` — is returned whole.
 - A nested project (each activity's and notification's `project`) is reduced to `id`, `projectKey` and `name`, and a nested issue (a pull request's or notification's `issue`) to `id`, `issueKey`, `summary` and `status`. A project or issue that is the result — `get_project`, `get_issue`, the items of `get_project_list` or `get_issues` — is returned whole, and so is the issue of each item of `get_watching_list_items`.
 - Nested entities (statuses, issue types, categories, milestones, custom field items, …) omit `color` and `displayOrder`, and nested milestones also omit `description`. Tools that list these themselves (`get_issue_types`, `get_categories`, `get_version_milestone_list`, …) return them whole.
 - Fields that are `null`, an empty string or an empty array are omitted. `0`, `false` and `{}` are kept. This also applies to a field named in `fields`: an empty one is left out rather than returned as empty.
@@ -598,15 +599,34 @@ If a response exceeds the limit, it will be truncated with a warning.
 
 > Note: This is a best-effort mitigation, not a guaranteed enforcement.
 
+### Attachment uploads
+
+`add_attachment` is the only tool that reads the host's filesystem. It takes a `filePath`, uploads that file to the space and returns `{ id, name, size }`; the id is what `add_issue`, `update_issue` and `add_issue_comment` accept in `attachmentId`, since those tools attach existing uploads rather than performing one.
+
+The path is resolved **on the machine running the server**, not on the client:
+
+- With the stdio/npx setup the two are the same machine, so a local path works as written.
+- In the container image they are not. Bind-mount the directory first (`-v /host/dir:/data`) and pass the path inside the container.
+
+| Variable                   | Description                                                                                                                                                                                                                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKLOG_ATTACHMENT_ROOTS` | Directories `add_attachment` may read from, separated by the platform's path delimiter (`:` on Unix, `;` on Windows). Unset means no restriction over stdio; over HTTP, `add_attachment` refuses every upload until this is set, because remote callers would otherwise read any file the server can. |
+
+Symlinks are resolved before the check, so a link inside an allowed directory cannot be used to reach a file outside it.
+
+```
+BACKLOG_ATTACHMENT_ROOTS=/srv/uploads:/tmp/backlog-in
+```
+
 ### Logging
 
 The server logs to **stderr** (stdout carries the JSON-RPC stream on the stdio transport).
 
-| Variable    | Description                                                                                                                                                                                             |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Variable    | Description                                                                                                                                                                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent`. Defaults to `error` when `NODE_ENV` is `production` — which is also the default when `NODE_ENV` is unset — and to `debug` otherwise. An unrecognised value is reported and the default is used. |
 
-`NODE_ENV` still selects the output *format*: any value other than `production` switches to human-readable `pino-pretty` output when that package is available. Use `LOG_LEVEL`, not `NODE_ENV`, to change how much is logged, so that a deployment keeps structured JSON:
+`NODE_ENV` still selects the output _format_: any value other than `production` switches to human-readable `pino-pretty` output when that package is available. Use `LOG_LEVEL`, not `NODE_ENV`, to change how much is logged, so that a deployment keeps structured JSON:
 
 `pino-pretty` is a development dependency, so neither the published npm package nor the container image carries a copy. In those, logs are structured JSON whatever `NODE_ENV` says, and `LOG_LEVEL` is the only setting that changes the output.
 

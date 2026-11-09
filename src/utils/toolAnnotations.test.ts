@@ -26,6 +26,7 @@ const WRITE_TOOLS: Record<
   string,
   { destructiveHint: boolean; idempotentHint: boolean }
 > = {
+  add_attachment: { destructiveHint: false, idempotentHint: false },
   add_category: { destructiveHint: false, idempotentHint: false },
   add_document: { destructiveHint: false, idempotentHint: false },
   add_issue: { destructiveHint: false, idempotentHint: false },
@@ -58,6 +59,9 @@ const WRITE_TOOLS: Record<
   remove_related_issue: { destructiveHint: true, idempotentHint: true },
 };
 
+// Tools that reach beyond the Backlog space.
+const OPEN_WORLD_TOOLS = ['add_attachment'];
+
 describe('toolAnnotationsFor', () => {
   // Clients treat an unannotated tool as destructive and open-world.
   it.each(allToolNames)(
@@ -71,8 +75,16 @@ describe('toolAnnotationsFor', () => {
     }
   );
 
-  it.each(allToolNames)('%s reaches only the Backlog API', (name) => {
-    expect(toolAnnotationsFor(name)?.openWorldHint).toBe(false);
+  it.each(allToolNames.filter((name) => !OPEN_WORLD_TOOLS.includes(name)))(
+    '%s reaches only the Backlog API',
+    (name) => {
+      expect(toolAnnotationsFor(name)?.openWorldHint).toBe(false);
+    }
+  );
+
+  it.each(OPEN_WORLD_TOOLS)('%s is annotated as open-world', (name) => {
+    expect(allToolNames).toContain(name);
+    expect(toolAnnotationsFor(name)?.openWorldHint).toBe(true);
   });
 
   it.each(Object.entries(WRITE_TOOLS))(
