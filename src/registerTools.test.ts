@@ -1,5 +1,9 @@
 import { registerTools } from './registerTools';
-import { McpServer } from '@modelcontextprotocol/server';
+import {
+  isInputRequiredResult,
+  McpServer,
+  type ServerContext,
+} from '@modelcontextprotocol/server';
 import type { Client } from 'backlog-js';
 import { DescriptionHelper } from './createDescriptionHelper';
 import { describe, it, expect, vi, type Mock } from 'vite-plus/test';
@@ -8,6 +12,7 @@ import { buildToolsetGroup } from './utils/toolsetUtils.js';
 import { wrapServerWithToolRegistry } from './utils/wrapServerWithToolRegistry.js';
 import type { Toolset } from './types/toolsets.js';
 import { composeNativeContentToolHandler } from './handlers/builders/composeNativeContentToolHandler.js';
+import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 
 vi.mock('./handlers/builders/composeToolHandler', () => ({
   composeToolHandler: vi.fn((tool) => ({
@@ -193,6 +198,41 @@ describe('registerTools', () => {
     expect(annotationsByName.get('backlog.get_issue_attachment')).toMatchObject(
       { readOnlyHint: true, destructiveHint: false }
     );
+  });
+
+  it('asks the user before a delete tool runs, and only then', async () => {
+    const mockServer = wrapServerWithToolRegistry({
+      registerTool: vi.fn(),
+    } as unknown as McpServer);
+    const toolsetGroup = buildToolsetGroup(mockBacklog, mockHelper, ['issue']);
+
+    registerTools(mockServer, toolsetGroup, {
+      useFields: false,
+      maxTokens: 1000,
+      prefix: '',
+      useOrganization: false,
+    });
+
+    const composedByName = new Map(
+      (composeToolHandler as Mock).mock.results.map((result, i) => [
+        (composeToolHandler as Mock).mock.calls[i][0].name,
+        result.value.handler,
+      ])
+    );
+    const registeredByName = new Map(
+      (mockServer.registerTool as Mock).mock.calls.map((call) => [
+        call[0],
+        call[2],
+      ])
+    );
+    const ctx = { mcpReq: {} } as unknown as ServerContext;
+
+    const result = await registeredByName.get('delete_issue')({}, ctx);
+
+    expect(isInputRequiredResult(result)).toBe(true);
+    for (const name of ['add_issue', 'update_issue', 'remove_related_issue']) {
+      expect(registeredByName.get(name), name).toBe(composedByName.get(name));
+    }
   });
 
   it('advertises organization on dynamic MCP content tools in multi-org mode', () => {

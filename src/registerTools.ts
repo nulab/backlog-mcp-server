@@ -4,7 +4,11 @@ import { composeNativeContentToolHandler } from './handlers/builders/composeNati
 import { composeToolHandler } from './handlers/builders/composeToolHandler.js';
 import { MCPOptions } from './types/mcp.js';
 import { ToolsetGroup } from './types/toolsets.js';
-import { toolAnnotationsFor } from './utils/toolAnnotations.js';
+import {
+  requiresConfirmation,
+  toolAnnotationsFor,
+} from './utils/toolAnnotations.js';
+import { withConfirmation } from './utils/withConfirmation.js';
 import { BacklogMCPServer } from './utils/wrapServerWithToolRegistry.js';
 
 type RegistrableTool = {
@@ -84,7 +88,9 @@ function registerToolsets<TTool extends RegistrableTool>({
         toolNameWithPrefix,
         tool.description,
         schema,
-        handler,
+        requiresConfirmation(tool.name)
+          ? withConfirmation(toolNameWithPrefix, handler)
+          : handler,
         // Derived from the bare name, so that `--prefix` cannot change what a
         // client is told the tool does.
         toolAnnotationsFor(tool.name)

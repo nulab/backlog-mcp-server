@@ -4,7 +4,7 @@ import type { DescriptionHelper } from '../createDescriptionHelper';
 import { allTools } from '../tools/tools';
 import { organizationTools } from '../tools/organizations';
 import type { BacklogClientRegistry } from './backlogClientRegistry';
-import { toolAnnotationsFor } from './toolAnnotations';
+import { requiresConfirmation, toolAnnotationsFor } from './toolAnnotations';
 
 const mockBacklog = {} as Client;
 const mockHelper = { t: vi.fn() } as unknown as DescriptionHelper;
@@ -117,4 +117,14 @@ describe('toolAnnotationsFor', () => {
       expect(toolAnnotationsFor(`${verb}_something`)).toBeUndefined();
     }
   );
+});
+
+describe('requiresConfirmation', () => {
+  it('covers exactly the delete tools', () => {
+    expect(allToolNames.filter(requiresConfirmation).sort()).toEqual([
+      'delete_issue',
+      'delete_version',
+      'delete_watching',
+    ]);
+  });
 });

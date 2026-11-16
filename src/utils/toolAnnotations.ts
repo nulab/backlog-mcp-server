@@ -64,6 +64,12 @@ const ANNOTATIONS_BY_VERB: Record<string, ToolAnnotations> = Object.assign(
   }
 );
 
+// Only `delete`: updates stay in Backlog's change history and `remove_related_issue` can be
+// re-added, but a deleted record cannot be brought back.
+export function requiresConfirmation(name: string): boolean {
+  return name.split('_')[0] === 'delete';
+}
+
 // `undefined` rather than a default so an unknown verb fails a test. Takes the bare name:
 // the hints must not depend on the `--prefix` flag.
 export function toolAnnotationsFor(name: string): ToolAnnotations | undefined {
