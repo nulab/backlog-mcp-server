@@ -521,6 +521,10 @@ Environment variables always take precedence over the config file.
 
 ## Advanced Features
 
+### Confirmation before deletion
+
+Before a `delete_*` tool runs, the server asks the user to confirm through MCP elicitation, showing the tool name and its arguments. If the user declines or cancels, nothing is deleted. A client without elicitation support cannot run `delete_*` tools.
+
 ### Tool Name Prefixing
 
 Add prefix to tool names with:

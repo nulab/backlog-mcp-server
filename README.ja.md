@@ -407,6 +407,10 @@ npx github:nulab/backlog-mcp-server --export-descriptions
 
 ## 高度な機能
 
+### 削除前の確認
+
+`delete_*` ツールを実行する前に、サーバーは MCP の elicitation でツール名と引数を示し、ユーザーに確認を求めます。拒否またはキャンセルされた場合は削除しません。elicitation に対応していないクライアントでは `delete_*` ツールを実行できません。
+
 ### ツール名のプレフィックス
 
 次の方法でツール名にプレフィックスを追加します：
