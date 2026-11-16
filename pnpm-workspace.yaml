@@ -15,7 +15,7 @@ minimumReleaseAgeExclude:
 catalog:
   vite: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest: 5.1.0
-  vite-plus: 1.5.0
+  vite-plus: 1.6.0
   '@vitest/coverage-v8': 5.1.0
 overrides:
   vite@*: 'catalog:'
