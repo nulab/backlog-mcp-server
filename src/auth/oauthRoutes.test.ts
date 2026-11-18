@@ -902,6 +902,99 @@ describe('createOAuthRoutes', () => {
       expect(store.consumeMcpRefreshToken('mcp-refresh-401')).toBeDefined();
     });
 
+    it('revokes sibling access and refresh tokens when a redeemed refresh token is replayed', async () => {
+      const { verifier, challenge } = makePkce();
+
+      store.registerClient({
+        client_id: 'c1',
+        client_secret: 's1',
+        client_id_issued_at: 0,
+        client_secret_expires_at: 0,
+        redirect_uris: ['https://client.example.com/cb'],
+      });
+
+      store.storeAuthCode('mcp-code-family', {
+        mcpClientId: 'c1',
+        backlogTokens: {
+          access_token: 'bl-at-1',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'bl-rt-1',
+        },
+        backlogAccessTokenExpiresAt: Date.now() + 3600 * 1000,
+        codeChallenge: challenge,
+        redirectUri: 'https://client.example.com/cb',
+        expiresAt: Date.now() + 600_000,
+      });
+
+      const codeRes = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: 'c1',
+          client_secret: 's1',
+          code: 'mcp-code-family',
+          code_verifier: verifier,
+          redirect_uri: 'https://client.example.com/cb',
+        }).toString(),
+      });
+      expect(codeRes.status).toBe(200);
+      const firstPair = (await codeRes.json()) as {
+        access_token: string;
+        refresh_token: string;
+      };
+
+      // Rotate once legitimately
+      const rotateRes = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: 'c1',
+          client_secret: 's1',
+          refresh_token: firstPair.refresh_token,
+        }).toString(),
+      });
+      expect(rotateRes.status).toBe(200);
+      const rotatedPair = (await rotateRes.json()) as {
+        access_token: string;
+        refresh_token: string;
+      };
+      expect(store.getMcpToken(rotatedPair.access_token)).toBeDefined();
+
+      // Replay the already-redeemed first refresh token
+      const replayRes = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: 'c1',
+          client_secret: 's1',
+          refresh_token: firstPair.refresh_token,
+        }).toString(),
+      });
+      expect(replayRes.status).toBe(400);
+      expect((await replayRes.json()).error).toBe('invalid_grant');
+
+      // Both the original and rotated access tokens plus the rotated refresh token are now dead
+      expect(store.getMcpToken(firstPair.access_token)).toBeUndefined();
+      expect(store.getMcpToken(rotatedPair.access_token)).toBeUndefined();
+
+      const siblingRefreshRes = await app.request('/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: 'c1',
+          client_secret: 's1',
+          refresh_token: rotatedPair.refresh_token,
+        }).toString(),
+      });
+      expect(siblingRefreshRes.status).toBe(400);
+      expect((await siblingRefreshRes.json()).error).toBe('invalid_grant');
+    });
+
     it('rejects unsupported grant_type', async () => {
       store.registerClient({
         client_id: 'c1',
