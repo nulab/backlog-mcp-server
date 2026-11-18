@@ -1,6 +1,6 @@
 {
   "name": "backlog-mcp-server",
-  "version": "0.23.3",
+  "version": "0.23.4",
   "type": "module",
   "bin": {
     "backlog-mcp-server": "./build/index.js"
