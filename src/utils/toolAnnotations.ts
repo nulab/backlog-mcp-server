@@ -64,9 +64,16 @@ const ANNOTATIONS_BY_VERB: Record<string, ToolAnnotations> = Object.assign(
   }
 );
 
+// Security: reads any file the server can reach, not only Backlog, so clients should not
+// auto-approve it the way they would a closed-world call.
+const ANNOTATIONS_BY_NAME: Record<string, ToolAnnotations> = Object.assign(
+  Object.create(null),
+  { add_attachment: { ...CREATE, openWorldHint: true } }
+);
+
 // `undefined` rather than a default so an unknown verb fails a test. Takes the bare name:
 // the hints must not depend on the `--prefix` flag.
 export function toolAnnotationsFor(name: string): ToolAnnotations | undefined {
   const verb = name.split('_')[0];
-  return ANNOTATIONS_BY_VERB[verb];
+  return ANNOTATIONS_BY_NAME[name] ?? ANNOTATIONS_BY_VERB[verb];
 }
