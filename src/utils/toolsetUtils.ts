@@ -1,14 +1,16 @@
 import type { Client } from 'backlog-js';
 import { ToolsetGroup } from '../types/toolsets.js';
 import { allTools } from '../tools/tools.js';
+import type { AddAttachmentOptions } from '../tools/addAttachment.js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 
 export const buildToolsetGroup = (
   backlog: Client,
   helper: DescriptionHelper,
-  enabledToolsets: string[]
+  enabledToolsets: string[],
+  options: AddAttachmentOptions = {}
 ): ToolsetGroup => {
-  const toolsetGroup = allTools(backlog, helper);
+  const toolsetGroup = allTools(backlog, helper, options);
   const knownNames = toolsetGroup.toolsets.map((ts) => ts.name);
   const unknown = enabledToolsets.filter(
     (name) => name !== 'all' && !knownNames.includes(name)

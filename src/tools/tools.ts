@@ -1,6 +1,10 @@
 import type { Client } from 'backlog-js';
 import { DescriptionHelper } from '../createDescriptionHelper.js';
 import { ToolsetGroup } from '../types/toolsets.js';
+import {
+  addAttachmentTool,
+  type AddAttachmentOptions,
+} from './addAttachment.js';
 import { addIssueTool } from './addIssue.js';
 import { addIssueCommentTool } from './addIssueComment.js';
 import { addProjectTool } from './addProject.js';
@@ -68,7 +72,8 @@ import { addDocumentTool } from './addDocument.js';
 
 export const allTools = (
   backlog: Client,
-  helper: DescriptionHelper
+  helper: DescriptionHelper,
+  options: AddAttachmentOptions = {}
 ): ToolsetGroup => {
   return {
     toolsets: [
@@ -84,6 +89,7 @@ export const allTools = (
           getUserStarsCountTool(backlog, helper),
           getMyselfTool(backlog, helper),
           getUserRecentUpdatesTool(backlog, helper),
+          addAttachmentTool(backlog, helper, options),
         ],
       },
       {

@@ -175,7 +175,8 @@ const mcpOption = {
 const sharedToolsetGroup = buildToolsetGroup(
   backlog,
   descriptionHelper,
-  enabledToolsets
+  enabledToolsets,
+  { attachmentRootsRequired: argv.transport !== 'stdio' }
 );
 
 reportUnknownOverrideKeys({
