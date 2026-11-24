@@ -236,6 +236,58 @@ describe('createTokenStore', () => {
       vi.advanceTimersByTime(31 * 24 * 60 * 60 * 1000);
       expect(store.consumeMcpRefreshToken('mcp-rt1')).toBeUndefined();
     });
+
+    it('revokes the entire token family when an already-redeemed refresh token is replayed', () => {
+      const expiresAt = Date.now() + 3600_000;
+      store.storeMcpToken('at-1', {
+        backlogAccessToken: 'bl-at-1',
+        clientId: 'c1',
+        expiresAt,
+        familyId: 'fam-1',
+      });
+      store.storeMcpRefreshToken('rt-1', {
+        backlogRefreshToken: 'bl-rt-1',
+        clientId: 'c1',
+        expiresAt,
+        familyId: 'fam-1',
+      });
+      store.storeMcpToken('other-at', {
+        backlogAccessToken: 'bl-other',
+        clientId: 'c1',
+        expiresAt,
+        familyId: 'fam-2',
+      });
+
+      // Normal rotation: redeem rt-1 and issue at-2 / rt-2 in the same family
+      expect(store.consumeMcpRefreshToken('rt-1')).toBeDefined();
+      store.storeMcpToken('at-2', {
+        backlogAccessToken: 'bl-at-2',
+        clientId: 'c1',
+        expiresAt,
+        familyId: 'fam-1',
+      });
+      store.cacheVerification(
+        'at-2',
+        { token: 'bl-at-2', clientId: 'c1', scopes: [], expiresAt: 0 },
+        300_000
+      );
+      store.storeMcpRefreshToken('rt-2', {
+        backlogRefreshToken: 'bl-rt-2',
+        clientId: 'c1',
+        expiresAt,
+        familyId: 'fam-1',
+      });
+
+      // Replay rt-1: rejected and revokes at-1, at-2 (plus verification cache), and rt-2
+      expect(store.consumeMcpRefreshToken('rt-1')).toBeUndefined();
+      expect(store.getMcpToken('at-1')).toBeUndefined();
+      expect(store.getMcpToken('at-2')).toBeUndefined();
+      expect(store.getCachedVerification('at-2')).toBeUndefined();
+      expect(store.consumeMcpRefreshToken('rt-2')).toBeUndefined();
+
+      // Unrelated token family remains intact
+      expect(store.getMcpToken('other-at')).toBeDefined();
+    });
   });
 
   describe('revokeMcpToken', () => {

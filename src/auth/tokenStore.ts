@@ -1,4 +1,5 @@
 import type { AuthInfo } from '@modelcontextprotocol/server';
+import { logger } from '../utils/logger.js';
 
 export type BacklogTokenData = {
   access_token: string;
@@ -50,10 +51,18 @@ export type McpTokenEntry = {
   backlogAccessToken: string;
   clientId: string;
   expiresAt: number;
+  familyId?: string;
 };
 
 type McpRefreshEntry = {
   backlogRefreshToken: string;
+  clientId: string;
+  expiresAt: number;
+  familyId?: string;
+};
+
+type RedeemedRefreshEntry = {
+  familyId: string;
   clientId: string;
   expiresAt: number;
 };
@@ -71,6 +80,21 @@ export function createTokenStore() {
   const verificationCache = new Map<string, CachedVerification>();
   const mcpAccessTokens = new Map<string, McpTokenEntry>();
   const mcpRefreshTokens = new Map<string, McpRefreshEntry>();
+  const redeemedRefreshTokens = new Map<string, RedeemedRefreshEntry>();
+
+  const revokeFamily = (familyId: string): void => {
+    for (const [token, entry] of mcpAccessTokens) {
+      if (entry.familyId === familyId) {
+        mcpAccessTokens.delete(token);
+        verificationCache.delete(token);
+      }
+    }
+    for (const [token, entry] of mcpRefreshTokens) {
+      if (entry.familyId === familyId) {
+        mcpRefreshTokens.delete(token);
+      }
+    }
+  };
 
   const evictOldestClient = (): void => {
     const now = Math.floor(Date.now() / 1000);
@@ -165,6 +189,7 @@ export function createTokenStore() {
       mcpRefreshToken: string,
       entry: McpRefreshEntry
     ): void {
+      redeemedRefreshTokens.delete(mcpRefreshToken);
       mcpRefreshTokens.set(mcpRefreshToken, entry);
     },
 
@@ -172,9 +197,30 @@ export function createTokenStore() {
       mcpRefreshToken: string
     ): McpRefreshEntry | undefined {
       const entry = mcpRefreshTokens.get(mcpRefreshToken);
-      if (!entry) return undefined;
+      if (!entry) {
+        const redeemed = redeemedRefreshTokens.get(mcpRefreshToken);
+        if (redeemed) {
+          if (Date.now() > redeemed.expiresAt) {
+            redeemedRefreshTokens.delete(mcpRefreshToken);
+            return undefined;
+          }
+          revokeFamily(redeemed.familyId);
+          logger.warn(
+            { clientId: redeemed.clientId, familyId: redeemed.familyId },
+            'Refresh token reuse detected; revoked token family'
+          );
+        }
+        return undefined;
+      }
       mcpRefreshTokens.delete(mcpRefreshToken);
       if (Date.now() > entry.expiresAt) return undefined;
+      if (entry.familyId) {
+        redeemedRefreshTokens.set(mcpRefreshToken, {
+          familyId: entry.familyId,
+          clientId: entry.clientId,
+          expiresAt: entry.expiresAt,
+        });
+      }
       return entry;
     },
 
@@ -195,6 +241,9 @@ export function createTokenStore() {
       }
       for (const [key, entry] of mcpRefreshTokens) {
         if (now > entry.expiresAt) mcpRefreshTokens.delete(key);
+      }
+      for (const [key, entry] of redeemedRefreshTokens) {
+        if (now > entry.expiresAt) redeemedRefreshTokens.delete(key);
       }
       const nowSec = Math.floor(now / 1000);
       for (const [key, client] of clients) {
