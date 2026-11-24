@@ -6,6 +6,8 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { runHttpMcpServer } from './httpMcpServer.js';
 import { createTokenStore } from './auth/tokenStore.js';
 import type { BacklogOAuthConfig } from './auth/backlogOAuthConfig.js';
+import { getCurrentAccessToken } from './auth/backlogAuthContext.js';
+import { getCurrentBacklogHost } from './auth/backlogHost.js';
 import { backlogErrorHandler } from './backlog/backlogErrorHandler.js';
 import {
   wrapServerWithToolRegistry,
@@ -378,6 +380,210 @@ describe('runHttpMcpServer', () => {
       expect(res.status).toBe(401);
       expect(store.getMcpToken('mcp-token')).toBeUndefined();
       expect(store.getCachedVerification('mcp-token')).toBeUndefined();
+    });
+  });
+
+  describe('token passthrough', () => {
+    const backlogAuthError = {
+      _name: 'BacklogAuthError',
+      _status: 401,
+      _url: 'https://example.backlog.com/api/v2/users/myself',
+    };
+
+    const createTokenServer = (): BacklogMCPServer => {
+      const server = wrapServerWithToolRegistry(
+        new McpServer({ name: 'backlog-test', version: '0.0.0' })
+      );
+      server.registerOnce('whoami', 'test tool', z.object({}), () => ({
+        content: [
+          { type: 'text' as const, text: getCurrentAccessToken() ?? '' },
+        ],
+      }));
+      server.registerOnce('whereami', 'test tool', z.object({}), () => ({
+        content: [
+          { type: 'text' as const, text: getCurrentBacklogHost() ?? '' },
+        ],
+      }));
+      server.registerOnce('get_myself', 'test tool', z.object({}), () => {
+        const { message } = backlogErrorHandler(backlogAuthError);
+        return { content: [{ type: 'text' as const, text: message }] };
+      });
+      return server;
+    };
+
+    const startPassthrough = (defaultHost?: string) =>
+      start({
+        createServer: createTokenServer,
+        enableJsonResponse: false,
+        tokenPassthrough: { defaultHost },
+      });
+
+    const callTool = (
+      port: number,
+      name: string,
+      token?: string,
+      host: string | null = 'example.backlog.com'
+    ) =>
+      send(port, {
+        headers: {
+          ...(token === undefined ? {} : { authorization: `Bearer ${token}` }),
+          ...(host === null ? {} : { 'x-backlog-host': host }),
+          'mcp-method': 'tools/call',
+          'mcp-name': name,
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name, arguments: {}, _meta: MODERN_ENVELOPE },
+        }),
+      });
+
+    const textOf = (res: RawResponse) =>
+      JSON.parse(res.body).result.content[0].text;
+
+    it('answers 401 when the Authorization header is missing', async () => {
+      const port = await startPassthrough();
+
+      const res = await callTool(port, 'whoami');
+
+      expect(res.status).toBe(401);
+      expect(JSON.parse(res.body).error).toBe('invalid_token');
+      expect(res.headers['www-authenticate']).toContain('Bearer');
+    });
+
+    it('runs each request with its own token', async () => {
+      const port = await startPassthrough();
+
+      const [a, b] = await Promise.all([
+        callTool(port, 'whoami', 'token-a'),
+        callTool(port, 'whoami', 'token-b'),
+      ]);
+
+      expect(textOf(a)).toBe('token-a');
+      expect(textOf(b)).toBe('token-b');
+    });
+
+    it('runs each request against its own space', async () => {
+      const port = await startPassthrough();
+
+      const [a, b] = await Promise.all([
+        callTool(port, 'whereami', 'token-a', 'hblab.backlogtool.com'),
+        callTool(port, 'whereami', 'token-b', 'Other-Space.backlog.jp'),
+      ]);
+
+      expect(textOf(a)).toBe('hblab.backlogtool.com');
+      expect(textOf(b)).toBe('other-space.backlog.jp');
+    });
+
+    it.each(['evil.example.com', 'hblab.backlog.com.evil.com', 'backlog.com'])(
+      'answers 400 when X-Backlog-Host is %j',
+      async (host) => {
+        const port = await startPassthrough();
+
+        const res = await callTool(port, 'whoami', 'token-a', host);
+
+        expect(res.status).toBe(400);
+        expect(JSON.parse(res.body).error).toBe('invalid_host');
+      }
+    );
+
+    it('answers 400 without X-Backlog-Host when no default space is set', async () => {
+      const port = await startPassthrough();
+
+      const res = await callTool(port, 'whoami', 'token-a', null);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('falls back to the default space without X-Backlog-Host', async () => {
+      const port = await startPassthrough('default.backlog.com');
+
+      const res = await callTool(port, 'whereami', 'token-a', null);
+
+      expect(textOf(res)).toBe('default.backlog.com');
+    });
+
+    it('answers in JSON even when JSON responses are not enabled', async () => {
+      const port = await startPassthrough();
+
+      const res = await callTool(port, 'whoami', 'token-a');
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('application/json');
+    });
+
+    it('answers 401 when Backlog rejects the token', async () => {
+      const port = await startPassthrough();
+
+      const res = await callTool(port, 'get_myself', 'expired');
+
+      expect(res.status).toBe(401);
+      expect(JSON.parse(res.body).error).toBe('invalid_token');
+      expect(res.headers['www-authenticate']).toContain(
+        'error="invalid_token"'
+      );
+    });
+
+    describe('from a 2025-era client, which the SDK always answers over SSE', () => {
+      const legacyCall = (port: number, name: string, token: string) =>
+        send(port, {
+          headers: {
+            authorization: `Bearer ${token}`,
+            'x-backlog-host': 'example.backlog.com',
+            'mcp-protocol-version': '2025-11-25',
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name, arguments: {} },
+          }),
+        });
+
+      it('answers 401 when Backlog rejects the token', async () => {
+        const port = await startPassthrough();
+
+        const res = await legacyCall(port, 'get_myself', 'expired');
+
+        expect(res.status).toBe(401);
+        expect(JSON.parse(res.body).error).toBe('invalid_token');
+      });
+
+      it('still delivers a successful result', async () => {
+        const port = await startPassthrough();
+
+        const res = await legacyCall(port, 'whoami', 'token-a');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toContain('token-a');
+      });
+    });
+
+    it('serves no OAuth endpoints', async () => {
+      const port = await startPassthrough();
+
+      const res = await send(port, {
+        method: 'GET',
+        path: '/.well-known/oauth-authorization-server',
+      });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('cannot be combined with the built-in OAuth server', async () => {
+      await expect(
+        start({
+          tokenPassthrough: {},
+          oauthConfig: {
+            clientId: 'cid',
+            clientSecret: 'csecret',
+            backlogDomain: 'example.backlog.com',
+            serverBaseUrl: 'https://mcp.example.com',
+          },
+          tokenStore: createTokenStore(),
+        })
+      ).rejects.toThrow('Token passthrough cannot be combined');
     });
   });
 });

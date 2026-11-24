@@ -1,6 +1,7 @@
 import { createClient } from 'backlog-js';
 import type { Client } from 'backlog-js';
 import { getCurrentAccessToken } from '../auth/backlogAuthContext.js';
+import { getCurrentBacklogHost } from '../auth/backlogHost.js';
 import { getCurrentOrganization } from './backlogOrganizationContext.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
@@ -239,6 +240,38 @@ export function createOAuthBacklogClientRegistry(
     listOrganizations: () => [info],
     getDefaultOrganization: () => defaultName,
     // OAuth authorises against one Backlog domain per server.
+    isMultiOrganization: false,
+  };
+}
+
+// Both the token and the space come from the request, set by the token passthrough
+// middleware, so one server can act for users of several Backlog spaces.
+export function createTokenPassthroughBacklogClientRegistry(): BacklogClientRegistry {
+  const defaultName = 'default';
+
+  const resolvePassthroughClient = (): Client => {
+    const token = getCurrentAccessToken();
+    const host = getCurrentBacklogHost();
+    if (!token || !host) {
+      throw new Error(
+        'No Backlog access token or space in current request context'
+      );
+    }
+    return createClient({ host, accessToken: token, userAgent: USER_AGENT });
+  };
+
+  return {
+    resolveClient: () => resolvePassthroughClient(),
+    createScopedClient: () =>
+      createBacklogClientProxy(resolvePassthroughClient),
+    listOrganizations: () => [
+      {
+        name: defaultName,
+        domain: getCurrentBacklogHost() ?? '',
+        isDefault: true,
+      },
+    ],
+    getDefaultOrganization: () => defaultName,
     isMultiOrganization: false,
   };
 }
